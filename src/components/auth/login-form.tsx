@@ -20,6 +20,9 @@ import {
   loginFlowSignupSchema,
   passwordSchema,
 } from "@/lib/schemas/auth.schema";
+import { extractAuthFromResponse } from "@/lib/auth-session";
+import { getRedirectPath } from "@/lib/auth-utils";
+import { setPendingVerifyEmail } from "@/lib/verify-email-storage";
 
 type LoginFormData = z.infer<typeof loginFlowSchema>;
 
@@ -62,7 +65,9 @@ export default function LoginForm() {
   const hasEmail = Boolean(normalizedEmail);
   const hasPassword = Boolean(password?.trim());
   const hasConfirmPassword = Boolean(confirmPassword?.trim());
-  const isEmailCheckedForCurrent = Boolean(hasEmail && checkedEmail === normalizedEmail);
+  const isEmailCheckedForCurrent = Boolean(
+    hasEmail && checkedEmail === normalizedEmail,
+  );
 
   useEffect(() => {
     if (checkedEmail && normalizedEmail !== checkedEmail) {
@@ -90,7 +95,9 @@ export default function LoginForm() {
 
     if (checkedEmail !== currentEmail) {
       try {
-        const result = await checkEmailMutation.mutateAsync({ email: currentEmail });
+        const result = await checkEmailMutation.mutateAsync({
+          email: currentEmail,
+        });
         setCheckedEmail(currentEmail);
         setIsLoginMode(result.exists);
         setShowPassword(false);
@@ -98,7 +105,12 @@ export default function LoginForm() {
         setValue("password", "");
         setValue("confirmPassword", "");
       } catch (error) {
-        setFormError(getApiErrorMessage(error, "Unable to verify email. Please try again."));
+        setFormError(
+          getApiErrorMessage(
+            error,
+            "Unable to verify email. Please try again.",
+          ),
+        );
       }
       return;
     }
@@ -106,26 +118,44 @@ export default function LoginForm() {
     if (isLoginMode) {
       const passwordResult = passwordSchema.safeParse(data.password);
       if (!passwordResult.success) {
-        setFormError(passwordResult.error.issues[0]?.message ?? "Invalid password");
+        setFormError(
+          passwordResult.error.issues[0]?.message ?? "Invalid password",
+        );
         return;
       }
 
       try {
-        await loginMutation.mutateAsync({
+        const response = await loginMutation.mutateAsync({
           email: currentEmail,
           password: data.password!,
           method: "email",
+          role: "service-provider",
         });
-        router.push("/app/dashboard");
+        const { user: loggedInUser } = extractAuthFromResponse(response);
+        const redirectPath = getRedirectPath(loggedInUser);
+
+        if (redirectPath === "/auth/verify-email") {
+          setPendingVerifyEmail(currentEmail);
+          router.push(
+            `/auth/verify-email?email=${encodeURIComponent(currentEmail)}`,
+          );
+          return;
+        }
+
+        router.push(redirectPath);
       } catch (error) {
-        setFormError(getApiErrorMessage(error, "Login failed. Please try again."));
+        setFormError(
+          getApiErrorMessage(error, "Login failed. Please try again."),
+        );
       }
       return;
     }
 
     const signupResult = loginFlowSignupSchema.safeParse(data);
     if (!signupResult.success) {
-      setFormError(signupResult.error.issues[0]?.message ?? "Please check your details.");
+      setFormError(
+        signupResult.error.issues[0]?.message ?? "Please check your details.",
+      );
       return;
     }
 
@@ -136,9 +166,13 @@ export default function LoginForm() {
         role: "service-provider",
         password: data.password!,
       });
-      router.push(`/auth/signup-verify-otp?email=${encodeURIComponent(currentEmail)}`);
+      router.push(
+        `/auth/signup-verify-otp?email=${encodeURIComponent(currentEmail)}`,
+      );
     } catch (error) {
-      setFormError(getApiErrorMessage(error, "Signup failed. Please try again."));
+      setFormError(
+        getApiErrorMessage(error, "Signup failed. Please try again."),
+      );
     }
   };
 
@@ -169,7 +203,9 @@ export default function LoginForm() {
             {...register("email")}
           />
           {errors.email && (
-            <p className="mt-1.5 text-sm text-red-600">{errors.email.message}</p>
+            <p className="mt-1.5 text-sm text-red-600">
+              {errors.email.message}
+            </p>
           )}
         </div>
 

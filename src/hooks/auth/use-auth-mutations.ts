@@ -1,9 +1,10 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import Cookies from "js-cookie";
 
+import { clearAuthSession, persistAuthFromResponse } from "@/lib/auth-session";
 import { authService } from "@/services/auth.service";
+import { setPendingVerifyEmail } from "@/lib/verify-email-storage";
 import type {
   CheckEmailPayload,
   LoginAuthPayload,
@@ -11,28 +12,7 @@ import type {
   ResendOtpPayload,
   VerifyEmailPayload,
 } from "@/types/auth.types";
-
-function saveAuthToken(data: unknown) {
-  if (!data || typeof data !== "object") return;
-
-  const record = data as Record<string, unknown>;
-  const nested =
-    record.data && typeof record.data === "object"
-      ? (record.data as Record<string, unknown>)
-      : null;
-
-  const token =
-    (typeof record.token === "string" && record.token) ||
-    (typeof record.accessToken === "string" && record.accessToken) ||
-    (nested &&
-      ((typeof nested.token === "string" && nested.token) ||
-        (typeof nested.accessToken === "string" && nested.accessToken))) ||
-    null;
-
-  if (token) {
-    Cookies.set("token", token, { expires: 7 });
-  }
-}
+import { useDispatch } from "react-redux";
 
 export function useCheckEmail() {
   return useMutation({
@@ -41,30 +21,34 @@ export function useCheckEmail() {
 }
 
 export function useRegisterAuth() {
+  const dispatch = useDispatch();
   return useMutation({
     mutationFn: (payload: RegisterAuthPayload) => authService.register(payload),
-    onSuccess: (data) => {
-      saveAuthToken(data);
-      
+    onSuccess: (data, variables) => {
+      persistAuthFromResponse(data, dispatch);
+      setPendingVerifyEmail(variables.email);
     },
   });
 }
 
 export function useLoginAuth() {
+  const dispatch = useDispatch();
   return useMutation({
     mutationFn: (payload: LoginAuthPayload) => authService.login(payload),
-    onSuccess: (data) => {
-      saveAuthToken(data);
+    onSuccess: (data, variables) => {
+      persistAuthFromResponse(data, dispatch);
+      setPendingVerifyEmail(variables.email);
     },
   });
 }
 
 export function useVerifyEmail() {
+  const dispatch = useDispatch();
   return useMutation({
     mutationFn: (payload: VerifyEmailPayload) =>
       authService.verifyEmail(payload),
     onSuccess: (data) => {
-      saveAuthToken(data);
+      persistAuthFromResponse(data, dispatch);
     },
   });
 }
@@ -72,5 +56,15 @@ export function useVerifyEmail() {
 export function useResendOtp() {
   return useMutation({
     mutationFn: (payload: ResendOtpPayload) => authService.resendOtp(payload),
+  });
+}
+
+export function useLogoutAuth() {
+  const dispatch = useDispatch();
+  return useMutation({
+    mutationFn: () => authService.logout(),
+    onSettled: () => {
+      clearAuthSession(dispatch);
+    },
   });
 }

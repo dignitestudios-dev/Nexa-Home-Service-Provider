@@ -1,10 +1,12 @@
-import SettingsPlaceholder from "../_components/settings-placeholder";
+import SettingsSubscriptionPlan from "../_components/settings-subscription-plan";
 
 export default function ServicePlanPage() {
   return (
-    <SettingsPlaceholder
+    <SettingsSubscriptionPlan
       title="Service Plan"
-      description="Manage your active service plan, renewals, and available upgrade options."
+      variant="service"
+      price="$299/month"
+      planName="Advance Service Plan"
     />
   );
 }

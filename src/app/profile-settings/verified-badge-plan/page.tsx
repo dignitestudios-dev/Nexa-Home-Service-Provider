@@ -1,10 +1,12 @@
-import SettingsPlaceholder from "../_components/settings-placeholder";
+import SettingsSubscriptionPlan from "../_components/settings-subscription-plan";
 
 export default function VerifiedBadgePlanPage() {
   return (
-    <SettingsPlaceholder
+    <SettingsSubscriptionPlan
       title="Verified Badge Plan"
-      description="Apply for a verified badge and manage your badge subscription details."
+      variant="verified-badge"
+      price="$2.99/7days"
+      packageName="Package Name"
     />
   );
 }

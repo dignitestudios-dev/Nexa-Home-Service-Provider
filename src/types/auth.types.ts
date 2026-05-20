@@ -17,6 +17,7 @@ export interface LoginAuthPayload {
   email: string;
   password: string;
   method: AuthMethod;
+  role: AuthRole;
 }
 
 export interface VerifyEmailPayload {
@@ -28,6 +29,20 @@ export interface VerifyEmailPayload {
 
 export interface ResendOtpPayload {
   email: string;
+}
+
+export interface ChangePhonePayload {
+  phone: string;
+}
+
+export interface VerifyChangePhonePayload {
+  phone: string;
+  otp: string;
+}
+
+export interface ChangePasswordPayload {
+  password: string;
+  newPassword: string;
 }
 
 export interface CheckEmailResponse {

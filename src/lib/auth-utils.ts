@@ -1,4 +1,5 @@
 import type { CheckEmailResponse } from "@/types/auth.types";
+import type { User } from "@/store/slices/auth-slice";
 
 export function parseEmailExists(data: unknown): boolean {
   if (!data || typeof data !== "object") {
@@ -53,3 +54,23 @@ export function toE164UsPhone(value: string): string {
 
   return `+${digits}`;
 }
+
+/**
+ * Post-login redirect: verify email when identity is not provided,
+ * otherwise home for pending / approved (and other verified states).
+ */
+export const getRedirectPath = (user: User | null): string => {
+  if (!user) {
+    return "/auth/login";
+  }
+
+  if (!user.isEmailVerified) {
+    return "/auth/verify-email";
+  }
+
+  if (user.identityStatus === "not-provided") {
+    return "/auth/verify-email";
+  }
+
+  return "/home";
+};

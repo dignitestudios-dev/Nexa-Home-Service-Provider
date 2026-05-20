@@ -2,7 +2,7 @@
 
 import { Bell, ChevronDown } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,39 +10,68 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLogoutAuth } from "@/hooks/auth/use-auth-mutations";
+import { useCurrentUserQuery } from "@/hooks/user/use-current-user-query";
+import {
+  getUserDisplayName,
+  getUserInitials,
+} from "@/lib/parse-user-profile";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/index";
 
 const navItems = [
-  { label: "Home", isActive: true },
-  { label: "Jobs", isActive: false },
-  { label: "Credit Plans", isActive: false },
+  { label: "Home", href: "/home" },
+  { label: "Jobs", href: "/home" },
+  { label: "Credit Plans", href: "/home" },
 ] as const;
 
 export default function HomeHeader() {
   const router = useRouter();
+  const pathname = usePathname();
+  const logoutMutation = useLogoutAuth();
+  const { isLoading: isLoadingUser } = useCurrentUserQuery();
+  const user = useSelector((state: RootState) => state.auth.user);
+
+  const displayName = getUserDisplayName(user);
+  const initials = getUserInitials(displayName);
+  const profilePicture = user?.profilePicture?.trim() || null;
+
+  const handleLogout = async () => {
+    await logoutMutation.mutateAsync().catch(() => undefined);
+    router.push("/auth/login");
+  };
 
   return (
     <header className="rounded-[50px] bg-[#F8F8F8] px-10 py-5">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
-         <Image src="/asset/darklogo.png" alt="NexaHome" width={200} height={200} />
+          <Image src="/asset/darklogo.png" alt="NexaHome" width={200} height={200} />
         </div>
 
         <div className="flex flex-wrap items-center gap-5">
           <nav className="flex items-center gap-2">
-            {navItems.map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                className={`cursor-pointer rounded-full px-4 py-3 text-[16px] leading-5 ${
-                  item.isActive ? "font-[600] text-[#005864]" : "font-[400] text-black/70"
-                }`}
-              >
-                {item.label}
-                {item.isActive ? (
-                  <span className="mt-2 block h-[3px] w-full rounded bg-[#005864]" />
-                ) : null}
-              </button>
-            ))}
+            {navItems.map((item) => {
+              const isActive =
+                item.label === "Home"
+                  ? pathname === "/home"
+                  : pathname === item.href;
+
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => router.push(item.href)}
+                  className={`cursor-pointer rounded-full px-4 py-3 text-[16px] leading-5 ${
+                    isActive ? "font-[600] text-[#005864]" : "font-[400] text-black/70"
+                  }`}
+                >
+                  {item.label}
+                  {isActive ? (
+                    <span className="mt-2 block h-[3px] w-full rounded bg-[#005864]" />
+                  ) : null}
+                </button>
+              );
+            })}
           </nav>
 
           <button
@@ -58,10 +87,23 @@ export default function HomeHeader() {
                 type="button"
                 className="flex cursor-pointer items-center gap-2 rounded-full px-2 py-1 transition hover:bg-[#EFEFEF]"
               >
-                <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#005864] text-sm font-[700] text-white">
-                  BK
-                </div>
-                <span className="text-[16px] font-[500] text-[#1C1C1C]">Boot Krewe Cleaner</span>
+                {profilePicture ? (
+                  <Image
+                    src={profilePicture}
+                    alt={displayName}
+                    width={46}
+                    height={46}
+                    className="h-[46px] w-[46px] rounded-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#005864] text-sm font-[700] text-white">
+                    {isLoadingUser ? "…" : initials}
+                  </div>
+                )}
+                <span className="max-w-[180px] truncate text-[16px] font-[500] text-[#1C1C1C]">
+                  {isLoadingUser ? "Loading..." : displayName}
+                </span>
                 <ChevronDown className="h-4 w-4 text-black/60" />
               </button>
             </DropdownMenuTrigger>
@@ -85,10 +127,11 @@ export default function HomeHeader() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-3 bg-[#E4E4E4]" />
                 <DropdownMenuItem
-                  onClick={() => router.push("/auth/login")}
-                  className="h-[18px] cursor-pointer rounded-none px-0 text-[14px] font-[500] text-[#FF0000] focus:bg-transparent focus:text-[#FF0000]"
+                  onClick={handleLogout}
+                  disabled={logoutMutation.isPending}
+                  className="h-[18px] cursor-pointer rounded-none px-0 text-[14px] font-[500] text-[#FF0000] focus:bg-transparent focus:text-[#FF0000] disabled:opacity-50"
                 >
-                  Log Out
+                  {logoutMutation.isPending ? "Logging out..." : "Log Out"}
                 </DropdownMenuItem>
               </div>
             </DropdownMenuContent>

@@ -111,7 +111,7 @@ function SignupVerificationContent() {
     try {
       await verifyEmailMutation.mutateAsync({
         email,
-        otp: data.otp,
+        otp: data.otp.replace(/\D/g, ""),
         role: "service-provider",
         mode: "verify",
       });

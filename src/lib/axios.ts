@@ -1,5 +1,5 @@
 import axios from "axios";
-import Cookies from "js-cookie";
+import { clearAuthTokenCookie, getAuthTokenCookie } from "@/lib/auth-session";
 
 // export const baseURL = "https://d3d7-101-53-226-103.ngrok-free.app";
 export const baseURL = "https://api.dev.nexahomeapp.com"
@@ -26,7 +26,7 @@ export const API = axios.create({
 
 API.interceptors.request.use(
   (config) => {
-    const token = Cookies.get("token");
+    const token = getAuthTokenCookie();
     if (token) {
       config.headers.authorization = `Bearer ${token}`;
     }
@@ -47,7 +47,7 @@ API.interceptors.response.use(
       const requestUrl = error?.config?.url || "";
       const isAuthRequest = requestUrl.startsWith("/auth/");
       if (!isAuthRequest) {
-        Cookies.remove("token");
+        clearAuthTokenCookie();
         if (typeof window !== "undefined") {
           // window.location.href = "/auth/login";
         }

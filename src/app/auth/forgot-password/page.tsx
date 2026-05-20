@@ -24,8 +24,10 @@ export default function ForgotPasswordForm() {
   });
 
   const onSubmit = (data: ForgotFormData) => {
-    console.log("FORGOT PASSWORD:", data);
-    router.push("/auth/verify-otp");
+    const email = data.email.trim().toLowerCase();
+    router.push(
+      `/auth/verify-otp?email=${encodeURIComponent(email)}&mode=reset`,
+    );
   };
 
   return (

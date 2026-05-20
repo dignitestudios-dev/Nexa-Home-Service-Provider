@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { BriefcaseBusiness, Check, CircleAlert, FileText, IdCard, UserRound, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -71,7 +71,7 @@ const walkthroughItems = [
   },
 ] as const;
 
-export default function AccountStatusPage() {
+function AccountStatusContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawStatus = (searchParams.get("status") ?? "submitted").toLowerCase();
@@ -108,7 +108,7 @@ export default function AccountStatusPage() {
         onOpenChange={(isOpen) => {
           setIsProfileSetupModalOpen(isOpen);
           if (!isOpen && initialStatus === "submitted") {
-            setShowWalkthrough(true);
+            router.push("/home");
           }
         }}
       >
@@ -118,7 +118,12 @@ export default function AccountStatusPage() {
         >
           <button
             type="button"
-            onClick={() => setIsProfileSetupModalOpen(false)}
+            onClick={() => {
+              setIsProfileSetupModalOpen(false);
+              if (initialStatus === "submitted") {
+                router.push("/home");
+              }
+            }}
             className="absolute right-5 top-5 inline-flex h-10 w-10 items-center justify-center rounded-full text-[#181818]/80 hover:bg-black/5"
             aria-label="Close modal"
           >
@@ -223,7 +228,7 @@ export default function AccountStatusPage() {
 
               <button
                 type="button"
-                onClick={() => router.push("/app/dashboard")}
+                onClick={() => router.push("/home")}
                 className="mt-16 h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] px-[10px] py-3 text-[16px] font-semibold leading-5 text-white capitalize hover:opacity-95"
               >
                 Next
@@ -259,6 +264,14 @@ export default function AccountStatusPage() {
       </div>
       </div>
     </>
+  );
+}
+
+export default function AccountStatusPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen w-full bg-white" />}>
+      <AccountStatusContent />
+    </Suspense>
   );
 }
 

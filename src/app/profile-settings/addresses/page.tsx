@@ -1,250 +1,165 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { ExternalLink, MapPin, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { ExternalLink, MapPin, Pencil, Trash2 } from "lucide-react";
+import { getAuthTokenCookie } from "@/lib/auth-session";
+import { useGetAddresses } from "@/hooks/addresses/use-addresses-query";
+import type { RootState } from "@/store/index";
+import type { UserAddress } from "@/types/address.types";
+import { useSelector } from "react-redux";
+import AddAddressDialog from "./_components/add-address-dialog";
+import AddressListSkeleton from "./_components/address-list-skeleton";
+import DeleteAddressDialog from "./_components/delete-address-dialog";
+import EditAddressDialog from "./_components/edit-address-dialog";
 
-type Address = {
-  id: string;
-  title: string;
-  fullAddress: string;
-};
-
-const initialAddresses: Address[] = [
-  { id: "home", title: "Home", fullAddress: "124 Bay Street, Downtown Toronto, ON M5J 2X8, Canada" },
-  { id: "office", title: "Office", fullAddress: "250 Yonge Street, Toronto, ON M5B 2L7, Canada" },
-];
+function getMapUrl(address: UserAddress): string | null {
+  const coords = address.coordinates?.coordinates;
+  if (!coords || coords.length < 2) return null;
+  const [lng, lat] = coords;
+  return `https://www.google.com/maps?q=${lat},${lng}`;
+}
 
 export default function AddressesPage() {
-  const [addresses, setAddresses] = useState<Address[]>(initialAddresses);
+  const isAuthenticated = useSelector(
+    (state: RootState) => state.auth.isAuthenticated,
+  );
+  const hasToken = Boolean(getAuthTokenCookie());
+  const canFetch = hasToken || isAuthenticated;
+
+  const {
+    data: addresses = [],
+    isLoading,
+    isPending,
+    isFetching,
+    isFetched,
+    isError,
+    refetch,
+  } = useGetAddresses();
+
+  const showSkeleton =
+    canFetch && (isLoading || isPending || (isFetching && !isFetched));
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
-  const [newAddress, setNewAddress] = useState({
-    title: "",
-    address: "",
-    streetName: "",
-    houseApartment: "",
-    zipCode: "",
-  });
+  const [editingAddress, setEditingAddress] = useState<UserAddress | null>(null);
+  const [isEditAddressOpen, setIsEditAddressOpen] = useState(false);
+  const [deletingAddress, setDeletingAddress] = useState<UserAddress | null>(null);
+  const [isDeleteAddressOpen, setIsDeleteAddressOpen] = useState(false);
 
-  const onSubmitAddress = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const openEditDialog = (address: UserAddress) => {
+    setEditingAddress(address);
+    setIsEditAddressOpen(true);
+  };
 
-    const fullAddress = [
-      newAddress.address,
-      newAddress.streetName,
-      newAddress.houseApartment,
-      newAddress.zipCode,
-    ]
-      .filter(Boolean)
-      .join(", ");
-
-    if (!newAddress.title || !fullAddress) {
-      return;
-    }
-
-    setAddresses((current) => [
-      ...current,
-      {
-        id: `${newAddress.title.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`,
-        title: newAddress.title,
-        fullAddress,
-      },
-    ]);
-    setNewAddress({
-      title: "",
-      address: "",
-      streetName: "",
-      houseApartment: "",
-      zipCode: "",
-    });
-    setIsAddAddressOpen(false);
+  const openDeleteDialog = (address: UserAddress) => {
+    setDeletingAddress(address);
+    setIsDeleteAddressOpen(true);
   };
 
   return (
     <div>
+      <EditAddressDialog
+        address={editingAddress}
+        open={isEditAddressOpen}
+        onOpenChange={(open) => {
+          setIsEditAddressOpen(open);
+          if (!open) setEditingAddress(null);
+        }}
+      />
+
+      <DeleteAddressDialog
+        address={deletingAddress}
+        open={isDeleteAddressOpen}
+        onOpenChange={(open) => {
+          setIsDeleteAddressOpen(open);
+          if (!open) setDeletingAddress(null);
+        }}
+      />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[21px] font-[700] leading-7 text-black">Address</h2>
-        <Dialog open={isAddAddressOpen} onOpenChange={setIsAddAddressOpen}>
-          <DialogTrigger asChild>
-            <button
-              type="button"
-              className="inline-flex cursor-pointer items-center gap-2 text-[16px] font-[500] leading-5 text-[#005864] underline underline-offset-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Address
-            </button>
-          </DialogTrigger>
-          <DialogContent
-            showCloseButton={false}
-            className="max-w-[525px] rounded-[12px] bg-white p-10"
+        <AddAddressDialog open={isAddAddressOpen} onOpenChange={setIsAddAddressOpen} />
+      </div>
+
+      {!canFetch ? (
+        <div className="mt-6 rounded-[12px] bg-white p-6 text-center">
+          <p className="text-[15px] text-black/70">Please log in to view your addresses.</p>
+        </div>
+      ) : showSkeleton ? (
+        <AddressListSkeleton count={2} />
+      ) : isError ? (
+        <div className="mt-6 rounded-[12px] bg-white p-6 text-center">
+          <p className="text-[15px] text-black/70">Unable to load addresses. Please try again.</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="mt-3 cursor-pointer text-[14px] font-[500] text-[#005864] underline underline-offset-2"
           >
-            <DialogHeader className="gap-1">
-              <DialogTitle className="text-[28px] font-[700] leading-[35px] tracking-[-0.018em] text-[#181818]">
-                Add Address
-              </DialogTitle>
-            </DialogHeader>
+            Retry
+          </button>
+        </div>
+      ) : isFetched && addresses.length === 0 ? (
+        <div className="mt-6 rounded-[12px] bg-white p-6 text-center">
+          <p className="text-[15px] text-black/70">No addresses saved yet.</p>
+        </div>
+      ) : (
+        <div className="mt-6 space-y-4">
+          {addresses.map((address) => {
+            const mapUrl = getMapUrl(address);
 
-            <DialogClose asChild>
-              <button
-                type="button"
-                className="absolute right-7 top-8 flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-[#181818] transition hover:bg-[#F3F3F3]"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </DialogClose>
+            return (
+              <article key={address._id} className="rounded-[12px] bg-white p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="max-w-[520px]">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-[20px] font-[500] leading-[26px] text-[#1F1F1F]">
+                        {address.label}
+                      </h3>
+                      {address.isDefault ? (
+                        <span className="rounded-full bg-[#E8F4F5] px-2 py-0.5 text-[12px] font-[500] text-[#005864]">
+                          Default
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-3 flex items-start gap-2">
+                      <MapPin className="mt-1 h-[17px] w-[17px] shrink-0 text-[#1F1F1F]" />
+                      <p className="text-[15px] leading-5 text-black/60">{address.address}</p>
+                    </div>
+                    {mapUrl ? (
+                      <a
+                        href={mapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex cursor-pointer items-center gap-1 text-[14px] font-[500] leading-[18px] text-[#005864] underline underline-offset-2"
+                      >
+                        View on Map
+                        <ExternalLink className="h-[14px] w-[14px]" />
+                      </a>
+                    ) : null}
+                  </div>
 
-            <form className="mt-1 space-y-[15px]" onSubmit={onSubmitAddress}>
-              <div>
-                <label htmlFor="address-title" className="mb-2 block text-[14px] font-[500] text-[#181818]">
-                  Address Name
-                </label>
-                <Input
-                  id="address-title"
-                  value={newAddress.title}
-                  onChange={(event) => setNewAddress((prev) => ({ ...prev, title: event.target.value }))}
-                  placeholder="Office"
-                  className="h-12 rounded-[12px] border-[#005864] bg-[#F8F8F8] text-[14px]"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="address" className="mb-2 block text-[14px] font-[500] text-[#181818]">
-                  Address
-                </label>
-                <Input
-                  id="address"
-                  value={newAddress.address}
-                  onChange={(event) => setNewAddress((prev) => ({ ...prev, address: event.target.value }))}
-                  placeholder="124 Bay Street, Downtown Toronto, ON M5J 2X8, Canada"
-                  className="h-12 rounded-[12px] border-[#005864] bg-[#F8F8F8] text-[14px]"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="street-name" className="mb-2 block text-[14px] font-[500] text-[#181818]">
-                  Street Name
-                </label>
-                <Input
-                  id="street-name"
-                  value={newAddress.streetName}
-                  onChange={(event) =>
-                    setNewAddress((prev) => ({ ...prev, streetName: event.target.value }))
-                  }
-                  placeholder="Bay Street"
-                  className="h-12 rounded-[12px] border-[#005864] bg-white text-[14px]"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-[10px]">
-                <div>
-                  <label
-                    htmlFor="house-apartment"
-                    className="mb-2 block text-[14px] font-[500] text-[#181818]"
-                  >
-                    House/Apartment
-                  </label>
-                  <Input
-                    id="house-apartment"
-                    value={newAddress.houseApartment}
-                    onChange={(event) =>
-                      setNewAddress((prev) => ({ ...prev, houseApartment: event.target.value }))
-                    }
-                    placeholder="e.g., 67"
-                    className="h-12 rounded-[12px] border-[#005864] bg-white text-[14px]"
-                    required
-                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label={`Edit ${address.label} address`}
+                      onClick={() => openEditDialog(address)}
+                      className="flex h-[42px] w-[42px] cursor-pointer items-center justify-center rounded-[6px] text-black transition hover:bg-[#F3F3F3]"
+                    >
+                      <Pencil className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Delete ${address.label} address`}
+                      onClick={() => openDeleteDialog(address)}
+                      className="flex h-[42px] w-[42px] cursor-pointer items-center justify-center rounded-[6px] text-[#FF5D5D] transition hover:bg-[#FFF1F1]"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <label htmlFor="zip-code" className="mb-2 block text-[14px] font-[500] text-[#181818]">
-                    Zip Code*
-                  </label>
-                  <Input
-                    id="zip-code"
-                    value={newAddress.zipCode}
-                    onChange={(event) => setNewAddress((prev) => ({ ...prev, zipCode: event.target.value }))}
-                    placeholder="e.g., 3456"
-                    className="h-12 rounded-[12px] border-[#005864] bg-white text-[14px]"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="relative overflow-hidden rounded-[8px] bg-[#D9D9D9] p-3">
-                <div className="h-[88px] rounded-[8px] bg-[radial-gradient(circle_at_70%_35%,#404040_0%,#202020_30%,#111111_60%)]" />
-                <button
-                  type="button"
-                  className="absolute left-1/2 top-1/2 flex h-14 w-14 cursor-pointer -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#181818] text-white"
-                >
-                  <Upload className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div>
-                <Button
-                  type="submit"
-                  className="h-12 w-full cursor-pointer rounded-[12px] bg-[#005864] text-[16px] font-[600] text-white hover:bg-[#004d57]"
-                >
-                  Save Address
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="mt-6 space-y-4">
-        {addresses.map((address) => (
-          <article key={address.id} className="rounded-[12px] bg-white p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="max-w-[520px]">
-                <h3 className="text-[20px] font-[500] leading-[26px] text-[#1F1F1F]">
-                  {address.title}
-                </h3>
-                <div className="mt-3 flex items-start gap-2">
-                  <MapPin className="mt-1 h-[17px] w-[17px] shrink-0 text-[#1F1F1F]" />
-                  <p className="text-[15px] leading-5 text-black/60">{address.fullAddress}</p>
-                </div>
-                <button
-                  type="button"
-                  className="mt-2 inline-flex cursor-pointer items-center gap-1 text-[14px] font-[500] leading-[18px] text-[#005864] underline underline-offset-2"
-                >
-                  View on Map
-                  <ExternalLink className="h-[14px] w-[14px]" />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  aria-label={`Edit ${address.title} address`}
-                  className="flex h-[42px] w-[42px] cursor-pointer items-center justify-center rounded-[6px] text-black transition hover:bg-[#F3F3F3]"
-                >
-                  <Pencil className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Delete ${address.title} address`}
-                  className="flex h-[42px] w-[42px] cursor-pointer items-center justify-center rounded-[6px] text-[#FF5D5D] transition hover:bg-[#FFF1F1]"
-                >
-                  <Trash2 className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,12 @@
+"use client";
+
 import { ChevronLeft, ChevronRight, Search, SlidersHorizontal } from "lucide-react";
+import { useSelector } from "react-redux";
 import HomeHeader from "./_components/home-header";
+import HomeWelcomeHeading from "./_components/home-welcome-heading";
+import { useCurrentUserQuery } from "@/hooks/user/use-current-user-query";
+import { getUserDisplayName } from "@/lib/parse-user-profile";
+import type { RootState } from "@/store/index";
 
 const stats = [
   { value: "500", label: "Total Jobs Purchased" },
@@ -46,7 +53,7 @@ export default function ServiceProviderHomePage() {
       
 
         <div className="mt-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <h1 className="text-[32px] font-[600] leading-10 text-black">Welcome Boot Krewe Cleaner!</h1>
+          <HomeWelcomeHeading />
 
           <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
             <div className="flex h-12 items-center gap-2 rounded-[24px] bg-[#F9FAFA] px-5 sm:w-[417px]">
