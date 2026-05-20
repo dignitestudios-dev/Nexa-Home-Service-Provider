@@ -25,7 +25,6 @@ function DialogPortal({
   return (
     <DialogPrimitive.Portal
       data-slot="dialog-portal"
-      className="fixed inset-0 z-[200]"
       {...props}
     />
   )

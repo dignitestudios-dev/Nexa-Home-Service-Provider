@@ -18,7 +18,7 @@ export function parseUserProfileFromResponse(data: unknown): User | null {
     return null;
   }
 
-  return profile as User;
+  return profile as unknown as User;
 }
 
 export function getUserDisplayName(
