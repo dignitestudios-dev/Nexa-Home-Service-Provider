@@ -1,0 +1,557 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  BriefcaseBusiness,
+  ChevronDown,
+  FileText,
+  IdCard,
+  Search,
+  Upload,
+  UserRound,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { useCompleteProfileSetup } from "@/hooks/onboarding/profile-setup-mutation";
+import {
+  ProfileSetupFormData,
+  profileSetupSchema,
+} from "@/lib/schemas/profile-setup.schema";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useGetCategories } from "@/lib/category-query";
+
+const stepItems = [
+  { label: "Profile Setup", icon: UserRound, active: true },
+  { label: "Business Documents", icon: FileText, active: false },
+  { label: "Portfolio", icon: BriefcaseBusiness, active: false },
+  { label: "Identity Card", icon: IdCard, active: false },
+];
+
+const availableServices = [
+  "Plumbing",
+  "Gardening",
+  "Baby Sitting",
+  "Cleaning",
+  "Electrician",
+];
+
+export default function ProfileSetupOnboardingPage() {
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const serviceDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  const [serviceSearch, setServiceSearch] = useState("");
+  const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
+
+  const completeProfileMutation = useCompleteProfileSetup();
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<ProfileSetupFormData>({
+    resolver: zodResolver(profileSetupSchema),
+    defaultValues: {
+      profileImage: null,
+      services: [],
+      overview: "",
+      label: "",
+      address: "",
+      streetName: "",
+      officeNo: "",
+      zipCode: "",
+    },
+  });
+
+  // =========================
+  // WATCHERS
+  // =========================
+
+  const profileFile = watch("profileImage");
+  const selectedServices = watch("services");
+  const overview = watch("overview");
+
+  // =========================
+  // PREVIEW
+  // =========================
+
+  const profilePreviewUrl = useMemo(() => {
+    if (!profileFile) return "";
+
+    return URL.createObjectURL(profileFile);
+  }, [profileFile]);
+
+  // ProfileSetup.tsx
+
+  const { data: categoriesResponse, isLoading: categoriesLoading } =
+    useGetCategories();
+
+  // ProfileSetup.tsx
+
+  const categories = categoriesResponse?.data ?? [];
+
+  const selectedServicesText =
+    selectedServices.length > 0
+      ? selectedServices.join(", ")
+      : "Select Services";
+
+  const filteredServices = categories.filter((category) =>
+    category.name.toLowerCase().includes(serviceSearch.toLowerCase()),
+  );
+
+  const onSubmit = async (data: ProfileSetupFormData) => {
+    try {
+      await completeProfileMutation.mutateAsync({
+        name: "John Doe",
+
+        overview: data.overview,
+
+        label: data.label,
+
+        address: `${data.address}, ${data.streetName}, ${data.officeNo}`,
+
+        country: "United States",
+        state: "Pennsylvania",
+        city: "Philadelphia",
+
+        zipCode: data.zipCode,
+
+        longitude: -75.1652,
+        latitude: 39.9526,
+
+        categoryIDs: data.services, // Replace with actual category IDs based on selected services
+      });
+
+      router.push("/onboarding/business-documents");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // useEffect(() => {
+  //   if (!profileFile) {
+  //     setProfilePreviewUrl("");
+  //     return;
+  //   }
+
+  //   const objectUrl = URL.createObjectURL(profileFile);
+  //   setProfilePreviewUrl(objectUrl);
+
+  //   return () => {
+  //     URL.revokeObjectURL(objectUrl);
+  //   };
+  // }, [profileFile]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        serviceDropdownRef.current &&
+        !serviceDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsServiceDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  return (
+    <div className="h-screen w-full overflow-hidden bg-white py-3 pr-3 pl-1 md:py-5 md:pr-10 md:pl-0">
+      <div className="mx-auto flex h-full w-full max-w-[1440px] flex-col rounded-[32px] bg-white p-0 lg:flex-row">
+        <div className="rounded-[16px] bg-[#005864] p-3 lg:hidden">
+          <div className="hide-scrollbar flex gap-3 overflow-x-auto">
+            {stepItems.map((step) => {
+              const Icon = step.icon;
+              const isActive = step.active;
+
+              return (
+                <div
+                  key={`mobile-${step.label}`}
+                  className={`flex shrink-0 items-center gap-2 rounded-[10px] px-3 py-2 ${
+                    isActive ? "bg-white" : "bg-white/20"
+                  }`}
+                >
+                  <Icon
+                    size={16}
+                    className={isActive ? "text-[#005864]" : "text-white/80"}
+                  />
+                  <span
+                    className={`text-[13px] font-medium ${
+                      isActive ? "text-[#005864]" : "text-white"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <aside className="relative hidden h-full w-[400px] shrink-0 overflow-hidden rounded-[24px] bg-[url('/asset/sidebarbg.png')] bg-cover bg-center bg-no-repeat lg:block">
+          <div className="relative z-10 flex h-full w-full items-start px-20 pt-[6em]">
+            <div className="flex w-full max-w-[199px] flex-col gap-1">
+              {stepItems.map((step, index) => {
+                const Icon = step.icon;
+                const isLastStep = index === stepItems.length - 1;
+                const isActive = step.active;
+
+                return (
+                  <div key={step.label} className="flex flex-col">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`flex h-12 w-12 items-center justify-center rounded-[8px] ${
+                          isActive ? "bg-white" : "bg-white/30"
+                        }`}
+                      >
+                        <Icon
+                          size={23}
+                          className={
+                            isActive ? "text-[#005864]" : "text-white/70"
+                          }
+                        />
+                      </div>
+                      <span
+                        className={`text-[14px] leading-[17px] tracking-[-0.008em] ${
+                          isActive ? "text-white" : "text-white/60"
+                        }`}
+                      >
+                        {step.label}
+                      </span>
+                    </div>
+
+                    {!isLastStep && (
+                      <div
+                        className={`ml-6 h-8 w-px ${
+                          isActive ? "bg-white" : "bg-white/30"
+                        }`}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+
+        <main className="flex h-full flex-1 justify-center overflow-y-auto px-4 py-6 sm:px-8 lg:px-16 lg:py-14">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="w-full max-w-[618px]"
+          >
+            <h1 className="text-center text-[32px] font-bold leading-[40px] text-[#1C1C1C]">
+              Profile Setup
+            </h1>
+
+            {/* ========================= */}
+            {/* PROFILE IMAGE */}
+            {/* ========================= */}
+
+            <div className="mt-8 flex flex-col items-center">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+
+                  setValue("profileImage", file, {
+                    shouldValidate: true,
+                  });
+                }}
+              />
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-[106px] w-[106px] items-center justify-center overflow-hidden rounded-full border border-dashed border-[#005864] bg-[#F9F9F9]"
+              >
+                {profilePreviewUrl ? (
+                  <img
+                    src={profilePreviewUrl}
+                    alt="Profile preview"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Upload size={20} className="text-[#005864]" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-3 text-[16px] font-medium leading-5 text-[#1C1C1C] underline"
+              >
+                Upload Profile Picture/Logo*
+              </button>
+
+              {errors.profileImage && (
+                <p className="mt-2 text-sm text-red-500">
+                  {errors.profileImage.message}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-10 space-y-4">
+              {/* ========================= */}
+              {/* SERVICES */}
+              {/* ========================= */}
+
+              <div ref={serviceDropdownRef}>
+                <label className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
+                  Select Service
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => setIsServiceDropdownOpen((prev) => !prev)}
+                  className="mt-1 flex h-12 w-full items-center justify-between rounded-[12px] bg-[#F8F8F8] px-4 text-left text-[16px] text-[#1C1C1C]"
+                >
+                  <span className="truncate pr-3">{selectedServicesText}</span>
+
+                  <ChevronDown
+                    size={18}
+                    className={`text-black/70 transition-transform ${
+                      isServiceDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {errors.services && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.services.message}
+                  </p>
+                )}
+
+                {isServiceDropdownOpen && (
+                  <div className="mt-2 rounded-[12px] bg-[#F9FAFA] p-3">
+                    <div className="relative">
+                      <Search
+                        size={16}
+                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-black/45"
+                      />
+
+                      <Input
+                        value={serviceSearch}
+                        onChange={(e) => setServiceSearch(e.target.value)}
+                        placeholder="Search here"
+                        className="h-12 rounded-[24px] border-0 bg-[#E6E6E6] pl-11 pr-4 text-[16px] placeholder:text-black/55 focus-visible:ring-0"
+                      />
+                    </div>
+
+                    <div className="mt-4 max-h-[130px] space-y-3 overflow-y-auto pr-1">
+                      {categoriesLoading ? (
+                        <p className="text-sm text-black/60">Loading...</p>
+                      ) : (
+                        filteredServices.map((category) => {
+                          const checked = selectedServices.includes(
+                            category._id,
+                          );
+
+                          return (
+                            <label
+                              key={category._id}
+                              className="flex cursor-pointer items-center gap-3"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setValue(
+                                      "services",
+                                      [...selectedServices, category._id],
+                                      {
+                                        shouldValidate: true,
+                                      },
+                                    );
+
+                                    return;
+                                  }
+
+                                  setValue(
+                                    "services",
+                                    selectedServices.filter(
+                                      (id) => id !== category._id,
+                                    ),
+                                    {
+                                      shouldValidate: true,
+                                    },
+                                  );
+                                }}
+                                className="h-5 w-5 rounded-[2px] border border-black/80 accent-[#005864]"
+                              />
+
+                              <span className="text-[16px] leading-[22px] text-[#1C1C1C]">
+                                {category.name}
+                              </span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ========================= */}
+              {/* OVERVIEW */}
+              {/* ========================= */}
+
+              <div>
+                <label className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
+                  Overview
+                </label>
+
+                <div className="mt-1 rounded-[12px] bg-[#F8F8F8] p-3">
+                  <textarea
+                    {...register("overview")}
+                    maxLength={120}
+                    placeholder="Write here"
+                    className="h-[96px] w-full resize-none bg-transparent text-[16px] leading-5 text-[#1C1C1C] placeholder:text-black/55 outline-none"
+                  />
+                </div>
+
+                <div className="mt-2 flex items-center justify-between">
+                  {errors.overview && (
+                    <p className="text-sm text-red-500">
+                      {errors.overview.message}
+                    </p>
+                  )}
+
+                  <p className="ml-auto text-right text-[16px] leading-5 text-black/60">
+                    {overview.length}/120
+                  </p>
+                </div>
+              </div>
+
+              {/* LABEL */}
+
+              <div>
+                <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                  Label This Address
+                </label>
+
+                <Input
+                  {...register("label")}
+                  placeholder="e.g., Home, Office"
+                  className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
+                />
+
+                {errors.label && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.label.message}
+                  </p>
+                )}
+              </div>
+
+              {/* ADDRESS */}
+
+              <div>
+                <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                  Address
+                </label>
+
+                <Input
+                  {...register("address")}
+                  placeholder="Los Angeles, CA"
+                  className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
+                />
+
+                {errors.address && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.address.message}
+                  </p>
+                )}
+              </div>
+
+              {/* STREET */}
+
+              <div>
+                <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                  Street Name
+                </label>
+
+                <Input
+                  {...register("streetName")}
+                  placeholder="Bay Street"
+                  className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
+                />
+
+                {errors.streetName && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.streetName.message}
+                  </p>
+                )}
+              </div>
+
+              {/* OFFICE + ZIP */}
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                    Office No.
+                  </label>
+
+                  <Input
+                    {...register("officeNo")}
+                    placeholder="e.g., 56"
+                    className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                    Zip Code*
+                  </label>
+
+                  <Input
+                    {...register("zipCode")}
+                    placeholder="e.g., 3467"
+                    className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
+                  />
+
+                  {errors.zipCode && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.zipCode.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* MAP */}
+
+              <div className="h-[125px] w-full overflow-hidden rounded-[12px]">
+                <iframe
+                  title="Google Map Preview"
+                  src="https://maps.google.com/maps?q=Los%20Angeles%2C%20CA&t=&z=13&ie=UTF8&iwloc=&output=embed"
+                  className="h-full w-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            </div>
+
+            {/* SUBMIT */}
+
+            <button
+              type="submit"
+              disabled={completeProfileMutation.isPending}
+              className="mx-auto mt-6 block h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:opacity-50"
+            >
+              {completeProfileMutation.isPending
+                ? "Please wait..."
+                : "Continue"}
+            </button>
+          </form>
+        </main>
+      </div>
+    </div>
+  );
+}
