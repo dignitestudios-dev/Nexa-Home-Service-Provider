@@ -11,6 +11,8 @@ import type {
   ResendOtpPayload,
   VerifyEmailPayload,
 } from "@/types/auth.types";
+import { useDispatch } from "react-redux";
+import { setToken, singUp } from "@/store/slices/auth-slice";
 
 function saveAuthToken(data: unknown) {
   if (!data || typeof data !== "object") return;
@@ -41,29 +43,36 @@ export function useCheckEmail() {
 }
 
 export function useRegisterAuth() {
+  const dispatch = useDispatch();
   return useMutation({
     mutationFn: (payload: RegisterAuthPayload) => authService.register(payload),
     onSuccess: (data) => {
       saveAuthToken(data);
+      dispatch(singUp(data?.data));
+      dispatch(setToken(data?.token || data?.accessToken || null));
     },
   });
 }
 
 export function useLoginAuth() {
+  const dispatch = useDispatch();
   return useMutation({
     mutationFn: (payload: LoginAuthPayload) => authService.login(payload),
     onSuccess: (data) => {
       saveAuthToken(data);
+      dispatch(singUp(data?.data));
     },
   });
 }
 
 export function useVerifyEmail() {
+  const dispatch = useDispatch();
   return useMutation({
     mutationFn: (payload: VerifyEmailPayload) =>
       authService.verifyEmail(payload),
     onSuccess: (data) => {
       saveAuthToken(data);
+      dispatch(singUp(data?.data));
     },
   });
 }

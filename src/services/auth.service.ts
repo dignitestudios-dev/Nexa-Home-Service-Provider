@@ -23,7 +23,7 @@ export const authService = {
   },
 
   login: async (payload: LoginAuthPayload) => {
-    const { data } = await API.post("/auth/login", payload);
+    const { data } = await API.post("/auth", payload);
     return data;
   },
 
@@ -32,10 +32,7 @@ export const authService = {
     return data;
   },
   resendOtp: async (payload: ResendOtpPayload) => {
-    const { data } = await API.post(
-      "/auth/email-verification-otp",
-      payload
-    );
+    const { data } = await API.post("/auth/email-verification-otp", payload);
     return data;
   },
 };

@@ -1,10 +1,10 @@
-
 "use client";
-import { RootState } from "@/src/lib/store";
+import { RootState } from "@/store/index";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
+import { getRedirectPath } from "@/lib/auth-utils";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,39 +13,30 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, user, isGuestMode, isResetPasswordFlow } =
-    useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, user } = useSelector(
+    (state: RootState) => state.auth,
+  );
+  console.log("🚀 ~ ProtectedRoute ~ user: 18-->", user);
 
-  const isLoggedIn = Boolean(isAuthenticated && user);
-
-  const isGuestAllowedPath =
-    pathname.startsWith("/app/home") ||
-    pathname.startsWith("/app/search") ||
-    pathname === "/app/products" ||
-    pathname.startsWith("/app/products/") ||
-    pathname === "/app/categories" ||
-    pathname.startsWith("/app/categories/") ||
-    pathname.startsWith("/app/store/") ||
-    pathname.startsWith("/app/users");
+  const isLoggedIn = Boolean(isAuthenticated);
+  console.log("🚀 ~ ProtectedRoute ~ isLoggedIn:", isLoggedIn);
 
   useEffect(() => {
-    if (!isLoggedIn && !(isGuestMode && isGuestAllowedPath)) {
+    if (!isLoggedIn) {
       router.push("/auth/login");
       return;
     }
-    if (isResetPasswordFlow) {
-      router.push("/auth/new-password");
+
+    const redirectPath = getRedirectPath(user);
+    console.log("🚀 ~ ProtectedRoute ~ redirectPath:", redirectPath);
+    if (
+      redirectPath !== "/app/dashboard" &&
+      !pathname.startsWith("/onboarding")
+    ) {
+      router.push(redirectPath);
       return;
     }
-
-    if (!isLoggedIn) {
-      return;
-    }
-
-    if (user?.identityStatus === "not-provided") {
-      router.push("/auth/identity-verification");
-    }
-  }, [isLoggedIn, isGuestMode, isGuestAllowedPath, user, router]);
+  }, [isLoggedIn, user, pathname, router]);
 
   return <>{children}</>;
 };

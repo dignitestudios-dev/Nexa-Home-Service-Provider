@@ -1,4 +1,5 @@
 import type { CheckEmailResponse } from "@/types/auth.types";
+import type { User } from "@/store/slices/auth-slice";
 
 export function parseEmailExists(data: unknown): boolean {
   if (!data || typeof data !== "object") {
@@ -53,3 +54,37 @@ export function toE164UsPhone(value: string): string {
 
   return `+${digits}`;
 }
+
+/**
+ * Determines the appropriate redirect path based on user's onboarding status
+ * @param user - The user object from Redux store
+ * @returns The path to redirect to
+ */
+export const getRedirectPath = (user: User | null): string => {
+  console.log("🚀 ~ getRedirectPath ~ user: utils 64==> ", user);
+  if (!user) {
+    return "/auth/login";
+  }
+
+  if (!user.isEmailVerified) {
+    return "/auth/verify-email";
+  }
+
+  if (!user.isProfileCompleted) {
+    return "/onboarding/profile-setup";
+  }
+
+  if (!user.businessDocsSubmitted) {
+    return "/onboarding/business-documents";
+  }
+
+  if (user.identityStatus === "not-provided") {
+    return "/onboarding/identity-card";
+  }
+
+  if (!user.portfolioMediaUploaded) {
+    return "/onboarding/portfolio";
+  }
+
+  return "/app/dashboard";
+};

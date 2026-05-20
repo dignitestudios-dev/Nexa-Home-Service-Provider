@@ -17,6 +17,7 @@ export interface LoginAuthPayload {
   email: string;
   password: string;
   method: AuthMethod;
+  role: AuthRole;
 }
 
 export interface VerifyEmailPayload {
