@@ -21,6 +21,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGetCategories } from "@/lib/category-query";
 import { ServiceLimitModal } from "@/components/auth/service-limit-modal";
+import { extractAuthFromResponse } from "@/lib/auth-session";
+import { getRedirectPath } from "@/lib/auth-utils";
 
 const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: true },
@@ -187,7 +189,6 @@ export default function ProfileSetupOnboardingPage() {
   const updateFromPlace = (place: any, lat: number, lng: number) => {
     if (!place.address_components) return;
     const parsed = parseAddressComponents(place.address_components);
-    console.log("🚀 ~ updateFromPlace ~ parsed:", parsed);
 
     // ✅ Save coordinates to form
     setValue("latitude", String(lat), { shouldValidate: true });
@@ -295,9 +296,8 @@ export default function ProfileSetupOnboardingPage() {
   // =========================
 
   const onSubmit = async (data: ProfileSetupFormData) => {
-    console.log("🚀 ~ onSubmit ~ data:", data);
     try {
-      await completeProfileMutation.mutateAsync({
+      const response = await completeProfileMutation.mutateAsync({
         name: "John Doe",
         overview: data.overview,
         label: data.label,
@@ -311,7 +311,9 @@ export default function ProfileSetupOnboardingPage() {
         categoryIDs: data.services,
       });
 
-      router.push("/onboarding/business-documents");
+      const { user: loggedInUser } = extractAuthFromResponse(response?.data);
+      const redirectPath = getRedirectPath(loggedInUser);
+      router.push(redirectPath);
     } catch (error) {
       console.log(error);
     }

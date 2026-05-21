@@ -30,31 +30,20 @@ export const profileSetupSchema = z.object({
   city: z.string().optional(),
 });
 
-const fileSchema = z.instanceof(File).refine((file) => file.size > 0, {
-  message: "File is required",
-});
-
-export const businessDocumentsSchema = z
-  .object({
-    businessLicense: fileSchema,
-
-    taxRegistration: fileSchema,
-
-    ownershipCertificate: fileSchema,
-
-    proofOfAddress: fileSchema,
+const fileSchema = z
+  .instanceof(File, {
+    message: "File is required",
   })
-  .refine(
-    (data) =>
-      !!data.businessLicense ||
-      !!data.taxRegistration ||
-      !!data.ownershipCertificate ||
-      !!data.proofOfAddress,
-    {
-      message: "Please upload at least one document",
-      path: ["root"],
-    },
-  );
+  .refine((file) => file.size > 0, {
+    message: "File is required",
+  });
+
+export const businessDocumentsSchema = z.object({
+  businessLicense: fileSchema,
+  taxRegistration: fileSchema,
+  ownershipCertificate: fileSchema,
+  proofOfAddress: fileSchema,
+});
 
 export const MAX_FILES = 10;
 
