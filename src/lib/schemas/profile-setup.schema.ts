@@ -23,6 +23,11 @@ export const profileSetupSchema = z.object({
   officeNo: z.string().optional(),
 
   zipCode: z.string().min(3, "Zip code is required"),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
+  country: z.string().optional(),
+  state: z.string().optional(),
+  city: z.string().optional(),
 });
 
 const fileSchema = z.instanceof(File).refine((file) => file.size > 0, {

@@ -29,6 +29,70 @@ const stepItems = [
   { label: "Identity Card", icon: IdCard, active: false },
 ];
 
+// ─── Google Maps helpers ──────────────────────────────────────────────────────
+
+const loadGoogleMapsScript = (callback: () => void) => {
+  if (typeof window === "undefined") return;
+  if ((window as any).google) {
+    callback();
+    return;
+  }
+  const existingScript = document.getElementById("google-maps-script");
+  if (existingScript) {
+    existingScript.addEventListener("load", callback);
+    return;
+  }
+  const script = document.createElement("script");
+  script.src =
+    "https://maps.googleapis.com/maps/api/js?key=AIzaSyDTtKExKUXYOVHPTRUIrd_uSH9j940rDcI&libraries=places";
+  script.id = "google-maps-script";
+  script.async = true;
+  script.defer = true;
+  script.onload = () => callback();
+  document.body.appendChild(script);
+};
+
+function parseAddressComponents(components: any[]) {
+  let streetNumber = "";
+  let route = "";
+  let city = "";
+  let state = "";
+  let country = "";
+  let zipCode = "";
+
+  for (const component of components) {
+    const types = component.types;
+    if (types.includes("street_number")) {
+      streetNumber = component.long_name;
+    } else if (types.includes("route")) {
+      route = component.long_name;
+    } else if (
+      types.includes("locality") ||
+      types.includes("sublocality_level_1")
+    ) {
+      city = component.long_name;
+    } else if (types.includes("administrative_area_level_1")) {
+      state = component.long_name;
+    } else if (types.includes("country")) {
+      country = component.long_name;
+    } else if (types.includes("postal_code")) {
+      zipCode = component.long_name;
+    }
+  }
+
+  const streetAddress = [streetNumber, route].filter(Boolean).join(" ");
+  return {
+    address: streetAddress || "",
+    streetName: route || "",
+    city,
+    state,
+    country,
+    zipCode: zipCode.replace(/\D/g, ""),
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function ProfileSetupOnboardingPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -37,6 +101,15 @@ export default function ProfileSetupOnboardingPage() {
   const [serviceSearch, setServiceSearch] = useState("");
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [isServiceLimitModalOpen, setIsServiceLimitModalOpen] = useState(false);
+
+  // ── Google Maps state ──────────────────────────────────────────────────────
+  const mapRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isMapsLoaded, setIsMapsLoaded] = useState(false);
+  const mapInstanceRef = useRef<any>(null);
+  const markerInstanceRef = useRef<any>(null);
+  const autocompleteInstanceRef = useRef<any>(null);
+  // ──────────────────────────────────────────────────────────────────────────
 
   const completeProfileMutation = useCompleteProfileSetup();
 
@@ -57,6 +130,11 @@ export default function ProfileSetupOnboardingPage() {
       streetName: "",
       officeNo: "",
       zipCode: "",
+      latitude: "",
+      longitude: "",
+      country: "",
+      state: "",
+      city: "",
     },
   });
 
@@ -66,7 +144,6 @@ export default function ProfileSetupOnboardingPage() {
 
   const profileFile = watch("profileImage");
   const selectedServices = watch("services");
-
   const overview = watch("overview");
 
   // =========================
@@ -75,20 +152,14 @@ export default function ProfileSetupOnboardingPage() {
 
   const profilePreviewUrl = useMemo(() => {
     if (!profileFile) return "";
-
     return URL.createObjectURL(profileFile);
   }, [profileFile]);
-
-  // ProfileSetup.tsx
 
   const { data: categoriesResponse, isLoading: categoriesLoading } =
     useGetCategories();
 
-  // ProfileSetup.tsx
-
   const categories = categoriesResponse?.data ?? [];
 
-  // Derive service names from selected IDs instead of maintaining separate state
   const selectedServicesText = useMemo(() => {
     if (selectedServices.length === 0) return "Select Services";
     const names = categories
@@ -101,27 +172,143 @@ export default function ProfileSetupOnboardingPage() {
     category.name.toLowerCase().includes(serviceSearch.toLowerCase()),
   );
 
+  // =========================
+  // GOOGLE MAPS — load script
+  // =========================
+
+  useEffect(() => {
+    loadGoogleMapsScript(() => setIsMapsLoaded(true));
+  }, []);
+
+  // =========================
+  // GOOGLE MAPS — helpers
+  // =========================
+
+  const updateFromPlace = (place: any, lat: number, lng: number) => {
+    if (!place.address_components) return;
+    const parsed = parseAddressComponents(place.address_components);
+    console.log("🚀 ~ updateFromPlace ~ parsed:", parsed);
+
+    // ✅ Save coordinates to form
+    setValue("latitude", String(lat), { shouldValidate: true });
+    setValue("longitude", String(lng), { shouldValidate: true });
+
+    if (parsed.address)
+      setValue("address", parsed.address.substring(0, 50), {
+        shouldValidate: true,
+      });
+    if (parsed.streetName)
+      setValue("streetName", parsed.streetName, { shouldValidate: true });
+    if (parsed.zipCode)
+      setValue("zipCode", parsed.zipCode.slice(0, 5), { shouldValidate: true });
+    if (parsed.country)
+      setValue("country", parsed.country, { shouldValidate: true });
+    if (parsed.state) setValue("state", parsed.state, { shouldValidate: true });
+    if (parsed.city) setValue("city", parsed.city, { shouldValidate: true });
+  };
+
+  const geocodeLatLng = (lat: number, lng: number) => {
+    const google = (window as any).google;
+    if (!google) return;
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode(
+      { location: { lat, lng } },
+      (results: any, status: any) => {
+        if (status === "OK" && results && results[0]) {
+          updateFromPlace(results[0], lat, lng);
+        }
+      },
+    );
+  };
+
+  // =========================
+  // GOOGLE MAPS — init map
+  // =========================
+
+  useEffect(() => {
+    if (!isMapsLoaded || !mapRef.current) return;
+
+    const google = (window as any).google;
+    if (!google) return;
+
+    const defaultLat = 40.74;
+    const defaultLng = -73.98;
+
+    const map = new google.maps.Map(mapRef.current, {
+      center: { lat: defaultLat, lng: defaultLng },
+      zoom: 12,
+      mapTypeControl: false,
+      fullscreenControl: false,
+      streetViewControl: false,
+    });
+    mapInstanceRef.current = map;
+
+    const marker = new google.maps.Marker({
+      position: { lat: defaultLat, lng: defaultLng },
+      map,
+      draggable: true,
+    });
+    markerInstanceRef.current = marker;
+
+    // Autocomplete on the dedicated search input
+    if (searchInputRef.current) {
+      const autocomplete = new google.maps.places.Autocomplete(
+        searchInputRef.current,
+        { types: ["address"] },
+      );
+      autocompleteInstanceRef.current = autocomplete;
+
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (!place.geometry || !place.geometry.location) return;
+
+        const newLat = place.geometry.location.lat();
+        const newLng = place.geometry.location.lng();
+
+        map.setCenter({ lat: newLat, lng: newLng });
+        map.setZoom(16);
+        marker.setPosition({ lat: newLat, lng: newLng });
+
+        updateFromPlace(place, newLat, newLng);
+      });
+    }
+
+    // Click on map
+    map.addListener("click", (e: any) => {
+      if (!e.latLng) return;
+      const clickedLat = e.latLng.lat();
+      const clickedLng = e.latLng.lng();
+      marker.setPosition({ lat: clickedLat, lng: clickedLng });
+      geocodeLatLng(clickedLat, clickedLng);
+    });
+
+    // Drag marker
+    marker.addListener("dragend", () => {
+      const pos = marker.getPosition();
+      if (!pos) return;
+      geocodeLatLng(pos.lat(), pos.lng());
+    });
+  }, [isMapsLoaded]);
+
+  // =========================
+  // SUBMIT
+  // =========================
+
   const onSubmit = async (data: ProfileSetupFormData) => {
+    console.log("🚀 ~ onSubmit ~ data:", data);
     try {
       await completeProfileMutation.mutateAsync({
         name: "John Doe",
-
         overview: data.overview,
-
         label: data.label,
-
         address: `${data.address}, ${data.streetName}, ${data.officeNo}`,
-
-        country: "United States",
-        state: "Pennsylvania",
-        city: "Philadelphia",
-
+        country: data.country || "United States",
+        state: data.state || "Pennsylvania",
+        city: data.city || "Philadelphia",
         zipCode: data.zipCode,
-
-        longitude: -75.1652,
-        latitude: 39.9526,
-
-        categoryIDs: data.services, // Replace with actual category IDs based on selected services
+        longitude: data.longitude ? parseFloat(data.longitude) : -75.1652,
+        latitude: data.latitude ? parseFloat(data.latitude) : 39.9526,
+        categoryIDs: data.services,
       });
 
       router.push("/onboarding/business-documents");
@@ -129,20 +316,6 @@ export default function ProfileSetupOnboardingPage() {
       console.log(error);
     }
   };
-
-  // useEffect(() => {
-  //   if (!profileFile) {
-  //     setProfilePreviewUrl("");
-  //     return;
-  //   }
-
-  //   const objectUrl = URL.createObjectURL(profileFile);
-  //   setProfilePreviewUrl(objectUrl);
-
-  //   return () => {
-  //     URL.revokeObjectURL(objectUrl);
-  //   };
-  // }, [profileFile]);
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -161,12 +334,12 @@ export default function ProfileSetupOnboardingPage() {
   return (
     <div className="h-screen w-full overflow-hidden bg-white py-3 pr-3 pl-1 md:py-5 md:pr-10 md:pl-0">
       <div className="mx-auto flex h-full w-full max-w-[1440px] flex-col rounded-[32px] bg-white p-0 lg:flex-row">
+        {/* ── Mobile stepper ── */}
         <div className="rounded-[16px] bg-[#005864] p-3 lg:hidden">
           <div className="hide-scrollbar flex gap-3 overflow-x-auto">
             {stepItems.map((step) => {
               const Icon = step.icon;
               const isActive = step.active;
-
               return (
                 <div
                   key={`mobile-${step.label}`}
@@ -191,6 +364,7 @@ export default function ProfileSetupOnboardingPage() {
           </div>
         </div>
 
+        {/* ── Desktop sidebar ── */}
         <aside className="relative hidden h-full w-[400px] shrink-0 overflow-hidden rounded-[24px] bg-[url('/asset/sidebarbg.png')] bg-cover bg-center bg-no-repeat lg:block">
           <div className="relative z-10 flex h-full w-full items-start px-20 pt-[6em]">
             <div className="flex w-full max-w-[199px] flex-col gap-1">
@@ -198,7 +372,6 @@ export default function ProfileSetupOnboardingPage() {
                 const Icon = step.icon;
                 const isLastStep = index === stepItems.length - 1;
                 const isActive = step.active;
-
                 return (
                   <div key={step.label} className="flex flex-col">
                     <div className="flex items-center gap-3">
@@ -222,12 +395,9 @@ export default function ProfileSetupOnboardingPage() {
                         {step.label}
                       </span>
                     </div>
-
                     {!isLastStep && (
                       <div
-                        className={`ml-6 h-8 w-px ${
-                          isActive ? "bg-white" : "bg-white/30"
-                        }`}
+                        className={`ml-6 h-8 w-px ${isActive ? "bg-white" : "bg-white/30"}`}
                         aria-hidden="true"
                       />
                     )}
@@ -238,6 +408,7 @@ export default function ProfileSetupOnboardingPage() {
           </div>
         </aside>
 
+        {/* ── Main content ── */}
         <main className="flex h-full flex-1 justify-center overflow-y-auto px-4 py-6 sm:px-8 lg:px-16 lg:py-14">
           <form
             onSubmit={handleSubmit(onSubmit)}
@@ -259,10 +430,7 @@ export default function ProfileSetupOnboardingPage() {
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0] ?? null;
-
-                  setValue("profileImage", file, {
-                    shouldValidate: true,
-                  });
+                  setValue("profileImage", file, { shouldValidate: true });
                 }}
               />
 
@@ -313,7 +481,6 @@ export default function ProfileSetupOnboardingPage() {
                   className="mt-1 flex h-12 w-full items-center justify-between rounded-[12px] bg-[#F8F8F8] px-4 text-left text-[16px] text-[#1C1C1C]"
                 >
                   <span className="truncate pr-3">{selectedServicesText}</span>
-
                   <ChevronDown
                     size={18}
                     className={`text-black/70 transition-transform ${
@@ -335,7 +502,6 @@ export default function ProfileSetupOnboardingPage() {
                         size={16}
                         className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-black/45"
                       />
-
                       <Input
                         value={serviceSearch}
                         onChange={(e) => setServiceSearch(e.target.value)}
@@ -352,7 +518,6 @@ export default function ProfileSetupOnboardingPage() {
                           const checked = selectedServices.includes(
                             category._id,
                           );
-
                           return (
                             <label
                               key={category._id}
@@ -363,35 +528,27 @@ export default function ProfileSetupOnboardingPage() {
                                 checked={checked}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    // Check if service limit is reached
                                     if (selectedServices.length >= 4) {
                                       setIsServiceLimitModalOpen(true);
                                       return;
                                     }
-
                                     setValue(
                                       "services",
                                       [...selectedServices, category._id],
-                                      {
-                                        shouldValidate: true,
-                                      },
+                                      { shouldValidate: true },
                                     );
                                     return;
                                   }
-
                                   setValue(
                                     "services",
                                     selectedServices.filter(
                                       (id) => id !== category._id,
                                     ),
-                                    {
-                                      shouldValidate: true,
-                                    },
+                                    { shouldValidate: true },
                                   );
                                 }}
                                 className="h-5 w-5 rounded-[2px] border border-black/80 accent-[#005864]"
                               />
-
                               <span className="text-[16px] leading-[22px] text-[#1C1C1C]">
                                 {category.name}
                               </span>
@@ -428,7 +585,6 @@ export default function ProfileSetupOnboardingPage() {
                       {errors.overview.message}
                     </p>
                   )}
-
                   <p className="ml-auto text-right text-[16px] leading-5 text-black/60">
                     {overview.length}/120
                   </p>
@@ -441,18 +597,51 @@ export default function ProfileSetupOnboardingPage() {
                 <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
                   Label This Address
                 </label>
-
                 <Input
                   {...register("label")}
                   placeholder="e.g., Home, Office"
                   className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
                 />
-
                 {errors.label && (
                   <p className="mt-1 text-sm text-red-500">
                     {errors.label.message}
                   </p>
                 )}
+              </div>
+
+              {/* ========================= */}
+              {/* GOOGLE MAP — placed before address fields */}
+              {/* ========================= */}
+
+              <div className="space-y-3">
+                {/* Map search input */}
+                <div>
+                  <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                    Search Location
+                  </label>
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search for your address..."
+                    className="mt-1 h-12 w-full rounded-[12px] border-0 bg-[#F8F8F8] px-4 text-[16px] text-[#1C1C1C] placeholder:text-black/55 outline-none"
+                  />
+                </div>
+
+                {/* Map container */}
+                <div className="relative h-[200px] w-full overflow-hidden rounded-[12px] border border-[#005864]/30 bg-[#E8F7F7]">
+                  {!isMapsLoaded ? (
+                    <div className="flex h-full w-full items-center justify-center text-sm font-medium text-[#005864]">
+                      Loading Google Maps...
+                    </div>
+                  ) : (
+                    <div ref={mapRef} className="h-full w-full" />
+                  )}
+                </div>
+
+                <p className="text-[13px] text-black/50">
+                  Click on the map or drag the marker to auto-fill the address
+                  fields below.
+                </p>
               </div>
 
               {/* ADDRESS */}
@@ -461,13 +650,11 @@ export default function ProfileSetupOnboardingPage() {
                 <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
                   Address
                 </label>
-
                 <Input
                   {...register("address")}
                   placeholder="Los Angeles, CA"
                   className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
                 />
-
                 {errors.address && (
                   <p className="mt-1 text-sm text-red-500">
                     {errors.address.message}
@@ -481,13 +668,11 @@ export default function ProfileSetupOnboardingPage() {
                 <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
                   Street Name
                 </label>
-
                 <Input
                   {...register("streetName")}
                   placeholder="Bay Street"
                   className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
                 />
-
                 {errors.streetName && (
                   <p className="mt-1 text-sm text-red-500">
                     {errors.streetName.message}
@@ -502,7 +687,6 @@ export default function ProfileSetupOnboardingPage() {
                   <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
                     Office No.
                   </label>
-
                   <Input
                     {...register("officeNo")}
                     placeholder="e.g., 56"
@@ -515,7 +699,6 @@ export default function ProfileSetupOnboardingPage() {
                   <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
                     Zip Code*
                   </label>
-
                   <Input
                     {...register("zipCode", {
                       onChange: (e) => {
@@ -530,7 +713,6 @@ export default function ProfileSetupOnboardingPage() {
                     inputMode="numeric"
                     maxLength={5}
                   />
-
                   {errors.zipCode && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.zipCode.message}
@@ -539,17 +721,12 @@ export default function ProfileSetupOnboardingPage() {
                 </div>
               </div>
 
-              {/* MAP */}
-
-              <div className="h-[125px] w-full overflow-hidden rounded-[12px]">
-                <iframe
-                  title="Google Map Preview"
-                  src="https://maps.google.com/maps?q=Los%20Angeles%2C%20CA&t=&z=13&ie=UTF8&iwloc=&output=embed"
-                  className="h-full w-full border-0"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
+              {/* Hidden fields for Google Maps data */}
+              <input type="hidden" {...register("country")} />
+              <input type="hidden" {...register("state")} />
+              <input type="hidden" {...register("city")} />
+              <input type="hidden" {...register("latitude")} />
+              <input type="hidden" {...register("longitude")} />
             </div>
 
             {/* SUBMIT */}
