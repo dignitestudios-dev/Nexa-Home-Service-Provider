@@ -7,6 +7,7 @@ import { authService } from "@/services/auth.service";
 import { setPendingVerifyEmail } from "@/lib/verify-email-storage";
 import type {
   CheckEmailPayload,
+  ForgotPasswordPayload,
   LoginAuthPayload,
   RegisterAuthPayload,
   ResendOtpPayload,
@@ -56,6 +57,13 @@ export function useVerifyEmail() {
 export function useResendOtp() {
   return useMutation({
     mutationFn: (payload: ResendOtpPayload) => authService.resendOtp(payload),
+  });
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (payload: ForgotPasswordPayload) =>
+      authService.forgotPassword(payload),
   });
 }
 

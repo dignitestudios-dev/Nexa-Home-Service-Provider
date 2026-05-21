@@ -38,12 +38,17 @@ function VerifyEmailContent() {
   const user = useSelector((state: RootState) => state.auth.user);
 
   const queryEmail = searchParams.get("email") ?? "";
-  const loginEmail = getLoginEmail(queryEmail, user?.email, user?.primaryIdentifier);
+  const loginEmail = getLoginEmail(
+    queryEmail,
+    user?.email,
+    user?.primaryIdentifier,
+  );
 
   const [otpChars, setOtpChars] = useState(["", "", "", "", ""]);
   const [timer, setTimer] = useState(30);
   const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResendLoading, setIsResendLoading] = useState(false);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const otp = otpChars.join("");
@@ -71,14 +76,21 @@ function VerifyEmailContent() {
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 5);
+    const digits = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 5);
     if (!digits) return;
     setOtpChars(Array.from({ length: 5 }, (_, i) => digits[i] ?? ""));
     inputRefs.current[Math.min(digits.length, 4)]?.focus();
   };
 
   const handleVerify = async () => {
-    const email = getLoginEmail(queryEmail, user?.email, user?.primaryIdentifier);
+    const email = getLoginEmail(
+      queryEmail,
+      user?.email,
+      user?.primaryIdentifier,
+    );
 
     if (!email) {
       setFormError("Session expired. Please log in again.");
@@ -106,14 +118,20 @@ function VerifyEmailContent() {
       clearPendingVerifyEmail();
       router.push("/onboarding/profile-setup");
     } catch (error) {
-      setFormError(getApiErrorMessage(error, "Invalid or expired OTP. Please try again."));
+      setFormError(
+        getApiErrorMessage(error, "Invalid or expired OTP. Please try again."),
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResend = async () => {
-    const email = getLoginEmail(queryEmail, user?.email, user?.primaryIdentifier);
+    const email = getLoginEmail(
+      queryEmail,
+      user?.email,
+      user?.primaryIdentifier,
+    );
 
     if (!email) {
       setFormError("Session expired. Please log in again.");
@@ -121,15 +139,17 @@ function VerifyEmailContent() {
     }
 
     setFormError(null);
-    setIsLoading(true);
+    setIsResendLoading(true);
 
     try {
       await authService.resendOtp({ email });
       setTimer(30);
+      setOtpChars(["", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
     } catch (error) {
       setFormError(getApiErrorMessage(error, "Could not resend OTP."));
     } finally {
-      setIsLoading(false);
+      setIsResendLoading(false);
     }
   };
 
@@ -182,7 +202,7 @@ function VerifyEmailContent() {
           <button
             type="button"
             onClick={handleResend}
-            disabled={timer > 0 || isLoading || !loginEmail}
+            disabled={timer > 0 || isResendLoading || !loginEmail}
             className="cursor-pointer font-medium text-[#005864] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {timer > 0 ? `Resend OTP in ${timer}s` : "Resend OTP"}

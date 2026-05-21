@@ -4,6 +4,7 @@ import type {
   ChangePasswordPayload,
   ChangePhonePayload,
   CheckEmailPayload,
+  ForgotPasswordPayload,
   LoginAuthPayload,
   RegisterAuthPayload,
   ResendOtpPayload,
@@ -36,6 +37,11 @@ export const authService = {
   },
   resendOtp: async (payload: ResendOtpPayload) => {
     const { data } = await API.post("/auth/email-verification-otp", payload);
+    return data;
+  },
+
+  forgotPassword: async (payload: ForgotPasswordPayload) => {
+    const { data } = await API.post("/auth/forgot", payload);
     return data;
   },
 

@@ -20,20 +20,13 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGetCategories } from "@/lib/category-query";
+import { ServiceLimitModal } from "@/components/auth/service-limit-modal";
 
 const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: true },
   { label: "Business Documents", icon: FileText, active: false },
   { label: "Portfolio", icon: BriefcaseBusiness, active: false },
   { label: "Identity Card", icon: IdCard, active: false },
-];
-
-const availableServices = [
-  "Plumbing",
-  "Gardening",
-  "Baby Sitting",
-  "Cleaning",
-  "Electrician",
 ];
 
 export default function ProfileSetupOnboardingPage() {
@@ -43,6 +36,7 @@ export default function ProfileSetupOnboardingPage() {
 
   const [serviceSearch, setServiceSearch] = useState("");
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
+  const [isServiceLimitModalOpen, setIsServiceLimitModalOpen] = useState(false);
 
   const completeProfileMutation = useCompleteProfileSetup();
 
@@ -72,6 +66,7 @@ export default function ProfileSetupOnboardingPage() {
 
   const profileFile = watch("profileImage");
   const selectedServices = watch("services");
+
   const overview = watch("overview");
 
   // =========================
@@ -93,10 +88,14 @@ export default function ProfileSetupOnboardingPage() {
 
   const categories = categoriesResponse?.data ?? [];
 
-  const selectedServicesText =
-    selectedServices.length > 0
-      ? selectedServices.join(", ")
-      : "Select Services";
+  // Derive service names from selected IDs instead of maintaining separate state
+  const selectedServicesText = useMemo(() => {
+    if (selectedServices.length === 0) return "Select Services";
+    const names = categories
+      .filter((cat) => selectedServices.includes(cat._id))
+      .map((cat) => cat.name);
+    return names.join(", ");
+  }, [selectedServices, categories]);
 
   const filteredServices = categories.filter((category) =>
     category.name.toLowerCase().includes(serviceSearch.toLowerCase()),
@@ -364,6 +363,12 @@ export default function ProfileSetupOnboardingPage() {
                                 checked={checked}
                                 onChange={(e) => {
                                   if (e.target.checked) {
+                                    // Check if service limit is reached
+                                    if (selectedServices.length >= 4) {
+                                      setIsServiceLimitModalOpen(true);
+                                      return;
+                                    }
+
                                     setValue(
                                       "services",
                                       [...selectedServices, category._id],
@@ -371,7 +376,6 @@ export default function ProfileSetupOnboardingPage() {
                                         shouldValidate: true,
                                       },
                                     );
-
                                     return;
                                   }
 
@@ -503,6 +507,7 @@ export default function ProfileSetupOnboardingPage() {
                     {...register("officeNo")}
                     placeholder="e.g., 56"
                     className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
+                    maxLength={100}
                   />
                 </div>
 
@@ -512,9 +517,18 @@ export default function ProfileSetupOnboardingPage() {
                   </label>
 
                   <Input
-                    {...register("zipCode")}
-                    placeholder="e.g., 3467"
+                    {...register("zipCode", {
+                      onChange: (e) => {
+                        const value = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 5);
+                        setValue("zipCode", value);
+                      },
+                    })}
+                    placeholder="e.g., 12345"
                     className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
+                    inputMode="numeric"
+                    maxLength={5}
                   />
 
                   {errors.zipCode && (
@@ -550,6 +564,11 @@ export default function ProfileSetupOnboardingPage() {
                 : "Continue"}
             </button>
           </form>
+
+          <ServiceLimitModal
+            open={isServiceLimitModalOpen}
+            onClose={() => setIsServiceLimitModalOpen(false)}
+          />
         </main>
       </div>
     </div>

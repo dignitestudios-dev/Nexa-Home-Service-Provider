@@ -68,8 +68,24 @@ export const getRedirectPath = (user: User | null): string => {
     return "/auth/verify-email";
   }
 
-  if (user.identityStatus === "not-provided") {
-    return "/auth/verify-email";
+  // if (user.identityStatus === "not-provided") {
+  //   return "/auth/verify-email";
+  // }
+
+  if (!user.isProfileCompleted) {
+    return "/onboarding/profile-setup";
+  }
+
+  if (!user.businessDocsSubmitted) {
+    return "/onboarding/business-documents";
+  }
+
+  if (!user.portfolioMediaUploaded) {
+    return "/onboarding/portfolio";
+  }
+
+  if (!user.identityStatus) {
+    return "/onboarding/identity-card";
   }
 
   return "/home";

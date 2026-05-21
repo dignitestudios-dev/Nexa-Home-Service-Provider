@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { persistAuthFromResponse } from "@/lib/auth-session";
+import { useResendOtp } from "@/hooks/auth/use-auth-mutations";
 import { authService } from "@/services/auth.service";
 
 function VerificationContent() {
@@ -23,6 +24,8 @@ function VerificationContent() {
   const mode = searchParams.get("mode") === "reset" ? "reset" : "verify";
   const otpDigits = otp.replace(/\D/g, "");
   const isOtpComplete = otpDigits.length === 5;
+
+  const resendOtpMutation = useResendOtp();
 
   useEffect(() => {
     if (timer <= 0) return;
@@ -79,6 +82,21 @@ function VerificationContent() {
     }
   };
 
+  const handleResend = async () => {
+    try {
+      await resendOtpMutation.mutateAsync({
+        email,
+      });
+      setTimer(30);
+      setOtp("");
+      inputRefs.current[0]?.focus();
+    } catch (error) {
+      setFormError(
+        getApiErrorMessage(error, "Failed to resend OTP. Please try again."),
+      );
+    }
+  };
+
   return (
     <div className="relative w-full self-stretch min-h-[560px]">
       <Link
@@ -124,11 +142,36 @@ function VerificationContent() {
           </p>
         )}
 
+        <p className="text-[16px] leading-[22px] text-black/80 mt-4 text-center">
+          Didn&apos;t receive code?{" "}
+          <button
+            onClick={handleResend}
+            type="button"
+            disabled={timer > 0 || resendOtpMutation.isPending}
+            className={`gap-2 font-medium text-[#005864] ${
+              timer > 0 || resendOtpMutation.isPending
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:underline"
+            }`}
+          >
+            {resendOtpMutation.isPending ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#005864] border-t-transparent" />
+                Sending...
+              </>
+            ) : timer > 0 ? (
+              `Resend OTP in ${timer}s`
+            ) : (
+              "Resend OTP"
+            )}
+          </button>
+        </p>
+
         <button
           type="button"
           onClick={handleVerify}
           disabled={isLoading || !email || !isOtpComplete}
-          className="w-[388px] mx-auto block h-[48px] mt-8 cursor-pointer bg-[#005864] rounded-[12px] text-white text-[16px] font-[600] capitalize hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-[388px] mx-auto block h-[48px] mt-8 cursor-pointer bg-[#005864] rounded-[12px] text-white text-[16px] font-[600] capitalize hover:opacity-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? "Verifying..." : "Verify"}
         </button>

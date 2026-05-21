@@ -69,8 +69,12 @@ function SignupVerificationContent() {
       e.preventDefault();
 
       if (otpArray[index]) {
+        // Clear current field and move to previous field
         otpArray[index] = "";
         setValue("otp", otpArray.join(""));
+        if (index > 0) {
+          inputRefs.current[index - 1]?.focus();
+        }
       } else if (index > 0) {
         otpArray[index - 1] = "";
         setValue("otp", otpArray.join(""));
@@ -124,6 +128,11 @@ function SignupVerificationContent() {
   };
   const handleResend = async () => {
     try {
+      // Clear all OTP inputs
+      setValue("otp", "");
+      // Focus on first input field
+      inputRefs.current[0]?.focus();
+
       await resendOtpMutation.mutateAsync({
         email,
       });

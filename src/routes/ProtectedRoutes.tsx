@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { getRedirectPath } from "@/lib/auth-utils";
-import { getPendingVerifyEmail, setPendingVerifyEmail } from "@/lib/verify-email-storage";
+import {
+  getPendingVerifyEmail,
+  setPendingVerifyEmail,
+} from "@/lib/verify-email-storage";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -23,6 +26,7 @@ const PUBLIC_AUTH_PATHS = [
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const router = useRouter();
   const pathname = usePathname();
+  console.log("🚀 ~ ProtectedRoute ~ pathname:", pathname);
   const { isAuthenticated, user } = useSelector(
     (state: RootState) => state.auth,
   );
@@ -41,6 +45,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     }
 
     const redirectPath = getRedirectPath(user);
+    console.log("🚀 ~ ProtectedRoute ~ redirectPath:", redirectPath);
 
     const isOnHomeArea =
       pathname === "/home" || pathname.startsWith("/profile-settings");

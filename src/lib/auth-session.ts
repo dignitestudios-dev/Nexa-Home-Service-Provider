@@ -1,6 +1,11 @@
 import Cookies from "js-cookie";
 import type { AppDispatch } from "@/store/index";
-import { clearAuth, setToken, singUp, type User } from "@/store/slices/auth-slice";
+import {
+  clearAuth,
+  setToken,
+  singUp,
+  type User,
+} from "@/store/slices/auth-slice";
 import { clearPendingVerifyEmail } from "@/lib/verify-email-storage";
 
 export const AUTH_TOKEN_COOKIE = "token";

@@ -31,6 +31,10 @@ export interface ResendOtpPayload {
   email: string;
 }
 
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
 export interface ChangePhonePayload {
   phone: string;
 }
