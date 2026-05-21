@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Search, SlidersHorizontal } from "lucide-react";
 import { useSelector } from "react-redux";
-import HomeHeader from "./_components/home-header";
+import MainAppShell from "@/components/layout/main-app-shell";
 import HomeWelcomeHeading from "./_components/home-welcome-heading";
 import { useCurrentUserQuery } from "@/hooks/user/use-current-user-query";
 import { getUserDisplayName } from "@/lib/parse-user-profile";
@@ -47,11 +47,7 @@ function ServiceCard({ title }: { title: string }) {
 
 export default function ServiceProviderHomePage() {
   return (
-    <div className="min-h-screen bg-[#ffff] p-3 md:p-5">
-        <HomeHeader />
-      <div className="mx-auto w-full max-w-[1440px] rounded-[32px] bg-white p-4 md:p-8">
-      
-
+    <MainAppShell>
         <div className="mt-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <HomeWelcomeHeading />
 
@@ -113,7 +109,6 @@ export default function ServiceProviderHomePage() {
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </MainAppShell>
   );
 }

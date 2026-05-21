@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import {
   IdCard,
   UserRound,
@@ -11,12 +11,19 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
+import { extractAuthFromResponse, persistAuthUser } from "@/lib/auth-session";
+import { mergeUserOnboardingFlags } from "@/lib/onboarding-steps";
+import type { RootState } from "@/store/index";
+import { singUp } from "@/store/slices/auth-slice";
 import {
   IdentityCardFormData,
   identityCardSchema,
+  validateIdentityCardUploadFile,
 } from "@/lib/schemas/profile-setup.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "@/lib/toast";
 import { useUploadIdDocsSetup } from "@/hooks/onboarding/profile-setup-mutation";
 
 const stepItems = [
@@ -28,7 +35,8 @@ const stepItems = [
 
 export default function IdentityCardOnboardingPage() {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const dispatch = useDispatch();
+  const user = useSelector((state: RootState) => state.auth.user);
 
   const idCardFields = [
     {
@@ -87,23 +95,57 @@ export default function IdentityCardOnboardingPage() {
   // SUBMIT
   // =========================
 
+  const handleFileSelect = (
+    key: (typeof idCardFields)[number]["key"],
+    file: File | undefined,
+    label: string,
+  ) => {
+    if (!file) return;
+
+    const validationError = validateIdentityCardUploadFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
+    setValue(key, file, { shouldValidate: true });
+    toast.success(`${label} added successfully.`);
+  };
+
   const onSubmit = async (data: IdentityCardFormData) => {
     try {
-      await uploadIdDocsMutation.mutateAsync({
+      const response = await uploadIdDocsMutation.mutateAsync({
         idCardFront: data.idCardFront,
-
         idCardBack: data.idCardBack,
       });
 
-      router.push("/onboarding/account-status?status=submitted");
+      toast.fromApiSuccess(
+        response,
+        "Identity card uploaded successfully.",
+      );
+
+      const { user: apiUser } = extractAuthFromResponse(response);
+      const baseUser = apiUser ?? user;
+      if (baseUser) {
+        const nextUser = mergeUserOnboardingFlags(baseUser, {
+          identityStatus: apiUser?.identityStatus ?? "pending",
+        });
+        persistAuthUser(nextUser);
+        dispatch(singUp(nextUser));
+      }
+
+      router.replace("/onboarding/account-status?status=submitted");
     } catch (error) {
-      console.log(error);
+      toast.fromApiError(
+        error,
+        "Could not upload identity card. Please try again.",
+      );
     }
   };
 
   return (
     <div className="h-screen w-full overflow-hidden bg-white py-3 pr-3 pl-1 md:py-5 md:pr-10 md:pl-0">
-      <div className="mx-auto flex h-full w-full max-w-[1440px] rounded-[32px] bg-white p-0">
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-[1440px] flex-col rounded-[32px] bg-white p-0 lg:flex-row">
         <aside className="relative hidden h-full w-[400px] shrink-0 overflow-hidden rounded-[24px] bg-[url('/asset/sidebarbg.png')] bg-cover bg-center bg-no-repeat lg:sticky lg:top-0 lg:block">
           <div className="relative z-10 flex h-full w-full items-start md:pt-[6em] px-20">
             <div className="flex w-full max-w-[199px] flex-col gap-1">
@@ -147,8 +189,8 @@ export default function IdentityCardOnboardingPage() {
           </div>
         </aside>
 
-        <main className="flex h-full flex-1 items-center justify-center px-4 sm:px-8 lg:px-16">
-          <div className="w-full max-w-[496px]">
+        <main className="flex min-h-0 flex-1 justify-center overflow-y-auto px-4 py-6 sm:px-8 lg:px-16 lg:py-14">
+          <div className="w-full max-w-[496px] pb-6">
             <div className="text-center">
               <h1 className="text-[36px] font-semibold leading-[45px] tracking-[-0.82px] text-[#1C1C1C]">
                 Upload Identity Card
@@ -160,8 +202,8 @@ export default function IdentityCardOnboardingPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <div className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="mt-10">
+              <div className="flex flex-col gap-10">
                 {idCardFields.map((field) => {
                   const selectedFile = watch(field.key);
 
@@ -186,12 +228,8 @@ export default function IdentityCardOnboardingPage() {
                         id={field.key}
                         onChange={(event) => {
                           const file = event.target.files?.[0];
-
-                          if (!file) return;
-
-                          setValue(field.key, file, {
-                            shouldValidate: true,
-                          });
+                          handleFileSelect(field.key, file, field.label);
+                          event.target.value = "";
                         }}
                       />
 
@@ -200,7 +238,7 @@ export default function IdentityCardOnboardingPage() {
                         onClick={() =>
                           document.getElementById(field.key)?.click()
                         }
-                        className="relative flex h-[200px] w-full flex-col items-center justify-center overflow-hidden rounded-[15px] border border-dashed border-[#005864] bg-[#F9FAFA]"
+                        className="relative mx-auto flex h-[140px] w-full max-w-[620px] flex-col items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#005864] bg-[#F9FAFA]"
                       >
                         {previewUrl ? (
                           <>
@@ -235,12 +273,12 @@ export default function IdentityCardOnboardingPage() {
                         ) : (
                           <>
                             {selectedFile ? (
-                              <File size={29} className="text-[#005864]" />
+                              <File size={24} className="text-[#005864]" />
                             ) : (
-                              <Upload size={29} className="text-black/80" />
+                              <Upload size={24} className="text-black/80" />
                             )}
 
-                            <span className="mt-3 text-[14px] leading-[18px] text-[#1C1C1C]">
+                            <span className="mt-2 text-[13px] leading-[18px] text-[#1C1C1C]">
                               {fileLabel}
                             </span>
                           </>

@@ -11,12 +11,18 @@ import {
   UserRound,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
 import { Input } from "@/components/ui/input";
 import { useCompleteProfileSetup } from "@/hooks/onboarding/profile-setup-mutation";
+import { navigateToNextOnboardingStep } from "@/lib/onboarding-navigation";
+import type { RootState } from "@/store/index";
 import {
   ProfileSetupFormData,
   profileSetupSchema,
+  PROFILE_IMAGE_ACCEPT,
+  validateProfileImage,
 } from "@/lib/schemas/profile-setup.schema";
+import { toast } from "@/lib/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGetCategories } from "@/lib/category-query";
@@ -95,6 +101,8 @@ function parseAddressComponents(components: any[]) {
 
 export default function ProfileSetupOnboardingPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const user = useSelector((state: RootState) => state.auth.user);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const serviceDropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -118,11 +126,14 @@ export default function ProfileSetupOnboardingPage() {
     handleSubmit,
     watch,
     setValue,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useForm<ProfileSetupFormData>({
     resolver: zodResolver(profileSetupSchema),
     defaultValues: {
       profileImage: null,
+      name: user?.name?.trim() ?? "",
       services: [],
       overview: "",
       label: "",
@@ -154,6 +165,25 @@ export default function ProfileSetupOnboardingPage() {
     if (!profileFile) return "";
     return URL.createObjectURL(profileFile);
   }, [profileFile]);
+
+  useEffect(() => {
+    return () => {
+      if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
+    };
+  }, [profilePreviewUrl]);
+
+  const handleProfileImageSelect = (file: File | null) => {
+    const validationError = validateProfileImage(file);
+    if (validationError) {
+      toast.error(validationError);
+      setValue("profileImage", null, { shouldValidate: true });
+      setError("profileImage", { type: "manual", message: validationError });
+      return;
+    }
+
+    clearErrors("profileImage");
+    setValue("profileImage", file!, { shouldValidate: true });
+  };
 
   const { data: categoriesResponse, isLoading: categoriesLoading } =
     useGetCategories();
@@ -187,7 +217,6 @@ export default function ProfileSetupOnboardingPage() {
   const updateFromPlace = (place: any, lat: number, lng: number) => {
     if (!place.address_components) return;
     const parsed = parseAddressComponents(place.address_components);
-    console.log("🚀 ~ updateFromPlace ~ parsed:", parsed);
 
     // ✅ Save coordinates to form
     setValue("latitude", String(lat), { shouldValidate: true });
@@ -295,10 +324,11 @@ export default function ProfileSetupOnboardingPage() {
   // =========================
 
   const onSubmit = async (data: ProfileSetupFormData) => {
-    console.log("🚀 ~ onSubmit ~ data:", data);
+    if (!data.profileImage) return;
+
     try {
-      await completeProfileMutation.mutateAsync({
-        name: "John Doe",
+      const response = await completeProfileMutation.mutateAsync({
+        name: data.name.trim(),
         overview: data.overview,
         label: data.label,
         address: `${data.address}, ${data.streetName}, ${data.officeNo}`,
@@ -311,9 +341,20 @@ export default function ProfileSetupOnboardingPage() {
         categoryIDs: data.services,
       });
 
-      router.push("/onboarding/business-documents");
+      toast.fromApiSuccess(
+        response,
+        "Profile setup completed successfully.",
+      );
+
+      navigateToNextOnboardingStep(router, dispatch, user, {
+        apiResponse: response,
+        completedFlags: { isProfileCompleted: true },
+      });
     } catch (error) {
-      console.log(error);
+      toast.fromApiError(
+        error,
+        "Could not complete profile setup. Please try again.",
+      );
     }
   };
 
@@ -426,11 +467,12 @@ export default function ProfileSetupOnboardingPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept={PROFILE_IMAGE_ACCEPT}
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0] ?? null;
-                  setValue("profileImage", file, { shouldValidate: true });
+                  handleProfileImageSelect(file);
+                  event.target.value = "";
                 }}
               />
 
@@ -458,6 +500,10 @@ export default function ProfileSetupOnboardingPage() {
                 Upload Profile Picture/Logo*
               </button>
 
+              <p className="mt-1 text-center text-xs text-[#181818]/60">
+                PNG or JPG only, max 5MB (required)
+              </p>
+
               {errors.profileImage && (
                 <p className="mt-2 text-sm text-red-500">
                   {errors.profileImage.message}
@@ -466,6 +512,27 @@ export default function ProfileSetupOnboardingPage() {
             </div>
 
             <div className="mt-10 space-y-4">
+              {/* ========================= */}
+              {/* NAME */}
+              {/* ========================= */}
+
+              <div>
+                <label className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
+                  Name*
+                </label>
+                <Input
+                  {...register("name")}
+                  maxLength={100}
+                  placeholder="Enter your name"
+                  className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
+                />
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.name.message}
+                  </p>
+                )}
+              </div>
+
               {/* ========================= */}
               {/* SERVICES */}
               {/* ========================= */}
@@ -598,6 +665,7 @@ export default function ProfileSetupOnboardingPage() {
                   Label This Address
                 </label>
                 <Input
+                maxLength={50}
                   {...register("label")}
                   placeholder="e.g., Home, Office"
                   className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"

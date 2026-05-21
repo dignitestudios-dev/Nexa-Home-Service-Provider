@@ -1,5 +1,6 @@
 import type { CheckEmailResponse } from "@/types/auth.types";
 import type { User } from "@/store/slices/auth-slice";
+import { getOnboardingRedirectPath } from "@/lib/onboarding-steps";
 
 export function parseEmailExists(data: unknown): boolean {
   if (!data || typeof data !== "object") {
@@ -55,38 +56,6 @@ export function toE164UsPhone(value: string): string {
   return `+${digits}`;
 }
 
-/**
- * Post-login redirect: verify email when identity is not provided,
- * otherwise home for pending / approved (and other verified states).
- */
-export const getRedirectPath = (user: User | null): string => {
-  if (!user) {
-    return "/auth/login";
-  }
-
-  if (!user.isEmailVerified) {
-    return "/auth/verify-email";
-  }
-
-  // if (user.identityStatus === "not-provided") {
-  //   return "/auth/verify-email";
-  // }
-
-  if (!user.isProfileCompleted) {
-    return "/onboarding/profile-setup";
-  }
-
-  if (!user.businessDocsSubmitted) {
-    return "/onboarding/business-documents";
-  }
-
-  if (!user.portfolioMediaUploaded) {
-    return "/onboarding/portfolio";
-  }
-
-  if (!user.identityStatus) {
-    return "/onboarding/identity-card";
-  }
-
-  return "/home";
-};
+/** Post-login / post-step redirect (sequential onboarding). */
+export const getRedirectPath = (user: User | null): string =>
+  getOnboardingRedirectPath(user);
