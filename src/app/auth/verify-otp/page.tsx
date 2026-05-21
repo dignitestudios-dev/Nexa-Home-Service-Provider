@@ -1,31 +1,52 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useDispatch } from "react-redux";
-import { getApiErrorMessage } from "@/lib/api-error";
-import { persistAuthFromResponse } from "@/lib/auth-session";
-import { useResendOtp } from "@/hooks/auth/use-auth-mutations";
-import { authService } from "@/services/auth.service";
+import {
+  useForgotPassword,
+  useResendOtp,
+  useVerifyEmailMutation,
+} from "@/hooks/auth/use-auth-mutations";
+import { persistResetTokenFromResponse } from "@/lib/auth-session";
+import { toast } from "@/lib/toast";
+import {
+  getPendingVerifyEmail,
+  setPendingVerifyEmail,
+} from "@/lib/verify-email-storage";
 
 function VerificationContent() {
   const router = useRouter();
-  const dispatch = useDispatch();
   const searchParams = useSearchParams();
   const [otp, setOtp] = useState("");
   const [timer, setTimer] = useState(30);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  const email = searchParams.get("email")?.trim().toLowerCase() ?? "";
+  const verifyEmailMutation = useVerifyEmailMutation();
+  const resendOtpMutation = useResendOtp();
+  const forgotPasswordMutation = useForgotPassword();
+
+  const emailFromQuery = searchParams.get("email")?.trim().toLowerCase() ?? "";
+  const email = useMemo(
+    () => emailFromQuery || getPendingVerifyEmail(),
+    [emailFromQuery],
+  );
   const mode = searchParams.get("mode") === "reset" ? "reset" : "verify";
+  const isResetMode = mode === "reset";
+
   const otpDigits = otp.replace(/\D/g, "");
   const isOtpComplete = otpDigits.length === 5;
+  const isSubmitting =
+    verifyEmailMutation.isPending ||
+    resendOtpMutation.isPending ||
+    forgotPasswordMutation.isPending;
 
-  const resendOtpMutation = useResendOtp();
+  useEffect(() => {
+    if (email) {
+      setPendingVerifyEmail(email);
+    }
+  }, [email]);
 
   useEffect(() => {
     if (timer <= 0) return;
@@ -42,65 +63,83 @@ function VerificationContent() {
     if (value && index < 4) inputRefs.current[index + 1]?.focus();
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 5);
+    if (!digits) return;
+    setOtp(digits.padEnd(5, "").slice(0, 5));
+    inputRefs.current[Math.min(digits.length, 4)]?.focus();
+  };
+
   const handleVerify = async () => {
     if (!email) {
-      setFormError("Email is missing.");
+      toast.error("Email is missing. Please try forgot password again.");
       return;
     }
     if (!isOtpComplete) {
-      setFormError("Please enter the complete 5-digit code.");
+      toast.error("Please enter the complete 5-digit code.");
       return;
     }
 
-    setFormError(null);
-    setIsLoading(true);
-
     try {
-      const response = await authService.verifyEmail({
+      const response = await verifyEmailMutation.mutateAsync({
         email,
         role: "service-provider",
         otp: otpDigits,
         mode,
       });
 
-      if (mode !== "reset") {
-        persistAuthFromResponse(response, dispatch);
-      }
+      const resetToken = persistResetTokenFromResponse(response);
 
-      if (mode === "reset") {
-        router.push(`/auth/change-password?email=${encodeURIComponent(email)}`);
+      if (resetToken || isResetMode) {
+        toast.fromApiSuccess(response, "OTP verified successfully.");
+
+        if (!resetToken) {
+          toast.error("Reset session failed. Please request a new code.");
+          return;
+        }
+
+        const changePasswordUrl = `/auth/change-password?email=${encodeURIComponent(email)}`;
+        router.replace(changePasswordUrl);
         return;
       }
 
-      router.push("/onboarding/profile-setup");
+      toast.fromApiSuccess(response, "OTP verified successfully.");
+      router.replace("/onboarding/profile-setup");
     } catch (error) {
-      setFormError(
-        getApiErrorMessage(error, "Invalid or expired OTP. Please try again."),
-      );
-    } finally {
-      setIsLoading(false);
+      toast.fromApiError(error, "Invalid or expired OTP. Please try again.");
     }
   };
 
   const handleResend = async () => {
+    if (!email) {
+      toast.error("Email is missing.");
+      return;
+    }
+
     try {
-      await resendOtpMutation.mutateAsync({
-        email,
-      });
+      if (isResetMode) {
+        const response = await forgotPasswordMutation.mutateAsync({ email });
+        toast.fromApiSuccess(response, "Verification code resent to your email.");
+      } else {
+        const response = await resendOtpMutation.mutateAsync({ email });
+        toast.fromApiSuccess(response, "Verification code resent to your email.");
+      }
+
       setTimer(30);
       setOtp("");
       inputRefs.current[0]?.focus();
     } catch (error) {
-      setFormError(
-        getApiErrorMessage(error, "Failed to resend OTP. Please try again."),
-      );
+      toast.fromApiError(error, "Failed to resend OTP. Please try again.");
     }
   };
+
+  const backHref = isResetMode ? "/auth/forgot-password" : "/auth/login";
 
   return (
     <div className="relative w-full self-stretch min-h-[560px]">
       <Link
-        href="/auth/forgot-password"
+        href={backHref}
         className="absolute left-0 top-0 inline-flex cursor-pointer items-center justify-center w-12 h-12 rounded-full text-[#181818] hover:bg-black/5"
       >
         <ArrowLeft size={24} />
@@ -130,50 +169,46 @@ function VerificationContent() {
                 type="text"
                 maxLength={1}
                 inputMode="numeric"
+                disabled={isSubmitting}
                 onChange={(e) => updateOtp(e.target.value, i)}
-                className="w-[60px] h-[60px] text-center text-[24px] font-semibold rounded-[12px] bg-[#F8F8F8] border border-transparent focus:border-[#005864] focus:outline-none text-[#005864]"
+                onKeyDown={(e) => {
+                  if (e.key === "Backspace" && !otpDigits[i] && i > 0) {
+                    inputRefs.current[i - 1]?.focus();
+                  }
+                }}
+                onPaste={handlePaste}
+                className="h-[60px] w-[60px] rounded-[12px] border border-transparent bg-[#F8F8F8] text-center text-[24px] font-semibold text-[#005864] focus:border-[#005864] focus:outline-none disabled:opacity-60"
               />
             ))}
         </div>
 
-        {formError && (
-          <p className="mt-2 text-center text-sm text-red-600" role="alert">
-            {formError}
-          </p>
-        )}
-
-        <p className="text-[16px] leading-[22px] text-black/80 mt-4 text-center">
+        <p className="mt-4 text-center text-[16px] leading-[22px] text-black/80">
           Didn&apos;t receive code?{" "}
           <button
             onClick={handleResend}
             type="button"
-            disabled={timer > 0 || resendOtpMutation.isPending}
+            disabled={timer > 0 || isSubmitting || !email}
             className={`gap-2 font-medium text-[#005864] ${
-              timer > 0 || resendOtpMutation.isPending
+              timer > 0 || isSubmitting || !email
                 ? "opacity-50 cursor-not-allowed"
                 : "hover:underline"
             }`}
           >
-            {resendOtpMutation.isPending ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#005864] border-t-transparent" />
-                Sending...
-              </>
-            ) : timer > 0 ? (
-              `Resend OTP in ${timer}s`
-            ) : (
-              "Resend OTP"
-            )}
+            {forgotPasswordMutation.isPending || resendOtpMutation.isPending
+              ? "Sending..."
+              : timer > 0
+                ? `Resend OTP in ${timer}s`
+                : "Resend OTP"}
           </button>
         </p>
 
         <button
           type="button"
           onClick={handleVerify}
-          disabled={isLoading || !email || !isOtpComplete}
-          className="w-[388px] mx-auto block h-[48px] mt-8 cursor-pointer bg-[#005864] rounded-[12px] text-white text-[16px] font-[600] capitalize hover:opacity-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={isSubmitting || !email || !isOtpComplete}
+          className="mx-auto mt-8 block h-[48px] w-[388px] cursor-pointer rounded-[12px] bg-[#005864] text-[16px] font-[600] capitalize text-white hover:opacity-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isLoading ? "Verifying..." : "Verify"}
+          {verifyEmailMutation.isPending ? "Verifying..." : "Verify"}
         </button>
       </div>
     </div>

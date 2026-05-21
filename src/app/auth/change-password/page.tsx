@@ -1,21 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useDispatch } from "react-redux";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { resetPasswordSchema } from "@/lib/schemas/auth.schema";
 import { z } from "zod";
 import { PasswordUpdatedModal } from "@/components/auth/passwordupdatemodal";
+import { useResetChangePassword } from "@/hooks/auth/use-change-password-mutation";
+import { clearAuthSession, getAuthTokenCookie } from "@/lib/auth-session";
+import {
+  getPasswordResetToken,
+  isPasswordResetFlow,
+} from "@/lib/reset-password-storage";
+import { toast } from "@/lib/toast";
+import { getPendingVerifyEmail } from "@/lib/verify-email-storage";
 
 type ResetPasswordSchema = z.infer<typeof resetPasswordSchema>;
 
-export default function ChangePasswordPage() {
+function ChangePasswordContent() {
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const searchParams = useSearchParams();
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordUpdated, setPasswordUpdated] = useState(false);
+
+  const changePasswordMutation = useResetChangePassword();
+
+  const email = useMemo(() => {
+    const fromQuery = searchParams.get("email")?.trim().toLowerCase() ?? "";
+    return fromQuery || getPendingVerifyEmail();
+  }, [searchParams]);
+
+  const verifyOtpHref = email
+    ? `/auth/verify-otp?email=${encodeURIComponent(email)}&mode=reset`
+    : "/auth/verify-otp?mode=reset";
+
+  useEffect(() => {
+    const hasResetSession =
+      isPasswordResetFlow() &&
+      (Boolean(getAuthTokenCookie()) || Boolean(getPasswordResetToken()));
+
+    if (hasResetSession) return;
+
+    toast.error("Reset session expired. Please verify OTP again.");
+    router.replace(verifyOtpHref);
+  }, [router, verifyOtpHref]);
+
   const {
     register,
     handleSubmit,
@@ -24,15 +60,25 @@ export default function ChangePasswordPage() {
     resolver: zodResolver(resetPasswordSchema),
   });
 
-  const onSubmit = (data: ResetPasswordSchema) => {
-    console.log("PASSWORD DATA:", data);
-    setPasswordUpdated(true);
+  const onSubmit = async (data: ResetPasswordSchema) => {
+    try {
+      const response = await changePasswordMutation.mutateAsync({
+        password: data.password,
+        newPassword: data.confirmPassword,
+      });
+
+      toast.fromApiSuccess(response, "Password updated successfully.");
+      clearAuthSession(dispatch);
+      setPasswordUpdated(true);
+    } catch (error) {
+      toast.fromApiError(error, "Could not update password. Please try again.");
+    }
   };
 
   return (
     <div className="relative w-full self-stretch min-h-[560px]">
       <Link
-        href="/auth/verify-otp"
+        href={verifyOtpHref}
         className="absolute left-0 top-0 inline-flex items-center justify-center w-12 h-12 rounded-full text-[#181818] hover:bg-black/5"
       >
         <ArrowLeft size={24} />
@@ -43,28 +89,27 @@ export default function ChangePasswordPage() {
           onSubmit={handleSubmit(onSubmit)}
           className="w-full max-w-[496px] min-h-[560px] mx-auto"
         >
-          {/* Heading */}
           <div className="text-center mt-[122px]">
             <h1 className="text-[36px] leading-[45px] tracking-[-0.82px] font-semibold text-[#1C1C1C]">
               Create New Password
             </h1>
             <p className="mt-2 text-[16px] leading-[22px] text-black/80 max-w-[496px] mx-auto">
-            Enter your new password to reset
+              Enter your new password to reset
             </p>
           </div>
 
-          {/* New Password */}
           <div className="mt-[52px] w-[388px] mx-auto">
             <label className="text-[16px] font-[500] leading-[22px] text-[#1C1C1C]">
-                Password
+              Password
             </label>
 
             <div className="relative mt-[6px]">
               <input
                 type={showNewPassword ? "text" : "password"}
                 placeholder="Enter new password"
+                disabled={changePasswordMutation.isPending}
                 {...register("password")}
-                className="w-full h-[48px] bg-[#F8F8F8] rounded-[12px] border-0 px-4 pr-10 text-[16px] placeholder:text-[#181818]/50 focus-visible:ring-0 focus-visible:border-transparent shadow-none"
+                className="w-full h-[48px] bg-[#F8F8F8] rounded-[12px] border-0 px-4 pr-10 text-[16px] placeholder:text-[#181818]/50 focus-visible:ring-0 focus-visible:border-transparent shadow-none disabled:opacity-60"
               />
 
               <button
@@ -83,7 +128,6 @@ export default function ChangePasswordPage() {
             </div>
           </div>
 
-          {/* Confirm Password */}
           <div className="mt-4 w-[388px] mx-auto">
             <label className="text-[16px] font-[500] leading-[22px] text-[#1C1C1C]">
               Confirm Password
@@ -93,8 +137,9 @@ export default function ChangePasswordPage() {
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm your password"
+                disabled={changePasswordMutation.isPending}
                 {...register("confirmPassword")}
-                className="w-full h-[48px] bg-[#F8F8F8] rounded-[12px] border-0 px-4 pr-10 text-[16px] placeholder:text-[#181818]/50 focus-visible:ring-0 focus-visible:border-transparent shadow-none"
+                className="w-full h-[48px] bg-[#F8F8F8] rounded-[12px] border-0 px-4 pr-10 text-[16px] placeholder:text-[#181818]/50 focus-visible:ring-0 focus-visible:border-transparent shadow-none disabled:opacity-60"
               />
 
               <button
@@ -115,19 +160,28 @@ export default function ChangePasswordPage() {
             </div>
           </div>
 
-          {/* Button */}
           <button
             type="submit"
-            className="w-[388px] mx-auto block h-[48px] mt-3 bg-[#005864] rounded-[12px] text-white text-[16px] font-[600] capitalize hover:opacity-95 active:scale-[0.99]"
+            disabled={changePasswordMutation.isPending}
+            className="w-[388px] mx-auto block h-[48px] mt-3 bg-[#005864] rounded-[12px] text-white text-[16px] font-[600] capitalize hover:opacity-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Update Password
+            {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
           </button>
         </form>
       </div>
+
       <PasswordUpdatedModal
         open={passwordUpdated}
         onClose={() => setPasswordUpdated(false)}
       />
     </div>
+  );
+}
+
+export default function ChangePasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[560px]" />}>
+      <ChangePasswordContent />
+    </Suspense>
   );
 }

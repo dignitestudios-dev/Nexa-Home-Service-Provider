@@ -29,12 +29,12 @@ const stepItems = [
 const documentFields = [
   {
     key: "businessLicense",
-    label: "Business License (Optional)",
+    label: "Business License ",
   },
 
   {
     key: "taxRegistration",
-    label: "Tax Registration (Optional)",
+    label: "Tax Registration ",
   },
 
   {

@@ -12,7 +12,11 @@ import {
   getPendingVerifyEmail,
   setPendingVerifyEmail,
 } from "@/lib/verify-email-storage";
-import { persistAuthFromResponse } from "@/lib/auth-session";
+import {
+  persistAuthFromResponse,
+  persistResetTokenFromResponse,
+} from "@/lib/auth-session";
+import { toast } from "@/lib/toast";
 import { authService } from "@/services/auth.service";
 import type { RootState } from "@/store/index";
 
@@ -38,6 +42,8 @@ function VerifyEmailContent() {
   const user = useSelector((state: RootState) => state.auth.user);
 
   const queryEmail = searchParams.get("email") ?? "";
+  const mode = searchParams.get("mode") === "reset" ? "reset" : "verify";
+  const isResetMode = mode === "reset";
   const loginEmail = getLoginEmail(
     queryEmail,
     user?.email,
@@ -110,13 +116,29 @@ function VerifyEmailContent() {
         email,
         role: "service-provider",
         otp,
-        mode: "verify",
+        mode,
       });
 
-      persistAuthFromResponse(response, dispatch);
+      const resetToken = persistResetTokenFromResponse(response);
 
+      if (resetToken || isResetMode) {
+        toast.fromApiSuccess(response, "OTP verified successfully.");
+
+        if (!resetToken) {
+          toast.error("Reset session failed. Please request a new code.");
+          return;
+        }
+
+        router.replace(
+          `/auth/change-password?email=${encodeURIComponent(email)}`,
+        );
+        return;
+      }
+
+      persistAuthFromResponse(response, dispatch);
       clearPendingVerifyEmail();
-      router.push("/onboarding/profile-setup");
+      toast.fromApiSuccess(response, "Email verified successfully.");
+      router.replace("/onboarding/profile-setup");
     } catch (error) {
       setFormError(
         getApiErrorMessage(error, "Invalid or expired OTP. Please try again."),
@@ -156,7 +178,7 @@ function VerifyEmailContent() {
   return (
     <div className="relative w-full self-stretch min-h-[560px]">
       <Link
-        href="/auth/login"
+        href={isResetMode ? "/auth/forgot-password" : "/auth/login"}
         className="absolute left-0 top-0 z-10 inline-flex cursor-pointer items-center justify-center w-12 h-12 rounded-full text-[#181818] hover:bg-black/5"
       >
         <ArrowLeft size={24} />
