@@ -6,6 +6,7 @@ import { Provider } from "react-redux";
 
 import { AuthHydrator } from "@/components/auth/auth-hydrator";
 import { CurrentUserSync } from "@/components/auth/current-user-sync";
+import { Toaster } from "@/components/ui/toaster";
 import { createQueryClient } from "@/lib/query-client";
 import { store } from "@/store";
 
@@ -18,6 +19,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <AuthHydrator />
         <CurrentUserSync />
         {children}
+        <Toaster />
       </QueryClientProvider>
     </Provider>
   );

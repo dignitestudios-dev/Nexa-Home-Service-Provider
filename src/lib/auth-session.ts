@@ -6,6 +6,10 @@ import {
   singUp,
   type User,
 } from "@/store/slices/auth-slice";
+import {
+  clearPasswordResetSession,
+  setPasswordResetSession,
+} from "@/lib/reset-password-storage";
 import { clearPendingVerifyEmail } from "@/lib/verify-email-storage";
 
 export const AUTH_TOKEN_COOKIE = "token";
@@ -97,6 +101,10 @@ export function extractAuthFromResponse(data: unknown): {
       : null;
 
   const token =
+    (typeof record.resetToken === "string" && record.resetToken) ||
+    (nested &&
+      typeof nested.resetToken === "string" &&
+      nested.resetToken) ||
     (typeof record.token === "string" && record.token) ||
     (typeof record.accessToken === "string" && record.accessToken) ||
     (nested &&
@@ -114,6 +122,48 @@ export function extractAuthFromResponse(data: unknown): {
     token,
     user: userRaw as User | null,
   };
+}
+
+/** Stores reset-password JWT from verify-email (`data.resetToken`) — cookie only, no Redux login. */
+export function persistResetTokenFromResponse(data: unknown): string | null {
+  const resetToken = extractResetTokenFromResponse(data);
+
+  if (resetToken) {
+    setAuthTokenCookie(resetToken);
+    setPasswordResetSession(resetToken);
+  }
+
+  return resetToken;
+}
+
+export function extractResetTokenFromResponse(data: unknown): string | null {
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  const record = data as Record<string, unknown>;
+
+  if (typeof record.resetToken === "string" && record.resetToken) {
+    return record.resetToken;
+  }
+
+  const nested =
+    record.data && typeof record.data === "object"
+      ? (record.data as Record<string, unknown>)
+      : null;
+
+  if (nested && typeof nested.resetToken === "string" && nested.resetToken) {
+    return nested.resetToken;
+  }
+
+  if (nested?.data && typeof nested.data === "object") {
+    const deeper = nested.data as Record<string, unknown>;
+    if (typeof deeper.resetToken === "string" && deeper.resetToken) {
+      return deeper.resetToken;
+    }
+  }
+
+  return null;
 }
 
 /** Saves JWT cookie + Redux auth state from login / verify-email API bodies. */
@@ -141,5 +191,6 @@ export function clearAuthSession(dispatch: AppDispatch): void {
   clearAuthTokenCookie();
   clearPersistedAuthUser();
   clearPendingVerifyEmail();
+  clearPasswordResetSession();
   dispatch(clearAuth());
 }

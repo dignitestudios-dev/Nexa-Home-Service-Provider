@@ -43,6 +43,14 @@ export function useLoginAuth() {
   });
 }
 
+/** Verify OTP — caller handles redirect / session (signup vs reset). */
+export function useVerifyEmailMutation() {
+  return useMutation({
+    mutationFn: (payload: VerifyEmailPayload) =>
+      authService.verifyEmail(payload),
+  });
+}
+
 export function useVerifyEmail() {
   const dispatch = useDispatch();
   return useMutation({

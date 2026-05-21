@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { getRedirectPath } from "@/lib/auth-utils";
+import { isPasswordResetFlow } from "@/lib/reset-password-storage";
 import {
   getPendingVerifyEmail,
   setPendingVerifyEmail,
@@ -21,7 +22,11 @@ const PUBLIC_AUTH_PATHS = [
   "/auth/verify-otp",
   "/auth/signup-verify-otp",
   "/auth/verify-email",
+  "/auth/change-password",
 ] as const;
+
+const isResetPasswordPath = (path: string) =>
+  path === "/auth/change-password" || path.startsWith("/auth/change-password/");
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const router = useRouter();
@@ -41,6 +46,17 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       if (!isPublicAuthPath) {
         router.replace("/auth/login");
       }
+      return;
+    }
+
+    if (isResetPasswordPath(pathname)) {
+      return;
+    }
+
+    if (
+      isPasswordResetFlow() &&
+      (isPublicAuthPath || isResetPasswordPath(pathname))
+    ) {
       return;
     }
 
