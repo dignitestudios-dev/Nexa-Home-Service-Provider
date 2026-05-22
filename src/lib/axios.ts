@@ -28,6 +28,16 @@ export const API = axios.create({
 API.interceptors.request.use(
   (config) => {
     const token = getAuthTokenCookie();
+
+    // Skip Authorization header for change-password endpoint with resetToken in body
+    // const isChangePasswordWithReset =
+    //   config.url === "/auth/change-password" &&
+    //   (config.data as any)?.resetToken;
+
+    // if (token && !isChangePasswordWithReset) {
+    //   config.headers.authorization = `Bearer ${token}`;
+    // }
+
     if (token) {
       config.headers.authorization = `Bearer ${token}`;
     }

@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/ui/input";
+import { AccountCreatedModal } from "@/components/auth/account-created-modal";
 import {
   useCheckEmail,
   useLoginAuth,
@@ -30,7 +31,9 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [checkedEmail, setCheckedEmail] = useState<string | null>(null);
-  const [isLoginMode, setIsLoginMode] = useState(false);
+  const [isLoginMode, setIsLoginMode] = useState("no");
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  console.log("🚀 ~ LoginForm ~ isLoginMode:", isLoginMode);
 
   const checkEmailMutation = useCheckEmail();
   const registerMutation = useRegisterAuth();
@@ -43,22 +46,17 @@ export default function LoginForm() {
 
   const isEmailCheckedForCurrent = Boolean(checkedEmail);
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    clearErrors,
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginFlowEmailSchema),
-    mode: "onBlur",
-    reValidateMode: "onChange",
-    defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
+  const { register, handleSubmit, watch, setValue, clearErrors } =
+    useForm<LoginFormData>({
+      resolver: zodResolver(loginFlowEmailSchema),
+      mode: "onBlur",
+      reValidateMode: "onChange",
+      defaultValues: {
+        email: "",
+        password: "",
+        confirmPassword: "",
+      },
+    });
 
   useEffect(() => {
     clearErrors(["password", "confirmPassword"]);
@@ -80,7 +78,7 @@ export default function LoginForm() {
     password?: { message?: string };
     confirmPassword?: { message?: string };
   }) => {
-    if (isLoginMode) {
+    if (isLoginMode === "yes") {
       if (fieldErrors.email?.message) {
         toast.error(fieldErrors.email.message);
       }
@@ -108,7 +106,7 @@ export default function LoginForm() {
   useEffect(() => {
     if (checkedEmail && normalizedEmail !== checkedEmail) {
       setCheckedEmail(null);
-      setIsLoginMode(false);
+      setIsLoginMode("no");
       setValue("password", "");
       setValue("confirmPassword", "");
       setShowPassword(false);
@@ -120,8 +118,8 @@ export default function LoginForm() {
     !hasEmail ||
     isLoading ||
     (isEmailCheckedForCurrent &&
-      ((isLoginMode && !hasPassword) ||
-        (!isLoginMode && (!hasPassword || !hasConfirmPassword))));
+      ((isLoginMode === "yes" && !hasPassword) ||
+        (isLoginMode === "no" && (!hasPassword || !hasConfirmPassword))));
 
   const onSubmit = async (data: LoginFormData) => {
     const currentEmail = data.email.trim().toLowerCase();
@@ -131,23 +129,28 @@ export default function LoginForm() {
       try {
         const result = await checkEmailMutation.mutateAsync({
           email: currentEmail,
+          role: "service-provider",
         });
+        console.log("🚀 ~ onSubmit ~ result:", result);
+
+        if (result.raw.data.exists === "yes-conflict") {
+          setShowConflictModal(true);
+          return;
+        }
+
         setCheckedEmail(currentEmail);
-        setIsLoginMode(result.exists);
+        setIsLoginMode(result.raw.data.exists);
         setShowPassword(false);
         setShowConfirmPassword(false);
         setValue("password", "");
         setValue("confirmPassword", "");
       } catch (error) {
-        toast.fromApiError(
-          error,
-          "Unable to verify email. Please try again.",
-        );
+        toast.fromApiError(error, "Unable to verify email. Please try again.");
       }
       return;
     }
 
-    if (isLoginMode) {
+    if (isLoginMode === "yes") {
       if (!data.password?.trim()) {
         toast.error("Password is required");
         return;
@@ -229,16 +232,15 @@ export default function LoginForm() {
         {isEmailCheckedForCurrent && (
           <>
             <PasswordField
-              label={isLoginMode ? "Password" : "Enter Password"}
+              label={isLoginMode === "yes" ? "Password" : "Enter Password"}
               showPassword={showPassword}
               setShowPassword={setShowPassword}
               register={register}
               fieldName="password"
               isLoading={isLoading}
-          
             />
 
-            {!isLoginMode && (
+            {isLoginMode === "no" && (
               <PasswordField
                 label="Confirm Password"
                 showPassword={showConfirmPassword}
@@ -259,7 +261,7 @@ export default function LoginForm() {
           {isLoading
             ? "Please wait..."
             : isEmailCheckedForCurrent
-              ? isLoginMode
+              ? isLoginMode === "yes"
                 ? "Continue"
                 : "Signup"
               : "Continue"}
@@ -310,6 +312,14 @@ export default function LoginForm() {
           </button>
         </div>
       </div>
+
+      <AccountCreatedModal
+        open={showConflictModal}
+        onClose={() => setShowConflictModal(false)}
+        title="Email Already in Use"
+        description="This email address is already associated with another account. Please use a different email to continue."
+        type="error"
+      />
     </form>
   );
 }
@@ -356,9 +366,7 @@ function PasswordField({
         </button>
       </div>
 
-      {hint ? (
-        <p className="mt-1.5 text-xs text-[#181818]/60">{hint}</p>
-      ) : null}
+      {hint ? <p className="mt-1.5 text-xs text-[#181818]/60">{hint}</p> : null}
     </div>
   );
 }

@@ -4,6 +4,7 @@ export type AuthMode = "verify" | "reset";
 
 export interface CheckEmailPayload {
   email: string;
+  role: string;
 }
 
 export interface RegisterAuthPayload {
@@ -46,7 +47,8 @@ export interface VerifyChangePhonePayload {
 
 export interface ChangePasswordPayload {
   password: string;
-  newPassword: string;
+  // newPassword: string;
+  resetToken?: string;
 }
 
 export interface CheckEmailResponse {

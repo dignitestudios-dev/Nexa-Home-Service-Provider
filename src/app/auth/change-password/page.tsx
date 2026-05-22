@@ -37,9 +37,7 @@ function ChangePasswordContent() {
     return fromQuery || getPendingVerifyEmail();
   }, [searchParams]);
 
-  const verifyOtpHref = email
-    ? `/auth/verify-otp?email=${encodeURIComponent(email)}&mode=reset`
-    : "/auth/verify-otp?mode=reset";
+  const verifyOtpHref = "/auth/verify-otp?mode=reset";
 
   useEffect(() => {
     const hasResetSession =
@@ -64,8 +62,8 @@ function ChangePasswordContent() {
     try {
       const response = await changePasswordMutation.mutateAsync({
         password: data.password,
-        newPassword: data.confirmPassword,
       });
+      // newPassword: data.confirmPassword,
 
       toast.fromApiSuccess(response, "Password updated successfully.");
       clearAuthSession(dispatch);
@@ -123,7 +121,9 @@ function ChangePasswordContent() {
 
             <div className="mt-2">
               {errors.password && (
-                <div className="text-red-600 text-sm">{errors.password.message}</div>
+                <div className="text-red-600 text-sm">
+                  {errors.password.message}
+                </div>
               )}
             </div>
           </div>
@@ -165,14 +165,19 @@ function ChangePasswordContent() {
             disabled={changePasswordMutation.isPending}
             className="w-[388px] mx-auto block h-[48px] mt-3 bg-[#005864] rounded-[12px] text-white text-[16px] font-[600] capitalize hover:opacity-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
+            {changePasswordMutation.isPending
+              ? "Updating..."
+              : "Update Password"}
           </button>
         </form>
       </div>
 
       <PasswordUpdatedModal
         open={passwordUpdated}
-        onClose={() => setPasswordUpdated(false)}
+        onClose={() => {
+          setPasswordUpdated(false);
+          router.push("/auth/login");
+        }}
       />
     </div>
   );

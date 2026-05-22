@@ -11,12 +11,20 @@ import {
 interface AccountCreatedModalProps {
   open: boolean;
   onClose: () => void;
+  title?: string;
+  description?: string;
+  type?: "success" | "error";
 }
 
 export function AccountCreatedModal({
   open,
   onClose,
+  title = "Email Verified",
+  description = "Your email has been verified successfully",
+  type = "success",
 }: AccountCreatedModalProps) {
+  const isError = type === "error";
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent
@@ -33,20 +41,29 @@ export function AccountCreatedModal({
         </button>
 
         <div className="px-[43px] py-[46px] flex flex-col items-center">
-          <div className="w-20 h-20 rounded-full bg-[linear-gradient(136.41deg,#005864_39.74%,#D7DF23_307.09%)] flex items-center justify-center">
-            <Check className="text-white" size={40} strokeWidth={3.2} />
+          <div
+            className={`w-20 h-20 rounded-full flex items-center justify-center ${
+              isError
+                ? "bg-red-100"
+                : "bg-[linear-gradient(136.41deg,#005864_39.74%,#D7DF23_307.09%)]"
+            }`}
+          >
+            {isError ? (
+              <X className="text-red-500" size={40} strokeWidth={3.2} />
+            ) : (
+              <Check className="text-white" size={40} strokeWidth={3.2} />
+            )}
           </div>
 
           <DialogTitle className="mt-8 text-[32px] leading-[40px] tracking-[-0.008em] text-center font-semibold text-[#1C1C1C] capitalize">
-            Email Verified
+            {title}
           </DialogTitle>
 
           <DialogDescription className="mt-4 text-[18px] leading-[23px] text-center text-black/80">
-            Your email has been verified successfully
+            {description}
           </DialogDescription>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-

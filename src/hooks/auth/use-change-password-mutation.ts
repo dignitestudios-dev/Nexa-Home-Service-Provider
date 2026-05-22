@@ -9,11 +9,12 @@ import type { ChangePasswordPayload } from "@/types/auth.types";
 
 export function useChangePassword() {
   return useMutation({
-    mutationFn: (payload: ChangePasswordPayload) => authService.changePassword(payload),
+    mutationFn: (payload: ChangePasswordPayload) =>
+      authService.changePassword(payload),
   });
 }
 
-/** Forgot-password flow: uses `resetToken` from verify-email OTP as Bearer. */
+/** Forgot-password flow: includes `resetToken` from verify-email OTP in request body. */
 export function useResetChangePassword() {
   return useMutation({
     mutationFn: (payload: ChangePasswordPayload) => {
@@ -21,7 +22,10 @@ export function useResetChangePassword() {
       if (!resetToken) {
         throw new Error("Reset session expired. Please verify OTP again.");
       }
-      return authService.changePassword(payload, resetToken);
+      return authService.changePassword({
+        ...payload,
+        resetToken,
+      });
     },
   });
 }

@@ -2,7 +2,7 @@ import type { CheckEmailResponse } from "@/types/auth.types";
 import type { User } from "@/store/slices/auth-slice";
 import { getOnboardingRedirectPath } from "@/lib/onboarding-steps";
 
-export function parseEmailExists(data: unknown): boolean {
+export function parseEmailExists(data: unknown): any {
   if (!data || typeof data !== "object") {
     return false;
   }

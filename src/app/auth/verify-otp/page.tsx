@@ -15,6 +15,7 @@ import {
   getPendingVerifyEmail,
   setPendingVerifyEmail,
 } from "@/lib/verify-email-storage";
+import { setPasswordResetSession } from "@/lib/reset-password-storage";
 
 function VerificationContent() {
   const router = useRouter();
@@ -65,7 +66,10 @@ function VerificationContent() {
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 5);
+    const digits = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 5);
     if (!digits) return;
     setOtp(digits.padEnd(5, "").slice(0, 5));
     inputRefs.current[Math.min(digits.length, 4)]?.focus();
@@ -99,8 +103,8 @@ function VerificationContent() {
           return;
         }
 
-        const changePasswordUrl = `/auth/change-password?email=${encodeURIComponent(email)}`;
-        router.replace(changePasswordUrl);
+        setPasswordResetSession(resetToken);
+        router.replace("/auth/change-password");
         return;
       }
 
@@ -120,10 +124,16 @@ function VerificationContent() {
     try {
       if (isResetMode) {
         const response = await forgotPasswordMutation.mutateAsync({ email });
-        toast.fromApiSuccess(response, "Verification code resent to your email.");
+        toast.fromApiSuccess(
+          response,
+          "Verification code resent to your email.",
+        );
       } else {
         const response = await resendOtpMutation.mutateAsync({ email });
-        toast.fromApiSuccess(response, "Verification code resent to your email.");
+        toast.fromApiSuccess(
+          response,
+          "Verification code resent to your email.",
+        );
       }
 
       setTimer(30);
