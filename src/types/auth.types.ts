@@ -47,6 +47,12 @@ export interface VerifyChangePhonePayload {
 
 export interface ChangePasswordPayload {
   password: string;
+  newPassword: string;
+  resetToken?: string;
+}
+
+export interface UpdatePasswordPayload {
+  password: string;
   // newPassword: string;
   resetToken?: string;
 }

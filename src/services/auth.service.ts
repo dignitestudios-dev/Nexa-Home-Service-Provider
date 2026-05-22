@@ -8,6 +8,7 @@ import type {
   LoginAuthPayload,
   RegisterAuthPayload,
   ResendOtpPayload,
+  UpdatePasswordPayload,
   VerifyChangePhonePayload,
   VerifyEmailPayload,
 } from "@/types/auth.types";
@@ -61,6 +62,11 @@ export const authService = {
   },
 
   changePassword: async (payload: ChangePasswordPayload) => {
+    const { data } = await API.post("/auth/change-password", payload);
+    return data;
+  },
+
+  updatePassword: async (payload: UpdatePasswordPayload) => {
     const { data } = await API.post("/auth/update-password", payload);
     return data;
   },

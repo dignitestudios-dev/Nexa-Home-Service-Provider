@@ -44,13 +44,20 @@ export default function ChangePasswordPage() {
       reset();
       setIsSuccessModalOpen(true);
     } catch (error) {
-      setFormError(getApiErrorMessage(error, "Could not change password. Please try again."));
+      setFormError(
+        getApiErrorMessage(
+          error,
+          "Could not change password. Please try again.",
+        ),
+      );
     }
   };
 
   return (
     <div className="mx-auto flex w-full max-w-[766px] flex-col">
-      <h2 className="text-[24px] font-[700] leading-[30px] text-black">Change Password</h2>
+      <h2 className="text-[24px] font-[700] leading-[30px] text-black">
+        Change Password
+      </h2>
 
       <form
         onSubmit={handleSubmit(onSubmit)}

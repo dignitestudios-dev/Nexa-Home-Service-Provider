@@ -11,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { resetPasswordSchema } from "@/lib/schemas/auth.schema";
 import { z } from "zod";
 import { PasswordUpdatedModal } from "@/components/auth/passwordupdatemodal";
-import { useResetChangePassword } from "@/hooks/auth/use-change-password-mutation";
+import { useResetUpdatePassword } from "@/hooks/auth/use-change-password-mutation";
 import { clearAuthSession, getAuthTokenCookie } from "@/lib/auth-session";
 import {
   getPasswordResetToken,
@@ -30,7 +30,7 @@ function ChangePasswordContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordUpdated, setPasswordUpdated] = useState(false);
 
-  const changePasswordMutation = useResetChangePassword();
+  const updatePasswordMutation = useResetUpdatePassword();
 
   const email = useMemo(() => {
     const fromQuery = searchParams.get("email")?.trim().toLowerCase() ?? "";
@@ -60,7 +60,7 @@ function ChangePasswordContent() {
 
   const onSubmit = async (data: ResetPasswordSchema) => {
     try {
-      const response = await changePasswordMutation.mutateAsync({
+      const response = await updatePasswordMutation.mutateAsync({
         password: data.password,
       });
       // newPassword: data.confirmPassword,
@@ -105,7 +105,7 @@ function ChangePasswordContent() {
               <input
                 type={showNewPassword ? "text" : "password"}
                 placeholder="Enter new password"
-                disabled={changePasswordMutation.isPending}
+                disabled={updatePasswordMutation.isPending}
                 {...register("password")}
                 className="w-full h-[48px] bg-[#F8F8F8] rounded-[12px] border-0 px-4 pr-10 text-[16px] placeholder:text-[#181818]/50 focus-visible:ring-0 focus-visible:border-transparent shadow-none disabled:opacity-60"
               />
@@ -137,7 +137,7 @@ function ChangePasswordContent() {
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm your password"
-                disabled={changePasswordMutation.isPending}
+                disabled={updatePasswordMutation.isPending}
                 {...register("confirmPassword")}
                 className="w-full h-[48px] bg-[#F8F8F8] rounded-[12px] border-0 px-4 pr-10 text-[16px] placeholder:text-[#181818]/50 focus-visible:ring-0 focus-visible:border-transparent shadow-none disabled:opacity-60"
               />
@@ -162,10 +162,10 @@ function ChangePasswordContent() {
 
           <button
             type="submit"
-            disabled={changePasswordMutation.isPending}
+            disabled={updatePasswordMutation.isPending}
             className="w-[388px] mx-auto block h-[48px] mt-3 bg-[#005864] rounded-[12px] text-white text-[16px] font-[600] capitalize hover:opacity-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {changePasswordMutation.isPending
+            {updatePasswordMutation.isPending
               ? "Updating..."
               : "Update Password"}
           </button>
