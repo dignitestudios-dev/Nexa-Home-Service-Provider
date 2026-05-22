@@ -14,17 +14,16 @@ import {
   useLoginAuth,
   useRegisterAuth,
 } from "@/hooks/auth/use-auth-mutations";
-import { getApiErrorMessage } from "@/lib/api-error";
 import {
-  loginFlowSchema,
+  loginFlowEmailSchema,
   loginFlowSignupSchema,
-  passwordSchema,
 } from "@/lib/schemas/auth.schema";
+import { toast } from "@/lib/toast";
 import { extractAuthFromResponse } from "@/lib/auth-session";
 import { getRedirectPath } from "@/lib/auth-utils";
 import { setPendingVerifyEmail } from "@/lib/verify-email-storage";
 
-type LoginFormData = z.infer<typeof loginFlowSchema>;
+type LoginFormData = z.infer<typeof loginFlowEmailSchema>;
 
 export default function LoginForm() {
   const router = useRouter();
@@ -32,7 +31,6 @@ export default function LoginForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [checkedEmail, setCheckedEmail] = useState<string | null>(null);
   const [isLoginMode, setIsLoginMode] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
 
   const checkEmailMutation = useCheckEmail();
   const registerMutation = useRegisterAuth();
@@ -43,20 +41,61 @@ export default function LoginForm() {
     registerMutation.isPending ||
     loginMutation.isPending;
 
+  const isEmailCheckedForCurrent = Boolean(checkedEmail);
+
   const {
     register,
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    clearErrors,
   } = useForm<LoginFormData>({
-    resolver: zodResolver(loginFlowSchema),
+    resolver: zodResolver(loginFlowEmailSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: {
       email: "",
       password: "",
       confirmPassword: "",
     },
   });
+
+  useEffect(() => {
+    clearErrors(["password", "confirmPassword"]);
+  }, [isLoginMode, isEmailCheckedForCurrent, clearErrors]);
+
+  const showValidationError = (
+    result: ReturnType<typeof loginFlowSignupSchema.safeParse>,
+  ) => {
+    if (result.success) return true;
+
+    const message =
+      result.error.issues[0]?.message ?? "Please check your details.";
+    toast.error(message);
+    return false;
+  };
+
+  const showFormValidationToast = (fieldErrors: {
+    email?: { message?: string };
+    password?: { message?: string };
+    confirmPassword?: { message?: string };
+  }) => {
+    if (isLoginMode) {
+      if (fieldErrors.email?.message) {
+        toast.error(fieldErrors.email.message);
+      }
+      return;
+    }
+
+    const message =
+      fieldErrors.email?.message ||
+      fieldErrors.password?.message ||
+      fieldErrors.confirmPassword?.message;
+
+    if (message) {
+      toast.error(message);
+    }
+  };
 
   const email = watch("email");
   const password = watch("password");
@@ -65,9 +104,6 @@ export default function LoginForm() {
   const hasEmail = Boolean(normalizedEmail);
   const hasPassword = Boolean(password?.trim());
   const hasConfirmPassword = Boolean(confirmPassword?.trim());
-  const isEmailCheckedForCurrent = Boolean(
-    hasEmail && checkedEmail === normalizedEmail,
-  );
 
   useEffect(() => {
     if (checkedEmail && normalizedEmail !== checkedEmail) {
@@ -91,8 +127,6 @@ export default function LoginForm() {
     const currentEmail = data.email.trim().toLowerCase();
     if (!currentEmail) return;
 
-    setFormError(null);
-
     if (checkedEmail !== currentEmail) {
       try {
         const result = await checkEmailMutation.mutateAsync({
@@ -105,22 +139,17 @@ export default function LoginForm() {
         setValue("password", "");
         setValue("confirmPassword", "");
       } catch (error) {
-        setFormError(
-          getApiErrorMessage(
-            error,
-            "Unable to verify email. Please try again.",
-          ),
+        toast.fromApiError(
+          error,
+          "Unable to verify email. Please try again.",
         );
       }
       return;
     }
 
     if (isLoginMode) {
-      const passwordResult = passwordSchema.safeParse(data.password);
-      if (!passwordResult.success) {
-        setFormError(
-          passwordResult.error.issues[0]?.message ?? "Invalid password",
-        );
+      if (!data.password?.trim()) {
+        toast.error("Password is required");
         return;
       }
 
@@ -144,20 +173,15 @@ export default function LoginForm() {
 
         router.push(redirectPath);
       } catch (error) {
-        setFormError(
-          getApiErrorMessage(error, "Login failed. Please try again."),
-        );
+        toast.fromApiError(error, "Login failed. Please try again.");
       }
       return;
     }
 
-    const signupResult = loginFlowSignupSchema.safeParse(data);
-    if (!signupResult.success) {
-      setFormError(
-        signupResult.error.issues[0]?.message ?? "Please check your details.",
-      );
-      return;
-    }
+    const signupValid = showValidationError(
+      loginFlowSignupSchema.safeParse(data),
+    );
+    if (!signupValid) return;
 
     try {
       await registerMutation.mutateAsync({
@@ -170,15 +194,13 @@ export default function LoginForm() {
         `/auth/signup-verify-otp?email=${encodeURIComponent(currentEmail)}`,
       );
     } catch (error) {
-      setFormError(
-        getApiErrorMessage(error, "Signup failed. Please try again."),
-      );
+      toast.fromApiError(error, "Signup failed. Please try again.");
     }
   };
 
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(onSubmit, showFormValidationToast)}
       className="w-full max-w-[388px] flex flex-col"
     >
       <div className="text-center">
@@ -202,11 +224,6 @@ export default function LoginForm() {
             className="mt-[6px] h-[48px] rounded-[12px] bg-[#F8F8F8] border-0 px-4 text-[16px] placeholder:text-[#181818]/50 focus-visible:ring-0 focus-visible:border-transparent shadow-none"
             {...register("email")}
           />
-          {errors.email && (
-            <p className="mt-1.5 text-sm text-red-600">
-              {errors.email.message}
-            </p>
-          )}
         </div>
 
         {isEmailCheckedForCurrent && (
@@ -218,6 +235,7 @@ export default function LoginForm() {
               register={register}
               fieldName="password"
               isLoading={isLoading}
+          
             />
 
             {!isLoginMode && (
@@ -231,12 +249,6 @@ export default function LoginForm() {
               />
             )}
           </>
-        )}
-
-        {formError && (
-          <p className="mb-4 text-sm text-red-600" role="alert">
-            {formError}
-          </p>
         )}
 
         <button
@@ -309,6 +321,7 @@ function PasswordField({
   register,
   fieldName,
   isLoading,
+  hint,
 }: {
   label: string;
   showPassword: boolean;
@@ -316,6 +329,7 @@ function PasswordField({
   register: ReturnType<typeof useForm<LoginFormData>>["register"];
   fieldName: "password" | "confirmPassword";
   isLoading: boolean;
+  hint?: string;
 }) {
   return (
     <div className="mb-4">
@@ -341,6 +355,10 @@ function PasswordField({
           {showPassword ? <Eye size={18} /> : <EyeClosed size={18} />}
         </button>
       </div>
+
+      {hint ? (
+        <p className="mt-1.5 text-xs text-[#181818]/60">{hint}</p>
+      ) : null}
     </div>
   );
 }

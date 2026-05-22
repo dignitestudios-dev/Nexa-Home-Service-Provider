@@ -5,7 +5,15 @@ import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { getRedirectPath } from "@/lib/auth-utils";
+import {
+  canAccessOnboardingPath,
+  getNextOnboardingStepPath,
+  isOnboardingComplete,
+  isOnboardingPath,
+  isPostIdentityOnboardingPath,
+} from "@/lib/onboarding-steps";
 import { isPasswordResetFlow } from "@/lib/reset-password-storage";
+import { getPersistedAuthUser } from "@/lib/auth-session";
 import {
   getPendingVerifyEmail,
   setPendingVerifyEmail,
@@ -31,7 +39,6 @@ const isResetPasswordPath = (path: string) =>
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const router = useRouter();
   const pathname = usePathname();
-  console.log("🚀 ~ ProtectedRoute ~ pathname:", pathname);
   const { isAuthenticated, user } = useSelector(
     (state: RootState) => state.auth,
   );
@@ -60,11 +67,36 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       return;
     }
 
-    const redirectPath = getRedirectPath(user);
-    console.log("🚀 ~ ProtectedRoute ~ redirectPath:", redirectPath);
+    const effectiveUser = user ?? getPersistedAuthUser();
+    if (!effectiveUser) {
+      return;
+    }
+
+    const redirectPath = getRedirectPath(effectiveUser);
 
     const isOnHomeArea =
       pathname === "/home" || pathname.startsWith("/profile-settings");
+
+    if (isPostIdentityOnboardingPath(pathname)) {
+      return;
+    }
+
+    if (isOnboardingPath(pathname)) {
+      if (canAccessOnboardingPath(pathname, effectiveUser)) {
+        return;
+      }
+      router.replace(getNextOnboardingStepPath(effectiveUser));
+      return;
+    }
+
+    if (
+      isOnboardingComplete(effectiveUser) &&
+      pathname.startsWith("/onboarding") &&
+      !isPostIdentityOnboardingPath(pathname)
+    ) {
+      router.replace("/home");
+      return;
+    }
 
     if (redirectPath === "/home" && isOnHomeArea) {
       return;
@@ -74,10 +106,19 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       return;
     }
 
+    if (
+      redirectPath.startsWith("/onboarding") &&
+      !isPublicAuthPath &&
+      pathname !== redirectPath
+    ) {
+      router.replace(redirectPath);
+      return;
+    }
+
     if (redirectPath === "/auth/verify-email") {
       const email =
-        user?.email?.trim().toLowerCase() ||
-        user?.primaryIdentifier?.trim().toLowerCase() ||
+        effectiveUser.email?.trim().toLowerCase() ||
+        effectiveUser.primaryIdentifier?.trim().toLowerCase() ||
         getPendingVerifyEmail();
 
       if (email) {

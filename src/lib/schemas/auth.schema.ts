@@ -5,57 +5,48 @@ export const emailSchema = z.string().min(1, "Email is required").email("Invalid
 
 
 /* ---------------- PASSWORD ---------------- */
+
 export const passwordSchema = z
   .string()
+  .min(1, "Password is required")
   .min(8, "Password must be at least 8 characters")
   .refine((val) => /[A-Z]/.test(val), {
-    message: "Must contain 1 uppercase letter",
+    message: "Must contain at least 1 uppercase letter",
   })
-  .refine((val) => /[!@#$%^&*]/.test(val), {
-    message: "Must contain 1 special character",
+  .refine((val) => /[^A-Za-z0-9]/.test(val), {
+    message: "Must contain at least 1 special character (!@#$%^&* etc.)",
   });
-
 
 /* ---------------- LOGIN FLOW (email check + login/signup) ---------------- */
-export const loginFlowSchema = z
+export const loginFlowEmailSchema = z.object({
+  email: emailSchema,
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
+});
+
+/** Login only — no strength rules (existing users may have any password). */
+export const loginPasswordSchema = z
+  .string()
+  .min(1, "Password is required");
+
+export const loginFlowLoginSchema = z.object({
+  email: emailSchema,
+  password: loginPasswordSchema,
+  confirmPassword: z.string().optional(),
+});
+
+export const loginFlowSignupSchema = z
   .object({
     email: emailSchema,
-    password: z.string().optional(),
-    confirmPassword: z.string().optional(),
+    password: passwordSchema,
+    confirmPassword: passwordSchema,
   })
-  .superRefine((data, ctx) => {
-    const password = data.password?.trim() ?? "";
-    const confirmPassword = data.confirmPassword?.trim() ?? "";
-
-    if (!password) return;
-
-    const passwordResult = passwordSchema.safeParse(password);
-    if (!passwordResult.success) {
-      ctx.addIssue({
-        code: "custom",
-        message: passwordResult.error.issues[0]?.message ?? "Invalid password",
-        path: ["password"],
-      });
-    }
-
-    if (confirmPassword && password !== confirmPassword) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Passwords do not match",
-        path: ["confirmPassword"],
-      });
-    }
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
   });
 
-export const loginFlowSignupSchema = loginFlowSchema.superRefine((data, ctx) => {
-  if (!data.confirmPassword?.trim()) {
-    ctx.addIssue({
-      code: "custom",
-      message: "Confirm password is required",
-      path: ["confirmPassword"],
-    });
-  }
-});
+export const loginFlowSchema = loginFlowEmailSchema;
 
 /* ---------------- LOGIN ---------------- */
 export const loginSchema = z.object({

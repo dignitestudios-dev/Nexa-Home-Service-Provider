@@ -2,6 +2,7 @@
 
 import { Bell, ChevronDown } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -12,18 +13,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useLogoutAuth } from "@/hooks/auth/use-auth-mutations";
 import { useCurrentUserQuery } from "@/hooks/user/use-current-user-query";
+import { MAIN_NAV_ITEMS } from "@/lib/main-nav";
 import {
   getUserDisplayName,
   getUserInitials,
 } from "@/lib/parse-user-profile";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store/index";
-
-const navItems = [
-  { label: "Home", href: "/home" },
-  { label: "Jobs", href: "/home" },
-  { label: "Credit Plans", href: "/home" },
-] as const;
 
 export default function HomeHeader() {
   const router = useRouter();
@@ -44,32 +40,37 @@ export default function HomeHeader() {
   return (
     <header className="rounded-[50px] bg-[#F8F8F8] px-10 py-5">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-3">
-          <Image src="/asset/darklogo.png" alt="NexaHome" width={200} height={200} />
-        </div>
+        <Link href="/home" className="flex shrink-0 items-center gap-3">
+          <Image
+            src="/asset/darklogo.png"
+            alt="NexaHome"
+            width={200}
+            height={200}
+            className="h-auto w-[200px]"
+          />
+        </Link>
 
         <div className="flex flex-wrap items-center gap-5">
-          <nav className="flex items-center gap-2">
-            {navItems.map((item) => {
-              const isActive =
-                item.label === "Home"
-                  ? pathname === "/home"
-                  : pathname === item.href;
+          <nav className="flex items-center gap-2" aria-label="Main navigation">
+            {MAIN_NAV_ITEMS.map((item) => {
+              const isActive = item.isActive(pathname);
 
               return (
-                <button
+                <Link
                   key={item.label}
-                  type="button"
-                  onClick={() => router.push(item.href)}
-                  className={`cursor-pointer rounded-full px-4 py-3 text-[16px] leading-5 ${
-                    isActive ? "font-[600] text-[#005864]" : "font-[400] text-black/70"
+                  href={item.href}
+                  className={`rounded-full px-4 py-3 text-[16px] leading-5 transition-colors ${
+                    isActive
+                      ? "font-[600] text-[#005864]"
+                      : "font-[400] text-black/70 hover:text-black"
                   }`}
+                  aria-current={isActive ? "page" : undefined}
                 >
                   {item.label}
                   {isActive ? (
                     <span className="mt-2 block h-[3px] w-full rounded bg-[#005864]" />
                   ) : null}
-                </button>
+                </Link>
               );
             })}
           </nav>
@@ -77,6 +78,7 @@ export default function HomeHeader() {
           <button
             type="button"
             className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#181818] transition hover:bg-[#EDEDED]"
+            aria-label="Notifications"
           >
             <Bell className="h-5 w-5" />
           </button>
@@ -113,14 +115,14 @@ export default function HomeHeader() {
             >
               <div className="px-[11px] py-[10px]">
                 <DropdownMenuItem
-                  onClick={() => router.push("/home")}
+                  onClick={() => router.push("/profile-settings")}
                   className="h-[18px] cursor-pointer rounded-none px-0 text-[14px] font-[500] text-[#1C1C1C] focus:bg-transparent"
                 >
                   View Profile
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-3 bg-[#E4E4E4]" />
                 <DropdownMenuItem
-                  onClick={() => router.push("/profile-settings/notifications")}
+                  onClick={() => router.push("/profile-settings")}
                   className="h-[18px] cursor-pointer rounded-none px-0 text-[14px] font-[500] text-[#1C1C1C] focus:bg-transparent"
                 >
                   Settings

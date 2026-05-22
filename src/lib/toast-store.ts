@@ -26,10 +26,12 @@ function createId() {
   return `toast-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export function subscribeToToasts(listener: Listener) {
+export function subscribeToToasts(listener: Listener): () => void {
   listeners.add(listener);
   listener([...toasts]);
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 export function dismissToast(id: string) {

@@ -79,14 +79,26 @@ function AccountStatusContent() {
     ? rawStatus
     : "submitted") as StatusKey;
   const [status, setStatus] = useState<StatusKey>(initialStatus);
-  const [isProfileSetupModalOpen, setIsProfileSetupModalOpen] = useState(initialStatus === "submitted");
+  const [isProfileSetupModalOpen, setIsProfileSetupModalOpen] = useState(false);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
+
+  const HOME_REDIRECT_MS = 7500;
 
   useEffect(() => {
     setStatus(initialStatus);
-    setIsProfileSetupModalOpen(initialStatus === "submitted");
+    setIsProfileSetupModalOpen(false);
     setShowWalkthrough(false);
   }, [initialStatus]);
+
+  useEffect(() => {
+    if (initialStatus !== "submitted") return;
+
+    const homeTimer = setTimeout(() => {
+      router.replace("/home");
+    }, HOME_REDIRECT_MS);
+
+    return () => clearTimeout(homeTimer);
+  }, [initialStatus, router]);
 
   useEffect(() => {
     if (status !== "submitted") return;
@@ -105,12 +117,7 @@ function AccountStatusContent() {
     <>
       <Dialog
         open={isProfileSetupModalOpen}
-        onOpenChange={(isOpen) => {
-          setIsProfileSetupModalOpen(isOpen);
-          if (!isOpen && initialStatus === "submitted") {
-            router.push("/home");
-          }
-        }}
+        onOpenChange={setIsProfileSetupModalOpen}
       >
         <DialogContent
           showCloseButton={false}
@@ -118,12 +125,7 @@ function AccountStatusContent() {
         >
           <button
             type="button"
-            onClick={() => {
-              setIsProfileSetupModalOpen(false);
-              if (initialStatus === "submitted") {
-                router.push("/home");
-              }
-            }}
+            onClick={() => setIsProfileSetupModalOpen(false)}
             className="absolute right-5 top-5 inline-flex h-10 w-10 items-center justify-center rounded-full text-[#181818]/80 hover:bg-black/5"
             aria-label="Close modal"
           >
@@ -247,6 +249,11 @@ function AccountStatusContent() {
                 <p className="max-w-[420px] text-[16px] leading-[22px] tracking-[-0.014em] text-black/80">
                   {content.description}
                 </p>
+                {initialStatus === "submitted" && (
+                  <p className="text-[14px] leading-[20px] text-black/50">
+                    Redirecting to home in a few seconds…
+                  </p>
+                )}
               </div>
 
               {status === "resubmit" && (

@@ -11,6 +11,9 @@ import {
   UserRound,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+import { navigateToNextOnboardingStep } from "@/lib/onboarding-navigation";
+import type { RootState } from "@/store/index";
 import {
   BusinessDocumentsFormData,
   businessDocumentsSchema,
@@ -52,6 +55,8 @@ type DocumentKey = (typeof documentFields)[number]["key"];
 
 export default function BusinessDocumentsPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const user = useSelector((state: RootState) => state.auth.user);
   const uploadDocsMutation = useUploadBusinessDocsSetup();
 
   const [files, setFiles] = useState<Partial<Record<DocumentKey, File>>>({});
@@ -100,7 +105,7 @@ export default function BusinessDocumentsPage() {
 
   const onSubmit = async (data: BusinessDocumentsFormData) => {
     try {
-      await uploadDocsMutation.mutateAsync({
+      const response = await uploadDocsMutation.mutateAsync({
         businessLicense: data.businessLicense,
 
         taxRegistration: data.taxRegistration,
@@ -110,7 +115,10 @@ export default function BusinessDocumentsPage() {
         proofOfAddress: data.proofOfAddress,
       });
 
-      router.push("/onboarding/portfolio");
+      navigateToNextOnboardingStep(router, dispatch, user, {
+        apiResponse: response,
+        completedFlags: { businessDocsSubmitted: true },
+      });
     } catch (error) {
       console.log(error);
     }
