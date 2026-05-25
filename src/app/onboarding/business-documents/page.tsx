@@ -15,10 +15,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { navigateToNextOnboardingStep } from "@/lib/onboarding-navigation";
 import type { RootState } from "@/store/index";
 import {
+  BUSINESS_DOC_ACCEPT,
+  BUSINESS_DOC_LABELS,
   BusinessDocumentsFormData,
   businessDocumentsSchema,
+  validateBusinessDocumentFile,
+  type BusinessDocumentFieldKey,
 } from "@/lib/schemas/profile-setup.schema";
 import { useUploadBusinessDocsSetup } from "@/hooks/onboarding/profile-setup-mutation";
+import { toast } from "@/lib/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -29,27 +34,9 @@ const stepItems = [
   { label: "Identity Card", icon: IdCard, active: false },
 ];
 
-const documentFields = [
-  {
-    key: "businessLicense",
-    label: "Business License ",
-  },
-
-  {
-    key: "taxRegistration",
-    label: "Tax Registration ",
-  },
-
-  {
-    key: "ownershipCertificate",
-    label: "Business/Ownership Certificate",
-  },
-
-  {
-    key: "proofOfAddress",
-    label: "Proof of address",
-  },
-] as const;
+const documentFields = (
+  Object.entries(BUSINESS_DOC_LABELS) as [BusinessDocumentFieldKey, string][]
+).map(([key, label]) => ({ key, label }));
 
 type DocumentKey = (typeof documentFields)[number]["key"];
 
@@ -65,6 +52,8 @@ export default function BusinessDocumentsPage() {
     handleSubmit,
     watch,
     setValue,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useForm<BusinessDocumentsFormData>({
     resolver: zodResolver(businessDocumentsSchema),
@@ -262,13 +251,31 @@ export default function BusinessDocumentsPage() {
                         }}
                         type="file"
                         className="hidden"
-                        accept=".jpg,.jpeg,.png,.pdf"
+                        accept={BUSINESS_DOC_ACCEPT}
                         onChange={(event) => {
-                          const file = event.target.files?.[0];
-
+                          const file = event.target.files?.[0] ?? null;
                           if (!file) return;
 
-                          setValue(field.key, file, {
+                          const validationError = validateBusinessDocumentFile(
+                            file,
+                            field.key,
+                          );
+
+                          if (validationError) {
+                            toast.error(validationError);
+                            setError(field.key, {
+                              type: "manual",
+                              message: validationError,
+                            });
+                            setValue(field.key, null as any, {
+                              shouldValidate: true,
+                            });
+                            event.target.value = "";
+                            return;
+                          }
+
+                          clearErrors(field.key);
+                          setValue(field.key, file!, {
                             shouldValidate: true,
                           });
                         }}

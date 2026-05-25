@@ -12,6 +12,8 @@ import {
   useResendOtp,
   useVerifyEmail,
 } from "@/hooks/auth/use-auth-mutations";
+import { getPersistedAuthUser } from "@/lib/auth-session";
+import { getRedirectPath } from "@/lib/auth-utils";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { otpSchema } from "@/lib/schemas/auth.schema";
 import { z } from "zod";
@@ -150,16 +152,11 @@ function SignupVerificationContent() {
     }
   }, [timer]);
 
-  useEffect(() => {
-    if (!isSuccessModalOpen) return;
-
-    const redirectTimer = setTimeout(() => {
-      setIsSuccessModalOpen(false);
-      router.push("/onboarding/profile-setup");
-    }, 3500);
-
-    return () => clearTimeout(redirectTimer);
-  }, [isSuccessModalOpen, router]);
+  const handleSuccessModalClose = () => {
+    setIsSuccessModalOpen(false);
+    const loggedInUser = getPersistedAuthUser();
+    router.push(getRedirectPath(loggedInUser));
+  };
 
   return (
     <div className="relative w-full self-stretch min-h-[560px]">
@@ -253,10 +250,7 @@ function SignupVerificationContent() {
 
       <AccountCreatedModal
         open={isSuccessModalOpen}
-        onClose={() => {
-          setIsSuccessModalOpen(false);
-          router.push("/onboarding/profile-setup");
-        }}
+        onClose={handleSuccessModalClose}
       />
     </div>
   );

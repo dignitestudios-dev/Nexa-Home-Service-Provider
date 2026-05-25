@@ -11,7 +11,7 @@ export const MAIN_NAV_ITEMS: MainNavItem[] = [
     isActive: (pathname) => pathname === "/home",
   },
   {
-    label: "Jobs",
+    label: "My Jobs",
     href: "/home",
     isActive: (pathname) =>
       pathname === "/jobs" || pathname.startsWith("/jobs/"),

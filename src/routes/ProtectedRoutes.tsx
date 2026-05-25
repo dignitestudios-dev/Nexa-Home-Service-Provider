@@ -36,6 +36,11 @@ const PUBLIC_AUTH_PATHS = [
 const isResetPasswordPath = (path: string) =>
   path === "/auth/change-password" || path.startsWith("/auth/change-password/");
 
+/** OTP success modal must close before redirect (signup-verify-otp page). */
+const isSignupOtpHoldPath = (path: string) =>
+  path === "/auth/signup-verify-otp" ||
+  path.startsWith("/auth/signup-verify-otp/");
+
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -69,6 +74,10 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
     const effectiveUser = user ?? getPersistedAuthUser();
     if (!effectiveUser) {
+      return;
+    }
+
+    if (isSignupOtpHoldPath(pathname)) {
       return;
     }
 

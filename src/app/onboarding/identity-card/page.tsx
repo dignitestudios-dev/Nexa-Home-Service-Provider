@@ -217,8 +217,12 @@ export default function IdentityCardOnboardingPage() {
 
                   return (
                     <div key={field.key}>
-                      <p className="mb-2 text-sm font-medium text-[#1C1C1C]">
+                      <p className="text-sm font-medium text-[#1C1C1C]">
                         {field.label}
+                      </p>
+                      <p className="mb-2 mt-1 text-xs text-[#181818]/60">
+                        JPG, PNG or PDF (max 10MB). Files over 10MB cannot be
+                        uploaded.
                       </p>
 
                       <input
