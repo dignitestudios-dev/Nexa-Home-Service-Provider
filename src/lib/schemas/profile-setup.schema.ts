@@ -127,7 +127,7 @@ const ACCEPTED_FILE_TYPES = [
   "application/pdf",
 ];
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const idFileSchema = z
   .instanceof(File, {
@@ -139,7 +139,7 @@ const idFileSchema = z
   })
 
   .refine((file) => file.size <= MAX_FILE_SIZE, {
-    message: "File size must be less than 20MB",
+    message: "File size must be less than 10MB",
   });
 
 export function validateIdentityCardUploadFile(file: File): string | null {

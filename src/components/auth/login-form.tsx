@@ -33,7 +33,6 @@ export default function LoginForm() {
   const [checkedEmail, setCheckedEmail] = useState<string | null>(null);
   const [isLoginMode, setIsLoginMode] = useState("no");
   const [showConflictModal, setShowConflictModal] = useState(false);
-  console.log("🚀 ~ LoginForm ~ isLoginMode:", isLoginMode);
 
   const checkEmailMutation = useCheckEmail();
   const registerMutation = useRegisterAuth();

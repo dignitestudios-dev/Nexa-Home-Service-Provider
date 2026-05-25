@@ -65,6 +65,8 @@ export default function BusinessDocumentsPage() {
     handleSubmit,
     watch,
     setValue,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useForm<BusinessDocumentsFormData>({
     resolver: zodResolver(businessDocumentsSchema),
@@ -268,6 +270,19 @@ export default function BusinessDocumentsPage() {
 
                           if (!file) return;
 
+                          // File size validation (8MB = 8388608 bytes)
+                          const MAX_FILE_SIZE = 8 * 1024 * 1024;
+
+                          if (file.size > MAX_FILE_SIZE) {
+                            setError(field.key, {
+                              type: "manual",
+                              message: `File size must not exceed 8MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+                            });
+                            return;
+                          }
+
+                          // Clear error if file is valid
+                          clearErrors(field.key);
                           setValue(field.key, file, {
                             shouldValidate: true,
                           });

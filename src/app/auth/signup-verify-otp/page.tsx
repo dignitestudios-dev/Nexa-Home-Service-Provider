@@ -150,16 +150,16 @@ function SignupVerificationContent() {
     }
   }, [timer]);
 
-  useEffect(() => {
-    if (!isSuccessModalOpen) return;
+  // useEffect(() => {
+  //   if (!isSuccessModalOpen) return;
 
-    const redirectTimer = setTimeout(() => {
-      setIsSuccessModalOpen(false);
-      router.push("/onboarding/profile-setup");
-    }, 3500);
+  //   const redirectTimer = setTimeout(() => {
+  //     setIsSuccessModalOpen(false);
+  //     router.push("/onboarding/profile-setup");
+  //   }, 3500);
 
-    return () => clearTimeout(redirectTimer);
-  }, [isSuccessModalOpen, router]);
+  //   return () => clearTimeout(redirectTimer);
+  // }, [isSuccessModalOpen, router]);
 
   return (
     <div className="relative w-full self-stretch min-h-[560px]">
