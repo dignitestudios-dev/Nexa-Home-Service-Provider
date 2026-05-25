@@ -2,8 +2,8 @@ import axios from "axios";
 import { clearAuthTokenCookie, getAuthTokenCookie } from "@/lib/auth-session";
 
 // export const baseURL = "https://d3d7-101-53-226-103.ngrok-free.app";
-// export const baseURL = "https://api.staging.nexahomeapp.com";
-export const baseURL = "https://api.dev.nexahomeapp.com";
+export const baseURL = "https://api.staging.nexahomeapp.com";
+// export const baseURL = "https://api.dev.nexahomeapp.com";
 
 const headers = {
   "Content-Type": "application/json",
