@@ -802,7 +802,7 @@ export default function ProfileSetupOnboardingPage() {
             <button
               type="submit"
               disabled={completeProfileMutation.isPending}
-              className="mx-auto mt-6 block h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:opacity-50"
+              className="mx-auto mt-6 block h-12 w-full cursor-pointer max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:opacity-50"
             >
               {completeProfileMutation.isPending
                 ? "Please wait..."

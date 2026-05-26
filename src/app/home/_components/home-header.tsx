@@ -14,10 +14,7 @@ import {
 import { useLogoutAuth } from "@/hooks/auth/use-auth-mutations";
 import { useCurrentUserQuery } from "@/hooks/user/use-current-user-query";
 import { MAIN_NAV_ITEMS } from "@/lib/main-nav";
-import {
-  getUserDisplayName,
-  getUserInitials,
-} from "@/lib/parse-user-profile";
+import { getUserDisplayName, getUserInitials } from "@/lib/parse-user-profile";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store/index";
 
@@ -115,7 +112,7 @@ export default function HomeHeader() {
             >
               <div className="px-[11px] py-[10px]">
                 <DropdownMenuItem
-                  onClick={() => router.push("/profile-settings")}
+                  onClick={() => router.push("/user-profile")}
                   className="h-[18px] cursor-pointer rounded-none px-0 text-[14px] font-[500] text-[#1C1C1C] focus:bg-transparent"
                 >
                   View Profile

@@ -54,7 +54,7 @@ export function getUserInitials(name: string): string {
 }
 
 export function formatDisplayPhone(phone: string | null | undefined): string {
-  if (!phone?.trim()) return "Not set";
+  if (!phone?.trim()) return "Not Available";
 
   const digits = phone.replace(/\D/g, "");
 

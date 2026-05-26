@@ -302,7 +302,7 @@ export default function IdentityCardOnboardingPage() {
               <button
                 type="submit"
                 disabled={uploadIdDocsMutation.isPending}
-                className="mt-8 h-[48px] w-full rounded-[12px] bg-[#005864] text-[16px] font-semibold leading-[20px] text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-8 h-[48px] w-full cursor-pointer rounded-[12px] bg-[#005864] text-[16px] font-semibold leading-[20px] text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {uploadIdDocsMutation.isPending ? "Uploading..." : "Continue"}
               </button>
