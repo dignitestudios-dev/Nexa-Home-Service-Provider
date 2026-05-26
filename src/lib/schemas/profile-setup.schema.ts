@@ -65,19 +65,33 @@ export const profileSetupSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(1, "Name is required")
     .max(32, "Name cannot exceed 32 characters")
-    .regex(
-      PROFILE_NAME_PATTERN,
+    .refine(
+      (value) => !value || PROFILE_NAME_PATTERN.test(value),
       "Name can only contain letters, spaces, hyphens and apostrophes (2–32 characters)",
     ),
+
+  companyName: z
+    .string()
+    .trim()
+    .min(1, "Company name is required")
+    .max(30, "Company name cannot exceed 30 characters"),
+
+  phoneNumber: z
+    .string()
+    .min(1, "Phone number is required")
+    .refine((value) => {
+      const digits = value.replace(/\D/g, "");
+      if (digits.length === 10) return true;
+      return digits.length === 11 && digits.startsWith("1");
+    }, "Enter a valid US phone number (e.g. (202) 555-0156)"),
 
   services: z.array(z.string()).min(1, "Please select at least one service"),
 
   overview: z
     .string()
     .min(10, "Overview must be at least 10 characters")
-    .max(120, "Overview cannot exceed 120 characters"),
+    .max(500, "Overview cannot exceed 500 characters"),
 
   label: z.string().min(2, "Label is required"),
 
@@ -93,6 +107,10 @@ export const profileSetupSchema = z.object({
   country: z.string().optional(),
   state: z.string().optional(),
   city: z.string().optional(),
+
+  acceptTerms: z
+    .boolean()
+    .refine((value) => value, "Please accept Terms & Conditions"),
 });
 
 export const BUSINESS_DOC_MAX_BYTES = 10 * 1024 * 1024;

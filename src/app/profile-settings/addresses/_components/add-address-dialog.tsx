@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useAddAddress } from "@/hooks/addresses/use-address-mutations";
 import { getAuthTokenCookie } from "@/lib/auth-session";
 import { getApiErrorMessage } from "@/lib/api-error";
-import AddressMapPreview from "./address-map-preview";
+import AddressGoogleMapPicker from "./address-google-map-picker";
 import {
   addressDialogContentClass,
   addressDialogFormClass,
@@ -204,19 +204,22 @@ export default function AddAddressDialog({ open, onOpenChange }: AddAddressDialo
             </div>
           </div>
 
-          <div>
-            <p className={addressFieldLabelClass}>Location on Map</p>
-            <AddressMapPreview
-              compact
+          {open ? (
+            <AddressGoogleMapPicker
+              enabled={open}
+              searchInputId="add-address-map-search"
               latitude={form.latitude}
               longitude={form.longitude}
-              address={form.address}
-              city={form.city}
-              state={form.state}
-              zipCode={form.zipCode}
-              country={form.country}
+              onLocationChange={(update) =>
+                setForm((prev) => ({
+                  ...prev,
+                  ...update,
+                  country: update.country || prev.country,
+                }))
+              }
+              compact
             />
-          </div>
+          ) : null}
 
           {formError ? <p className="text-[12px] text-[#FF0000]">{formError}</p> : null}
 

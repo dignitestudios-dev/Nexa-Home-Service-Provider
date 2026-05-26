@@ -12,7 +12,7 @@ export default function MainAppShell({ children }: MainAppShellProps) {
     <div className="min-h-screen bg-[#ffff] p-3 md:p-5">
       <HomeHeader />
 
-      <div className="mx-auto w-full max-w-[1440px] rounded-[32px] bg-white p-4 md:p-8">
+      <div className="mx-auto w-full max-w-[1640px] rounded-[32px] bg-white p-4 md:p-8">
         {children}
       </div>
     </div>

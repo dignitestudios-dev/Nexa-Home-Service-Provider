@@ -10,7 +10,10 @@ import {
   clearPasswordResetSession,
   setPasswordResetSession,
 } from "@/lib/reset-password-storage";
-import { clearPendingVerifyEmail } from "@/lib/verify-email-storage";
+import {
+  clearPendingVerifyEmail,
+} from "@/lib/verify-email-storage";
+import { normalizeProfilePicture } from "@/lib/profile-picture";
 
 export const AUTH_TOKEN_COOKIE = "token";
 const AUTH_USER_STORAGE_KEY = "nexa_auth_user";
@@ -46,7 +49,12 @@ export function getPersistedAuthUser(): User | null {
     const raw = localStorage.getItem(AUTH_USER_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as User;
-    return parsed?._id ? parsed : null;
+    if (!parsed?._id) return null;
+
+    return {
+      ...parsed,
+      profilePicture: normalizeProfilePicture(parsed.profilePicture),
+    };
   } catch {
     return null;
   }
@@ -120,7 +128,14 @@ export function extractAuthFromResponse(data: unknown): {
 
   return {
     token,
-    user: userRaw as User | null,
+    user: userRaw
+      ? ({
+          ...(userRaw as User),
+          profilePicture: normalizeProfilePicture(
+            (userRaw as Record<string, unknown>).profilePicture,
+          ),
+        } as User)
+      : null,
   };
 }
 

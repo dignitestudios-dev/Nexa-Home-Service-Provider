@@ -8,8 +8,11 @@ import { API } from "@/lib/axios";
 
 export interface CompleteProfilePayload {
   name: string;
+  profilePicture?: File;
   overview?: string;
   referralCode?: string;
+  companyName: string;
+  phone?: string;
 
   label: string;
   address: string;
@@ -51,12 +54,22 @@ export const profileSetupService = {
 
     formData.append("name", payload.name);
 
+    if (payload.profilePicture) {
+      formData.append("profilePicture", payload.profilePicture);
+    }
+
     if (payload.overview) {
       formData.append("overview", payload.overview);
     }
 
     if (payload.referralCode) {
       formData.append("referralCode", payload.referralCode);
+    }
+
+    formData.append("companyName", payload.companyName);
+
+    if (payload.phone) {
+      formData.append("phone", payload.phone);
     }
 
     formData.append("label", payload.label);

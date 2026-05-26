@@ -1,9 +1,15 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
+export type UserCategory = {
+  id: string;
+  name: string;
+};
+
 export interface User {
   _id: string;
   email: string;
   name: string | null;
+  companyName: string | null;
   role: string;
   authType: string;
   primaryIdentifier: string;
@@ -11,6 +17,7 @@ export interface User {
   contactEmail: string | null;
   profilePicture: string | null;
   overview: string | null;
+  selectedCategories?: UserCategory[];
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   isPasswordSet: boolean;

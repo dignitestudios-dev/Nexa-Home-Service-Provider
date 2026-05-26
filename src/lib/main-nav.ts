@@ -12,13 +12,13 @@ export const MAIN_NAV_ITEMS: MainNavItem[] = [
   },
   {
     label: "My Jobs",
-    href: "/home",
+    href: "/my-jobs",
     isActive: (pathname) =>
-      pathname === "/jobs" || pathname.startsWith("/jobs/"),
+      pathname === "/my-jobs" || pathname.startsWith("/my-jobs/"),
   },
   {
     label: "Credit Plans",
-    href: "/home",
+    href: "/credit-plans",
     isActive: (pathname) =>
       pathname === "/credit-plans" || pathname.startsWith("/credit-plans/"),
   },

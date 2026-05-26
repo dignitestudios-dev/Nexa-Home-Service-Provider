@@ -178,3 +178,64 @@
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* My Jobs — trapezoid tabs with rounded top corners */
+.my-jobs-tab {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  width: 167px;
+  height: 38px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.my-jobs-tab::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  clip-path: polygon(10% 10%, 90% 10%, 96% 100%, 4% 100%);
+  border-radius: 200px 200px 0 0;
+}
+
+.my-jobs-tab__label {
+  position: relative;
+  z-index: 1;
+  color: inherit;
+  font-size: 16px;
+  line-height: 20px;
+  text-align: center;
+  text-transform: capitalize;
+  pointer-events: none;
+}
+
+.my-jobs-tab--active {
+  color: #ffffff;
+}
+
+.my-jobs-tab--active .my-jobs-tab__label {
+  font-weight: 500;
+}
+
+.my-jobs-tab--active::before {
+  background: #005864;
+}
+
+.my-jobs-tab--inactive {
+  color: #1c1c1c;
+}
+
+.my-jobs-tab--inactive .my-jobs-tab__label {
+  font-weight: 400;
+}
+
+.my-jobs-tab--inactive::before {
+  background: #ffffff;
+}

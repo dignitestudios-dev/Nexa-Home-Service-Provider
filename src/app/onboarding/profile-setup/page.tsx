@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Input } from "@/components/ui/input";
 import { useCompleteProfileSetup } from "@/hooks/onboarding/profile-setup-mutation";
 import { navigateToNextOnboardingStep } from "@/lib/onboarding-navigation";
+import { formatUsPhoneNumber, toE164UsPhone } from "@/lib/auth-utils";
 import type { RootState } from "@/store/index";
 import {
   ProfileSetupFormData,
@@ -136,6 +137,8 @@ export default function ProfileSetupOnboardingPage() {
     defaultValues: {
       profileImage: null,
       name: user?.name?.trim() ?? "",
+      companyName: "",
+      phoneNumber: "",
       services: [],
       overview: "",
       label: "",
@@ -148,6 +151,7 @@ export default function ProfileSetupOnboardingPage() {
       country: "",
       state: "",
       city: "",
+      acceptTerms: false,
     },
   });
 
@@ -331,6 +335,9 @@ export default function ProfileSetupOnboardingPage() {
     try {
       const response = await completeProfileMutation.mutateAsync({
         name: data.name.trim(),
+        profilePicture: data.profileImage,
+        companyName: data.companyName.trim(),
+        phone: toE164UsPhone(data.phoneNumber),
         overview: data.overview,
         label: data.label,
         address: `${data.address}, ${data.streetName}, ${data.officeNo}`,
@@ -517,7 +524,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div>
                 <label className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
-                  Name*
+                  Full Name (Optional)
                 </label>
                 <Input
                   {...register("name")}
@@ -529,6 +536,84 @@ export default function ProfileSetupOnboardingPage() {
                 {errors.name && (
                   <p className="mt-1 text-sm text-red-500">
                     {errors.name.message}
+                  </p>
+                )}
+              </div>
+
+              {/* ========================= */}
+              {/* COMPANY NAME */}
+              {/* ========================= */}
+
+              <div>
+                <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                  Company Name*
+                </label>
+                <Input
+                  {...register("companyName")}
+                  maxLength={30}
+                  placeholder="ABC"
+                  className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4 text-[16px] placeholder:text-[rgba(24,24,24,0.8)]"
+                />
+                {errors.companyName && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.companyName.message}
+                  </p>
+                )}
+              </div>
+
+              {/* ========================= */}
+              {/* PHONE NUMBER */}
+              {/* ========================= */}
+
+              <div>
+                <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                  Phone Number
+                </label>
+                <div className="mt-1 flex gap-2">
+                  <div className="flex h-12 w-[91px] shrink-0 items-center justify-center rounded-[12px] bg-[#F8F8F8]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-[5px]">
+                        <img
+                          src="/asset/usa.png"
+                          alt="USA flag"
+                          width={21}
+                          height={15}
+                          className="h-[15px] w-[21px] rounded-[2px] object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                        <span className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
+                          +1
+                        </span>
+                      </div>
+                      <ChevronDown
+                        size={16}
+                        className="text-[rgba(24,24,24,0.8)]"
+                        aria-hidden
+                      />
+                    </div>
+                  </div>
+                  <Input
+                    type="text"
+                    inputMode="tel"
+                    placeholder="Add phone number"
+                    className="h-12 flex-1 rounded-[12px] border-0 bg-[#F8F8F8] px-4 text-[16px] placeholder:text-[rgba(24,24,24,0.8)]"
+                    {...register("phoneNumber", {
+                      onChange: (event) => {
+                        const formattedValue = formatUsPhoneNumber(
+                          event.target.value,
+                        );
+                        setValue("phoneNumber", formattedValue, {
+                          shouldValidate: true,
+                        });
+                      },
+                    })}
+                  />
+                </div>
+                {errors.phoneNumber && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.phoneNumber.message}
                   </p>
                 )}
               </div>
@@ -640,7 +725,7 @@ export default function ProfileSetupOnboardingPage() {
                 <div className="mt-1 rounded-[12px] bg-[#F8F8F8] p-3">
                   <textarea
                     {...register("overview")}
-                    maxLength={120}
+                    maxLength={500}
                     placeholder="Write here"
                     className="h-[96px] w-full resize-none bg-transparent text-[16px] leading-5 text-[#1C1C1C] placeholder:text-black/55 outline-none"
                   />
@@ -653,7 +738,7 @@ export default function ProfileSetupOnboardingPage() {
                     </p>
                   )}
                   <p className="ml-auto text-right text-[16px] leading-5 text-black/60">
-                    {overview.length}/120
+                    {overview.length}/500
                   </p>
                 </div>
               </div>
@@ -797,12 +882,52 @@ export default function ProfileSetupOnboardingPage() {
               <input type="hidden" {...register("longitude")} />
             </div>
 
+            <div className="mt-6">
+              <label className="flex cursor-pointer items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-5 w-5 rounded-[4px] border border-[#181818]/80 accent-[#005864]"
+                  {...register("acceptTerms")}
+                  onChange={(e) => {
+                    setValue("acceptTerms", e.target.checked, {
+                      shouldValidate: true,
+                    });
+                  }}
+                />
+                <span className="text-[15px] leading-[19px] text-black/80">
+                  I accept the{" "}
+                  <a
+                    href="/profile-settings/terms-and-conditions"
+                    className="font-medium text-[#005864]"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Terms & Conditions
+                  </a>{" "}
+                  and{" "}
+                  <a
+                    href="/profile-settings/privacy-policy"
+                    className="font-medium text-[#005864]"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Privacy Policy
+                  </a>
+                </span>
+              </label>
+              {errors.acceptTerms && (
+                <p className="mt-1.5 text-sm text-red-500">
+                  {errors.acceptTerms.message}
+                </p>
+              )}
+            </div>
+
             {/* SUBMIT */}
 
             <button
               type="submit"
               disabled={completeProfileMutation.isPending}
-              className="mx-auto mt-6 block h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:opacity-50"
+              className="mx-auto mt-6 block h-12 w-full cursor-pointer max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:opacity-50"
             >
               {completeProfileMutation.isPending
                 ? "Please wait..."

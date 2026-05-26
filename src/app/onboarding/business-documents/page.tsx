@@ -326,7 +326,7 @@ export default function BusinessDocumentsPage() {
               <button
                 type="submit"
                 disabled={uploadDocsMutation.isPending}
-                className="mx-auto mt-10 block h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mx-auto mt-10 block h-12 w-full cursor-pointer max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {uploadDocsMutation.isPending ? "Uploading..." : "Continue"}
               </button>
