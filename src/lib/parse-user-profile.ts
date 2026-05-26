@@ -29,6 +29,16 @@ export function getUserDisplayName(
   return "User";
 }
 
+/** Shortens long names for compact UI (e.g. home welcome). */
+export function truncateDisplayName(
+  name: string,
+  maxLength = 20,
+): string {
+  const trimmed = name.trim();
+  if (trimmed.length <= maxLength) return trimmed;
+  return `${trimmed.slice(0, maxLength)}.....`;
+}
+
 export function getUserInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
 

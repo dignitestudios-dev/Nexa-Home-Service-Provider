@@ -521,8 +521,9 @@ export default function ProfileSetupOnboardingPage() {
                 </label>
                 <Input
                   {...register("name")}
-                  maxLength={100}
+                  maxLength={32}
                   placeholder="Enter your name"
+                  autoComplete="name"
                   className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
                 />
                 {errors.name && (

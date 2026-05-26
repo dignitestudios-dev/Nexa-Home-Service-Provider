@@ -237,6 +237,7 @@ export default function LoginForm() {
               register={register}
               fieldName="password"
               isLoading={isLoading}
+              maxLength={32}
             />
 
             {isLoginMode === "no" && (
@@ -247,6 +248,7 @@ export default function LoginForm() {
                 register={register}
                 fieldName="confirmPassword"
                 isLoading={isLoading}
+                maxLength={32}
               />
             )}
           </>
@@ -331,6 +333,7 @@ function PasswordField({
   fieldName,
   isLoading,
   hint,
+  maxLength,
 }: {
   label: string;
   showPassword: boolean;
@@ -339,6 +342,7 @@ function PasswordField({
   fieldName: "password" | "confirmPassword";
   isLoading: boolean;
   hint?: string;
+  maxLength:number;
 }) {
   return (
     <div className="mb-4">
@@ -353,6 +357,7 @@ function PasswordField({
           disabled={isLoading}
           className="h-[48px] rounded-[12px] bg-[#F8F8F8] border-0 px-4 pr-12 text-[16px] placeholder:text-[#181818]/50 focus-visible:ring-0 focus-visible:border-transparent shadow-none"
           {...register(fieldName)}
+          maxLength={maxLength}
         />
 
         <button
