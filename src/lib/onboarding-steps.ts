@@ -1,4 +1,5 @@
 import type { User } from "@/store/slices/auth-slice";
+import { getPostOnboardingEntryPath, hasCompletedWalkthrough } from "@/lib/walkthrough-storage";
 
 export const ONBOARDING_STEPS = [
   {
@@ -89,11 +90,6 @@ export function canAccessOnboardingPath(pathname: string, user: User): boolean {
   const pathStepIndex = getOnboardingPathStepIndex(pathname);
   if (pathStepIndex === null) return false;
 
-  if (isOnboardingComplete(user)) {
-    return false;
-  }
-
-  const currentStepIndex = getCurrentOnboardingStepIndex(user);
   const basePath = pathname.split("?")[0];
   const isPostIdentityPath = ONBOARDING_POST_IDENTITY_PATHS.some(
     (path) => basePath === path || basePath.startsWith(`${path}/`),
@@ -102,6 +98,12 @@ export function canAccessOnboardingPath(pathname: string, user: User): boolean {
   if (isPostIdentityPath) {
     return true;
   }
+
+  if (isOnboardingComplete(user)) {
+    return false;
+  }
+
+  const currentStepIndex = getCurrentOnboardingStepIndex(user);
 
   if (
     pathStepIndex === 3 &&
@@ -128,7 +130,7 @@ export function needsIdentityResubmit(
 /** Next onboarding step only (no verify-email) — use after completing a step. */
 export function getNextOnboardingStepPath(user: User): string {
   if (isOnboardingComplete(user)) {
-    return "/home";
+    return getPostOnboardingEntryPath(user._id);
   }
 
   return ONBOARDING_STEPS[getCurrentOnboardingStepIndex(user)].path;
@@ -142,6 +144,10 @@ export function getOnboardingRedirectPath(user: User | null): string {
 
   if (!user.isEmailVerified) {
     return "/auth/verify-email";
+  }
+
+  if (hasCompletedWalkthrough(user._id)) {
+    return "/home";
   }
 
   return getNextOnboardingStepPath(user);

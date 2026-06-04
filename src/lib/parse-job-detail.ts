@@ -258,7 +258,7 @@ export function formatContactPreferences(preferences: string[]): string {
   if (preferences.length === 0) return "Not available";
 
   const labels: Record<string, string> = {
-    phone: "Call/Text",
+    phone: "Phone",
     email: "Email",
   };
 
@@ -288,6 +288,26 @@ export function maskClientName(name: string): string {
   return `${firstName}${"*".repeat(6)}`;
 }
 
+export function maskClientNamePartial(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "Client******";
+
+  return `${trimmed.slice(0, 4)}******`;
+}
+
+export function maskWithAsterisks(value: string | null): string {
+  if (!value?.trim()) return "Not available";
+
+  return "*".repeat(value.trim().length);
+}
+
+export function shouldHideClientContactDetails(job: JobDetail): boolean {
+  return (
+    job.applicationDisplayStatus.toLowerCase() === "no_longer_available" ||
+    job.status.toLowerCase() === "completed"
+  );
+}
+
 export function shouldMaskClientContact(job: JobDetail): boolean {
   const providerStatus = job.jobProviderStatus.toLowerCase();
 
@@ -299,6 +319,14 @@ export function shouldMaskClientContact(job: JobDetail): boolean {
 }
 
 export function getClientDisplay(job: JobDetail) {
+  if (shouldHideClientContactDetails(job)) {
+    return {
+      name: maskClientNamePartial(job.client.name),
+      phone: maskWithAsterisks(job.client.phone),
+      email: maskWithAsterisks(job.client.email),
+    };
+  }
+
   if (shouldMaskClientContact(job)) {
     return {
       name: maskClientName(job.client.name),

@@ -3,14 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Calendar,
-  ChevronLeft,
-  ChevronRight,
   FileSpreadsheet,
   Filter,
   Search,
   Upload,
   X,
 } from "lucide-react";
+import PaginationControls from "@/components/ui/pagination-controls";
 import {
   Dialog,
   DialogClose,
@@ -171,27 +170,12 @@ export default function CsvUploadPage() {
         </div>
       </section>
 
-      <div className="mt-6 flex items-center justify-end gap-4">
-        <button
-          type="button"
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={safePage === 1}
-          className="h-12 w-12 rounded-full bg-[#005864]/[0.06] text-[#005864] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <ChevronLeft className="mx-auto" size={20} />
-        </button>
-        <div className="rounded-full bg-[#F9FAFA] px-8 py-3 text-[16px] leading-5 font-medium text-black">
-          {String(safePage).padStart(2, "0")}
-        </div>
-        <button
-          type="button"
-          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-          disabled={safePage === totalPages}
-          className="h-12 w-12 rounded-full bg-[#005864] text-white disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <ChevronRight className="mx-auto" size={20} />
-        </button>
-      </div>
+      <PaginationControls
+        page={safePage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        className="mt-6 flex justify-end"
+      />
 
       <div
         className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${

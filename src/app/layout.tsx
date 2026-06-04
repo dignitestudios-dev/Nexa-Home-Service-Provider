@@ -5,11 +5,51 @@ import { AppProviders } from "@/providers/app-providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NexaHome Partner | CRM & Business Intelligence Dashboard",
+  title: {
+    default: "NexaHome Service Provider",
+    template: "%s | NexaHome Service Provider",
+  },
   description:
-    "NexaHome Partner is a modern CRM platform to manage vendors, referrals, CSV imports, revenue insights, and business operations from one unified dashboard.",
+    "Find homeowner jobs, apply for projects, manage your work, and grow your home services business with NexaHome Service Provider.",
+  applicationName: "NexaHome Service Provider",
+  keywords: [
+    "NexaHome",
+    "service provider",
+    "home services",
+    "contractor jobs",
+    "home improvement",
+    "find jobs",
+    "apply for jobs",
+  ],
+  authors: [{ name: "NexaHome" }],
+  creator: "NexaHome",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "NexaHome Service Provider",
+    title: "NexaHome Service Provider",
+    description:
+      "Find homeowner jobs, apply for projects, manage your work, and grow your home services business with NexaHome Service Provider.",
+    images: [
+      {
+        url: "/asset/darklogo.png",
+        alt: "NexaHome Service Provider",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: "NexaHome Service Provider",
+    description:
+      "Find homeowner jobs, apply for projects, manage your work, and grow your home services business with NexaHome Service Provider.",
+    images: ["/asset/darklogo.png"],
+  },
   icons: {
     icon: "/asset/favicon.png",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

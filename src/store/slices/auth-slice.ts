@@ -22,6 +22,8 @@ export interface User {
   isPhoneVerified: boolean;
   isPasswordSet: boolean;
   isProfileCompleted: boolean;
+  isServiceSubscribed: boolean;
+  isBadgeVerified: boolean;
   identityStatus: string;
   isPartnerApproved: boolean;
   isDeactivatedByAdmin: boolean;

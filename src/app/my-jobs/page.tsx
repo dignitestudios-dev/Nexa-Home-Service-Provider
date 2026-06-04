@@ -1,12 +1,12 @@
 "use client";
 
 import MainAppShell from "@/components/layout/main-app-shell";
+import PaginationControls from "@/components/ui/pagination-controls";
 import AvailableJobsSkeleton from "@/app/home/_components/available-jobs-skeleton";
 import {
   useMyApplicationsQuery,
   type MyApplicationsTab,
 } from "@/hooks/jobs/use-my-applications-query";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -26,7 +26,7 @@ const TAB_API_MAP: Record<TabType, MyApplicationsTab> = {
   completed: "completed",
 };
 
-const JOBS_PER_PAGE = 10;
+const JOBS_PER_PAGE = 9;
 
 function TabButton({
   label,
@@ -51,7 +51,6 @@ function TabButton({
 export default function MyJobsPage() {
   const [activeTab, setActiveTab] = useState<TabType>("applied");
   const [page, setPage] = useState(1);
-
   const { data, isLoading } = useMyApplicationsQuery({
     tab: TAB_API_MAP[activeTab],
     page,
@@ -109,44 +108,12 @@ export default function MyJobsPage() {
           </div>
         )}
 
-        {!isLoading && totalPages > 1 ? (
-          <div className="mt-10 flex justify-end">
-            <div className="flex h-12 w-[161px] items-center justify-between rounded-[24px] bg-[#F8F8F8] px-0">
-              <button
-                type="button"
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                disabled={page === 1}
-                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[rgba(0,88,100,0.06)] ${
-                  page === 1
-                    ? "cursor-not-allowed opacity-40"
-                    : "cursor-pointer hover:bg-[rgba(0,88,100,0.12)]"
-                }`}
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="h-3 w-3 text-[#005864]" strokeWidth={2.5} />
-              </button>
-
-              <span className="text-[16px] font-medium leading-5 text-black">
-                {String(page).padStart(2, "0")}
-              </span>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setPage((current) => Math.min(totalPages, current + 1))
-                }
-                disabled={page === totalPages}
-                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#005864] ${
-                  page === totalPages
-                    ? "cursor-not-allowed opacity-40"
-                    : "cursor-pointer hover:opacity-90"
-                }`}
-                aria-label="Next page"
-              >
-                <ChevronRight className="h-3 w-3 text-white" strokeWidth={2.5} />
-              </button>
-            </div>
-          </div>
+        {!isLoading ? (
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         ) : null}
       </div>
     </MainAppShell>

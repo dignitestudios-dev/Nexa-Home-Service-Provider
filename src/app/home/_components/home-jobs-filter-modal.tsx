@@ -9,6 +9,8 @@ import { toast } from "@/lib/toast";
 import {
   DEFAULT_JOB_FILTERS,
   MAX_FILTER_CATEGORIES,
+  MAX_FILTER_DISTANCE_MILES,
+  MIN_FILTER_DISTANCE_MILES,
   type JobFilters,
   type JobTypeFilter,
 } from "@/types/job-filters.types";
@@ -25,6 +27,24 @@ const JOB_TYPE_OPTIONS: { value: JobTypeFilter; label: string }[] = [
   { value: "one-time", label: "One Time Job" },
   { value: "recurring", label: "Recurring Job" },
 ];
+
+function getDistanceTooltipStyle(miles: number): {
+  left: string;
+  transform: string;
+} {
+  const range = MAX_FILTER_DISTANCE_MILES - MIN_FILTER_DISTANCE_MILES;
+  const percent = ((miles - MIN_FILTER_DISTANCE_MILES) / range) * 100;
+
+  if (percent >= 92) {
+    return { left: "100%", transform: "translateX(-100%)" };
+  }
+
+  if (percent <= 8) {
+    return { left: "0%", transform: "translateX(0)" };
+  }
+
+  return { left: `${percent}%`, transform: "translateX(-50%)" };
+}
 
 export default function HomeJobsFilterModal({
   open,
@@ -76,6 +96,13 @@ export default function HomeJobsFilterModal({
     onOpenChange(false);
   };
 
+  const handleResetAll = () => {
+    setDraftFilters({
+      ...DEFAULT_JOB_FILTERS,
+      categoryIds: [],
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -91,14 +118,14 @@ export default function HomeJobsFilterModal({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="flex h-10 w-10 items-center justify-center"
+            className="flex h-10 w-10 items-center justify-center cursor-pointer"
             aria-label="Close filters"
           >
             <X className="h-5 w-5 text-[rgba(24,24,24,0.8)]" strokeWidth={1.8} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-[30px] pb-6">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto px-[30px] pb-6">
           <section className="mt-10">
             <h3 className="text-[20px] font-semibold capitalize leading-[25px] text-[#1C1C1C]">
               Job Type
@@ -120,7 +147,7 @@ export default function HomeJobsFilterModal({
                         jobType: option.value,
                       }))
                     }
-                    className="h-6 w-6 border border-[rgba(24,24,24,0.8)] accent-[#005864]"
+                    className="h-6 w-6 cursor-pointer border border-[rgba(24,24,24,0.8)] accent-[#005864]"
                   />
                   <span className="text-[16px] leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
                     {option.label}
@@ -151,7 +178,7 @@ export default function HomeJobsFilterModal({
                       type="checkbox"
                       checked={draftFilters.categoryIds.includes(category._id)}
                       onChange={() => toggleCategory(category._id)}
-                      className="h-6 w-6 rounded-[4px] border border-[rgba(24,24,24,0.8)] accent-[#005864]"
+                      className="h-6 w-6 cursor-pointer rounded-[4px] border border-[rgba(24,24,24,0.8)] accent-[#005864]"
                     />
                     <span className="text-[18px] leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
                       {category.name}
@@ -169,20 +196,18 @@ export default function HomeJobsFilterModal({
               Distance
             </h3>
 
-            <div className="relative mt-6 pb-2">
+            <div className="relative mt-3 pt-10 pb-2">
               <div
-                className="absolute -top-12 -translate-x-1/2 rounded-[10px] bg-[#005864] px-3 py-2 text-center text-[14px] leading-[18px] text-white"
-                style={{
-                  left: `${((draftFilters.distanceMiles - 1) / 49) * 100}%`,
-                }}
+                className="absolute top-0 whitespace-nowrap rounded-[10px] bg-[#005864] px-3 py-2 text-[12px] font-medium leading-none text-white"
+                style={getDistanceTooltipStyle(draftFilters.distanceMiles)}
               >
                 {draftFilters.distanceMiles} miles
               </div>
 
               <input
                 type="range"
-                min={1}
-                max={50}
+                min={MIN_FILTER_DISTANCE_MILES}
+                max={MAX_FILTER_DISTANCE_MILES}
                 value={draftFilters.distanceMiles}
                 onChange={(event) =>
                   setDraftFilters((current) => ({
@@ -196,28 +221,35 @@ export default function HomeJobsFilterModal({
 
             <div className="mt-8 flex items-center justify-between">
               <span className="text-[16px] font-medium capitalize leading-5 text-[#1C1C1C]">
-                01 miles
+                {String(MIN_FILTER_DISTANCE_MILES).padStart(2, "0")} miles
               </span>
               <span className="text-[16px] font-medium capitalize leading-5 text-[#1C1C1C]">
-                50 miles
+                {MAX_FILTER_DISTANCE_MILES} miles
               </span>
             </div>
           </section>
         </div>
 
         <div className="rounded-t-[24px] bg-[#F8F8F8] px-[30px] py-[30px]">
+          <button
+            type="button"
+            onClick={handleResetAll}
+            className="mb-4 h-12 w-full cursor-pointer rounded-[12px] border border-[#005864] bg-white text-[16px] font-semibold capitalize leading-5 text-[#005864]"
+          >
+            Reset All Filters
+          </button>
           <div className="flex gap-3">
             <button
               type="button"
               onClick={handleCancel}
-              className="h-12 flex-1 rounded-[12px] bg-[rgba(0,88,100,0.06)] text-[16px] font-semibold capitalize leading-5 text-[#005864]"
+              className="h-12 flex-1 cursor-pointer rounded-[12px] bg-[rgba(0,88,100,0.06)] text-[16px] font-semibold capitalize leading-5 text-[#005864]"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleApply}
-              className="h-12 flex-1 rounded-[12px] bg-[#005864] text-[16px] font-semibold capitalize leading-5 text-white"
+              className="h-12 flex-1 cursor-pointer rounded-[12px] bg-[#005864] text-[16px] font-semibold capitalize leading-5 text-white"
             >
               Apply
             </button>

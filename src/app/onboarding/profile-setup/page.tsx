@@ -14,20 +14,34 @@ import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { Input } from "@/components/ui/input";
 import { useCompleteProfileSetup } from "@/hooks/onboarding/profile-setup-mutation";
+import { useCurrentUserQuery } from "@/hooks/user/use-current-user-query";
 import { navigateToNextOnboardingStep } from "@/lib/onboarding-navigation";
 import { formatUsPhoneNumber, toE164UsPhone } from "@/lib/auth-utils";
+import {
+  clearProfileSetupDraft,
+  draftToProfileSetupFormValues,
+  loadProfileSetupDraft,
+  saveProfileSetupDraft,
+} from "@/lib/profile-setup-draft-storage";
 import type { RootState } from "@/store/index";
 import {
   ProfileSetupFormData,
   profileSetupSchema,
   PROFILE_IMAGE_ACCEPT,
+  getMaxProfileServices,
+  OFFICE_NO_MAX_LENGTH,
   validateProfileImage,
+  ZIP_CODE_MAX_LENGTH,
 } from "@/lib/schemas/profile-setup.schema";
 import { toast } from "@/lib/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGetCategories } from "@/lib/category-query";
 import { ServiceLimitModal } from "@/components/auth/service-limit-modal";
+import ProfileSetupPlanPurchaseModals from "@/components/auth/profile-setup-plan-purchase-modals";
+import { ServicePlanUpgradeModal } from "@/components/auth/service-plan-upgrade-modal";
+import { LegalDocumentModal } from "@/components/legal/legal-document-modal";
+import { PRIVACY_POLICY, TERMS_AND_CONDITIONS } from "@/lib/legal-content";
 import { extractAuthFromResponse } from "@/lib/auth-session";
 import { getRedirectPath } from "@/lib/auth-utils";
 
@@ -112,6 +126,9 @@ export default function ProfileSetupOnboardingPage() {
   const [serviceSearch, setServiceSearch] = useState("");
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [isServiceLimitModalOpen, setIsServiceLimitModalOpen] = useState(false);
+  const [isServicePlanModalOpen, setIsServicePlanModalOpen] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
   // ── Google Maps state ──────────────────────────────────────────────────────
   const mapRef = useRef<HTMLDivElement>(null);
@@ -123,11 +140,17 @@ export default function ProfileSetupOnboardingPage() {
   // ──────────────────────────────────────────────────────────────────────────
 
   const completeProfileMutation = useCompleteProfileSetup();
+  useCurrentUserQuery();
+
+  const isServiceSubscribed = Boolean(user?.isServiceSubscribed);
+  const maxServices = getMaxProfileServices(isServiceSubscribed);
 
   const {
     register,
     handleSubmit,
     watch,
+    getValues,
+    reset,
     setValue,
     setError,
     clearErrors,
@@ -162,6 +185,70 @@ export default function ProfileSetupOnboardingPage() {
   const profileFile = watch("profileImage");
   const selectedServices = watch("services");
   const overview = watch("overview");
+  const latitude = watch("latitude");
+  const longitude = watch("longitude");
+  const userId = user?._id ?? null;
+  const isDraftReadyRef = useRef(false);
+
+  useEffect(() => {
+    const draft = loadProfileSetupDraft(userId);
+    if (draft) {
+      reset({
+        ...getValues(),
+        ...draftToProfileSetupFormValues(draft, user?.name?.trim() ?? ""),
+      });
+    }
+
+    isDraftReadyRef.current = true;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  useEffect(() => {
+    if (!isDraftReadyRef.current) return;
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const subscription = watch(() => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        void saveProfileSetupDraft(getValues(), userId);
+      }, 400);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [watch, getValues, userId]);
+
+  useEffect(() => {
+    if (!isDraftReadyRef.current) return;
+
+    const persistDraft = () => {
+      void saveProfileSetupDraft(getValues(), userId);
+    };
+
+    window.addEventListener("beforeunload", persistDraft);
+    return () => window.removeEventListener("beforeunload", persistDraft);
+  }, [getValues, userId]);
+
+  useEffect(() => {
+    if (!isMapsLoaded || !latitude || !longitude) return;
+
+    const lat = Number.parseFloat(latitude);
+    const lng = Number.parseFloat(longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    const map = mapInstanceRef.current;
+    const marker = markerInstanceRef.current;
+    if (!map || !marker) return;
+
+    map.setCenter({ lat, lng });
+    map.setZoom(16);
+    marker.setPosition({ lat, lng });
+  }, [isMapsLoaded, latitude, longitude]);
+
+  const persistDraftNow = () => saveProfileSetupDraft(getValues(), userId);
 
   // =========================
   // PREVIEW
@@ -189,10 +276,14 @@ export default function ProfileSetupOnboardingPage() {
 
     clearErrors("profileImage");
     setValue("profileImage", file!, { shouldValidate: true });
+    void saveProfileSetupDraft(
+      { ...getValues(), profileImage: file },
+      userId,
+    );
   };
 
   const { data: categoriesResponse, isLoading: categoriesLoading } =
-    useGetCategories();
+    useGetCategories(1, 100);
 
   const categories = categoriesResponse?.data ?? [];
 
@@ -235,7 +326,9 @@ export default function ProfileSetupOnboardingPage() {
     if (parsed.streetName)
       setValue("streetName", parsed.streetName, { shouldValidate: true });
     if (parsed.zipCode)
-      setValue("zipCode", parsed.zipCode.slice(0, 5), { shouldValidate: true });
+      setValue("zipCode", parsed.zipCode.slice(0, ZIP_CODE_MAX_LENGTH), {
+        shouldValidate: true,
+      });
     if (parsed.country)
       setValue("country", parsed.country, { shouldValidate: true });
     if (parsed.state) setValue("state", parsed.state, { shouldValidate: true });
@@ -332,6 +425,14 @@ export default function ProfileSetupOnboardingPage() {
   const onSubmit = async (data: ProfileSetupFormData) => {
     if (!data.profileImage) return;
 
+    if (data.services.length > maxServices) {
+      setError("services", {
+        type: "manual",
+        message: `You can select up to ${maxServices} services only`,
+      });
+      return;
+    }
+
     try {
       const response = await completeProfileMutation.mutateAsync({
         name: data.name.trim(),
@@ -347,10 +448,12 @@ export default function ProfileSetupOnboardingPage() {
         zipCode: data.zipCode,
         longitude: data.longitude ? parseFloat(data.longitude) : -75.1652,
         latitude: data.latitude ? parseFloat(data.latitude) : 39.9526,
-        categoryIDs: data.services,
+        categoryIDs: [...new Set(data.services.map((id) => id.trim()).filter(Boolean))],
       });
 
       toast.fromApiSuccess(response, "Profile setup completed successfully.");
+
+      clearProfileSetupDraft(userId);
 
       navigateToNextOnboardingStep(router, dispatch, user, {
         apiResponse: response,
@@ -680,8 +783,14 @@ export default function ProfileSetupOnboardingPage() {
                                 checked={checked}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    if (selectedServices.length >= 4) {
-                                      setIsServiceLimitModalOpen(true);
+                                    if (selectedServices.length >= maxServices) {
+                                      if (isServiceSubscribed) {
+                                        toast.error(
+                                          `You can select up to ${maxServices} services only.`,
+                                        );
+                                      } else {
+                                        setIsServiceLimitModalOpen(true);
+                                      }
                                       return;
                                     }
                                     setValue(
@@ -727,7 +836,7 @@ export default function ProfileSetupOnboardingPage() {
                     {...register("overview")}
                     maxLength={500}
                     placeholder="Write here"
-                    className="h-[96px] w-full resize-none bg-transparent text-[16px] leading-5 text-[#1C1C1C] placeholder:text-black/55 outline-none"
+                    className="h-[96px] w-full normal-case first-letter:uppercase resize-none bg-transparent text-[16px] leading-5 text-[#1C1C1C] placeholder:text-black/55 outline-none"
                   />
                 </div>
 
@@ -841,11 +950,23 @@ export default function ProfileSetupOnboardingPage() {
                     Office No.
                   </label>
                   <Input
-                    {...register("officeNo")}
-                    placeholder="e.g., 56"
+                    {...register("officeNo", {
+                      onChange: (event) => {
+                        const value = event.target.value
+                          .replace(/[^A-Za-z0-9]/g, "")
+                          .slice(0, OFFICE_NO_MAX_LENGTH);
+                        setValue("officeNo", value, { shouldValidate: true });
+                      },
+                    })}
+                    placeholder="e.g., 56A"
                     className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
-                    maxLength={100}
+                    maxLength={OFFICE_NO_MAX_LENGTH}
                   />
+                  {errors.officeNo && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.officeNo.message}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -857,14 +978,14 @@ export default function ProfileSetupOnboardingPage() {
                       onChange: (e) => {
                         const value = e.target.value
                           .replace(/\D/g, "")
-                          .slice(0, 5);
-                        setValue("zipCode", value);
+                          .slice(0, ZIP_CODE_MAX_LENGTH);
+                        setValue("zipCode", value, { shouldValidate: true });
                       },
                     })}
-                    placeholder="e.g., 12345"
+                    placeholder="e.g., 12345678"
                     className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
                     inputMode="numeric"
-                    maxLength={5}
+                    maxLength={ZIP_CODE_MAX_LENGTH}
                   />
                   {errors.zipCode && (
                     <p className="mt-1 text-sm text-red-500">
@@ -896,23 +1017,29 @@ export default function ProfileSetupOnboardingPage() {
                 />
                 <span className="text-[15px] leading-[19px] text-black/80">
                   I accept the{" "}
-                  <a
-                    href="/profile-settings/terms-and-conditions"
-                    className="font-medium text-[#005864]"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setIsTermsModalOpen(true);
+                    }}
+                    className="cursor-pointer font-medium text-[#005864] hover:underline"
                   >
                     Terms & Conditions
-                  </a>{" "}
+                  </button>{" "}
                   and{" "}
-                  <a
-                    href="/profile-settings/privacy-policy"
-                    className="font-medium text-[#005864]"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setIsPrivacyModalOpen(true);
+                    }}
+                    className="cursor-pointer font-medium text-[#005864] hover:underline"
                   >
                     Privacy Policy
-                  </a>
+                  </button>
                 </span>
               </label>
               {errors.acceptTerms && (
@@ -938,6 +1065,33 @@ export default function ProfileSetupOnboardingPage() {
           <ServiceLimitModal
             open={isServiceLimitModalOpen}
             onClose={() => setIsServiceLimitModalOpen(false)}
+            onUpgradePlan={() => {
+              persistDraftNow();
+              setIsServicePlanModalOpen(true);
+            }}
+            maxServices={maxServices}
+          />
+
+          <ServicePlanUpgradeModal
+            open={isServicePlanModalOpen}
+            onClose={() => setIsServicePlanModalOpen(false)}
+            onBeforeCheckout={persistDraftNow}
+          />
+
+          <ProfileSetupPlanPurchaseModals
+            onTryAgain={() => setIsServicePlanModalOpen(true)}
+          />
+
+          <LegalDocumentModal
+            open={isTermsModalOpen}
+            onClose={() => setIsTermsModalOpen(false)}
+            document={TERMS_AND_CONDITIONS}
+          />
+
+          <LegalDocumentModal
+            open={isPrivacyModalOpen}
+            onClose={() => setIsPrivacyModalOpen(false)}
+            document={PRIVACY_POLICY}
           />
         </main>
       </div>

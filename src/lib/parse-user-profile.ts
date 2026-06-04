@@ -88,6 +88,8 @@ export function parseUserProfileFromResponse(data: unknown): User | null {
     ...(profile as unknown as User),
     profilePicture: normalizeProfilePicture(profile.profilePicture),
     selectedCategories: parseSelectedCategories(profile),
+    isServiceSubscribed: Boolean(profile.isServiceSubscribed),
+    isBadgeVerified: Boolean(profile.isBadgeVerified),
   };
 }
 

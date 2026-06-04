@@ -40,6 +40,9 @@ export const toast = {
   },
 
   fromApiError(error: unknown, fallback?: string) {
-    this.error(getApiErrorMessage(error, fallback));
+    const message = getApiErrorMessage(error, fallback);
+    if (message) {
+      this.error(message);
+    }
   },
 };
