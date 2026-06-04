@@ -17,7 +17,7 @@ export default function SettingsLegalPage({
   sections,
 }: SettingsLegalPageProps) {
   return (
-    <div className="w-full max-w-[766px]">
+    <div className="w-full max-w-[866px]">
       <h2 className="text-[24px] font-[700] leading-[30px] text-black">{title}</h2>
       <p className="mt-2 text-[14px] leading-5 text-[rgba(24,24,24,0.6)]">
         Last updated: {lastUpdated}

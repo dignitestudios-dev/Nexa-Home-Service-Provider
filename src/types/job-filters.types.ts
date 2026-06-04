@@ -9,7 +9,10 @@ export type JobFilters = {
 export const DEFAULT_JOB_FILTERS: JobFilters = {
   jobType: null,
   categoryIds: [],
-  distanceMiles: 10,
+  distanceMiles: 25,
 };
+
+export const MIN_FILTER_DISTANCE_MILES = 1;
+export const MAX_FILTER_DISTANCE_MILES = 75;
 
 export const MAX_FILTER_CATEGORIES = 20;

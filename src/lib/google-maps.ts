@@ -53,8 +53,11 @@ export function parseAddressComponents(
       route = component.long_name;
     } else if (
       types.includes("locality") ||
+      types.includes("postal_town") ||
       types.includes("sublocality_level_1")
     ) {
+      city = city || component.long_name;
+    } else if (types.includes("administrative_area_level_2") && !city) {
       city = component.long_name;
     } else if (types.includes("administrative_area_level_1")) {
       state = component.long_name;
@@ -91,4 +94,69 @@ export function getInitialMapCenter(latitude?: string, longitude?: string) {
   }
 
   return { lat: 40.74, lng: -73.98, zoom: 12 };
+}
+
+export function buildAddressGeocodeQuery(parts: {
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  zipCode?: string;
+}): string {
+  return [parts.address, parts.city, parts.state, parts.zipCode, parts.country]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+export type GeocodedAddress = {
+  lat: number;
+  lng: number;
+  parsed: ParsedGoogleAddress;
+  formattedAddress: string;
+};
+
+export function geocodeAddressQuery(query: string): Promise<GeocodedAddress | null> {
+  return new Promise((resolve) => {
+    const trimmedQuery = query.trim();
+
+    if (!trimmedQuery) {
+      resolve(null);
+      return;
+    }
+
+    loadGoogleMapsScript(() => {
+      const google = (window as Window & { google?: any }).google;
+      if (!google?.maps?.Geocoder) {
+        resolve(null);
+        return;
+      }
+
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: trimmedQuery }, (results: any, status: any) => {
+        if (status !== "OK" || !results?.[0]?.geometry?.location) {
+          resolve(null);
+          return;
+        }
+
+        const result = results[0];
+        const lat = result.geometry.location.lat();
+        const lng = result.geometry.location.lng();
+        const parsed = result.address_components
+          ? parseAddressComponents(result.address_components)
+          : { address: "", city: "", state: "", country: "", zipCode: "" };
+
+        resolve({
+          lat,
+          lng,
+          parsed,
+          formattedAddress: toString(result.formatted_address),
+        });
+      });
+    });
+  });
+}
+
+function toString(value: unknown): string {
+  return typeof value === "string" ? value : "";
 }

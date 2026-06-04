@@ -1,12 +1,13 @@
-// queries/category.query.ts
-
 import { useQuery } from "@tanstack/react-query";
+
 import { categoryService } from "@/services/category.service";
 
-export function useGetCategories(page = 1, limit = 10) {
-  return useQuery({
-    queryKey: ["categories", page, limit],
+export const CATEGORIES_QUERY_KEY = ["categories", "all"] as const;
 
-    queryFn: () => categoryService.getCategories(page, limit),
+/** Fetches every category page so dropdowns show the full list. */
+export function useGetCategories(_page = 1, _limit = 100) {
+  return useQuery({
+    queryKey: CATEGORIES_QUERY_KEY,
+    queryFn: () => categoryService.getAllCategories(),
   });
 }

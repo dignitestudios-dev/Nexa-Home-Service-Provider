@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { resetPasswordSchema } from "@/lib/schemas/auth.schema";
 import { z } from "zod";
@@ -56,7 +56,22 @@ function ChangePasswordContent() {
     formState: { errors },
   } = useForm<ResetPasswordSchema>({
     resolver: zodResolver(resetPasswordSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    },
   });
+
+  const showValidationToast = (fieldErrors: FieldErrors<ResetPasswordSchema>) => {
+    const message =
+      fieldErrors.password?.message || fieldErrors.confirmPassword?.message;
+
+    if (message) {
+      toast.error(message);
+    }
+  };
 
   const onSubmit = async (data: ResetPasswordSchema) => {
     try {
@@ -84,7 +99,7 @@ function ChangePasswordContent() {
 
       <div className="flex-1 bg-white flex items-start justify-center">
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, showValidationToast)}
           className="w-full max-w-[496px] min-h-[560px] mx-auto"
         >
           <div className="text-center mt-[122px]">
@@ -106,6 +121,8 @@ function ChangePasswordContent() {
                 type={showNewPassword ? "text" : "password"}
                 placeholder="Enter new password"
                 disabled={updatePasswordMutation.isPending}
+                maxLength={32}
+                autoComplete="new-password"
                 {...register("password")}
                 className="w-full h-[48px] bg-[#F8F8F8] rounded-[12px] border-0 px-4 pr-10 text-[16px] placeholder:text-[#181818]/50 focus-visible:ring-0 focus-visible:border-transparent shadow-none disabled:opacity-60"
               />
@@ -119,12 +136,12 @@ function ChangePasswordContent() {
               </button>
             </div>
 
-            <div className="mt-2">
-              {errors.password && (
+            <div className="mt-2 min-h-[20px]">
+              {errors.password ? (
                 <div className="text-red-600 text-sm">
                   {errors.password.message}
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -138,6 +155,8 @@ function ChangePasswordContent() {
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm your password"
                 disabled={updatePasswordMutation.isPending}
+                maxLength={32}
+                autoComplete="new-password"
                 {...register("confirmPassword")}
                 className="w-full h-[48px] bg-[#F8F8F8] rounded-[12px] border-0 px-4 pr-10 text-[16px] placeholder:text-[#181818]/50 focus-visible:ring-0 focus-visible:border-transparent shadow-none disabled:opacity-60"
               />

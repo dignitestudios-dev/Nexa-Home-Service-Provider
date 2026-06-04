@@ -8,6 +8,7 @@ export type ProviderFeedJob = {
   status: string;
   jobProviderStatus: string;
   applicationDisplayStatus: string;
+  credits: number | null;
 };
 
 export type ProviderFeedPagination = {

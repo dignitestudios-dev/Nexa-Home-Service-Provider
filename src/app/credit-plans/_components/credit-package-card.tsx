@@ -37,7 +37,10 @@ export default function CreditPackageCard({
 
       <p className="mt-1 text-[18px] font-semibold leading-[23px] text-black">Credits</p>
 
-      <p className="mt-3 text-[20px] leading-[25px] text-black">For ${price}</p>
+      <p className="mt-3 text-[20px] leading-[25px] text-black">
+        For{" "}
+        <span className="font-bold">${price.toLocaleString("en-US")}</span>
+      </p>
     </button>
   );
 }

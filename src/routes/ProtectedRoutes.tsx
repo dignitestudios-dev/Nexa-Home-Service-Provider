@@ -4,6 +4,8 @@ import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
+import { getAuthTokenCookie, getPersistedAuthUser } from "@/lib/auth-session";
+import { isEmailOtpAuthPath } from "@/lib/auth-otp-paths";
 import { getRedirectPath } from "@/lib/auth-utils";
 import {
   canAccessOnboardingPath,
@@ -12,8 +14,13 @@ import {
   isOnboardingPath,
   isPostIdentityOnboardingPath,
 } from "@/lib/onboarding-steps";
+import {
+  hasCompletedWalkthrough,
+  isWalkthroughPath,
+  shouldRequireWalkthrough,
+  WALKTHROUGH_PATH,
+} from "@/lib/walkthrough-storage";
 import { isPasswordResetFlow } from "@/lib/reset-password-storage";
-import { getPersistedAuthUser } from "@/lib/auth-session";
 import {
   getPendingVerifyEmail,
   setPendingVerifyEmail,
@@ -41,6 +48,27 @@ const isSignupOtpHoldPath = (path: string) =>
   path === "/auth/signup-verify-otp" ||
   path.startsWith("/auth/signup-verify-otp/");
 
+const BILLING_RETURN_PATHS = [
+  "/profile-settings/service-plan/success",
+  "/profile-settings/service-plan/cancel",
+  "/profile-settings/verified-badge-plan/success",
+  "/profile-settings/verified-badge-plan/cancel",
+  "/profile-settings/ad-promotion/success",
+  "/profile-settings/ad-promotion/cancel",
+  "/Walkthrough/credit-plans/success",
+  "/Walkthrough/credit-plans/cancel",
+  "/Walkthrough/verified-badge/success",
+  "/Walkthrough/verified-badge/cancel",
+  "/wallet/success",
+  "/wallet/cancel",
+] as const;
+
+const isBillingReturnPath = (path: string) =>
+  BILLING_RETURN_PATHS.some(
+    (billingPath) =>
+      path === billingPath || path.startsWith(`${billingPath}/`),
+  );
+
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -55,9 +83,17 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   useEffect(() => {
     if (!isLoggedIn) {
-      if (!isPublicAuthPath) {
+      const hasStoredAuth = Boolean(
+        getAuthTokenCookie() || getPersistedAuthUser(),
+      );
+
+      if (!isPublicAuthPath && !hasStoredAuth) {
         router.replace("/auth/login");
       }
+      return;
+    }
+
+    if (isBillingReturnPath(pathname)) {
       return;
     }
 
@@ -77,6 +113,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       return;
     }
 
+    if (
+      effectiveUser.isEmailVerified &&
+      isEmailOtpAuthPath(pathname) &&
+      !isSignupOtpHoldPath(pathname)
+    ) {
+      router.replace(getRedirectPath(effectiveUser));
+      return;
+    }
+
     if (isSignupOtpHoldPath(pathname)) {
       return;
     }
@@ -87,6 +132,29 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       pathname === "/home" || pathname.startsWith("/profile-settings");
 
     if (isPostIdentityOnboardingPath(pathname)) {
+      return;
+    }
+
+    if (isWalkthroughPath(pathname)) {
+      if (!isOnboardingComplete(effectiveUser)) {
+        router.replace(getNextOnboardingStepPath(effectiveUser));
+        return;
+      }
+
+      if (hasCompletedWalkthrough(effectiveUser._id)) {
+        router.replace("/home");
+        return;
+      }
+
+      return;
+    }
+
+    if (
+      isOnboardingComplete(effectiveUser) &&
+      shouldRequireWalkthrough(effectiveUser._id) &&
+      !isPostIdentityOnboardingPath(pathname)
+    ) {
+      router.replace(WALKTHROUGH_PATH);
       return;
     }
 
@@ -103,7 +171,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       pathname.startsWith("/onboarding") &&
       !isPostIdentityOnboardingPath(pathname)
     ) {
-      router.replace("/home");
+      router.replace(getNextOnboardingStepPath(effectiveUser));
       return;
     }
 
@@ -112,6 +180,14 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     }
 
     if (pathname === redirectPath) {
+      return;
+    }
+
+    if (
+      redirectPath.startsWith("/onboarding") &&
+      hasCompletedWalkthrough(effectiveUser._id)
+    ) {
+      router.replace("/home");
       return;
     }
 

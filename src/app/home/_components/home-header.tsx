@@ -1,9 +1,11 @@
 "use client";
 
-import { Bell, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import LogoutConfirmModal from "@/components/auth/logout-confirm-modal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +16,7 @@ import {
 import { useLogoutAuth } from "@/hooks/auth/use-auth-mutations";
 import { useCurrentUserQuery } from "@/hooks/user/use-current-user-query";
 import { MAIN_NAV_ITEMS } from "@/lib/main-nav";
+import NotificationsPopover from "./notifications-popover";
 import { getUserDisplayName, getUserInitials, getUserProfilePictureUrl } from "@/lib/parse-user-profile";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store/index";
@@ -22,6 +25,7 @@ export default function HomeHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const logoutMutation = useLogoutAuth();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const { isLoading: isLoadingUser } = useCurrentUserQuery();
   const user = useSelector((state: RootState) => state.auth.user);
 
@@ -31,10 +35,12 @@ export default function HomeHeader() {
 
   const handleLogout = async () => {
     await logoutMutation.mutateAsync().catch(() => undefined);
+    setIsLogoutModalOpen(false);
     router.push("/auth/login");
   };
 
   return (
+    <>
     <header className="rounded-[50px] bg-[#F8F8F8] px-10 py-5">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <Link href="/home" className="flex shrink-0 items-center gap-3">
@@ -72,13 +78,7 @@ export default function HomeHeader() {
             })}
           </nav>
 
-          <button
-            type="button"
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#181818] transition hover:bg-[#EDEDED]"
-            aria-label="Notifications"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
+          <NotificationsPopover />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -126,11 +126,10 @@ export default function HomeHeader() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-3 bg-[#E4E4E4]" />
                 <DropdownMenuItem
-                  onClick={handleLogout}
-                  disabled={logoutMutation.isPending}
-                  className="h-[18px] cursor-pointer rounded-none px-0 text-[14px] font-[500] text-[#FF0000] focus:bg-transparent focus:text-[#FF0000] disabled:opacity-50"
+                  onClick={() => setIsLogoutModalOpen(true)}
+                  className="h-[18px] cursor-pointer rounded-none px-0 text-[14px] font-[500] text-[#FF0000] focus:bg-transparent focus:text-[#FF0000]"
                 >
-                  {logoutMutation.isPending ? "Logging out..." : "Log Out"}
+                  Log Out
                 </DropdownMenuItem>
               </div>
             </DropdownMenuContent>
@@ -138,5 +137,13 @@ export default function HomeHeader() {
         </div>
       </div>
     </header>
+
+    <LogoutConfirmModal
+      open={isLogoutModalOpen}
+      onOpenChange={setIsLogoutModalOpen}
+      onConfirm={handleLogout}
+      isConfirming={logoutMutation.isPending}
+    />
+    </>
   );
 }

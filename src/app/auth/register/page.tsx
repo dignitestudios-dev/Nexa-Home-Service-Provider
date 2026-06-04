@@ -8,6 +8,7 @@ import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Input } from "@/components/ui/input";
 import { signupSchema } from "@/lib/schemas/auth.schema";
 
@@ -259,19 +260,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="mt-5 flex items-center justify-between">
-          <button
-            type="button"
-            className="w-[188px] h-[50px] bg-[#F8F8F8] rounded-[15px] flex items-center justify-center gap-2 text-[14px] font-[500] text-[#181818]"
-          >
-            <img
-              src="/asset/google.png"
-              alt="Google"
-              width={24}
-              height={24}
-              className="w-[24px] h-[24px] object-contain"
-            />
-            <span>Google</span>
-          </button>
+          <GoogleSignInButton />
 
           <button
             type="button"

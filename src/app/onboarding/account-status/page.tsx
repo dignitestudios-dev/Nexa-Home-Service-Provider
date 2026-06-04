@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { BriefcaseBusiness, Check, CircleAlert, FileText, IdCard, UserRound, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { WALKTHROUGH_PATH } from "@/lib/walkthrough-storage";
 
 const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: false },
@@ -93,11 +94,11 @@ function AccountStatusContent() {
   useEffect(() => {
     if (initialStatus !== "submitted") return;
 
-    const homeTimer = setTimeout(() => {
-      router.replace("/home");
+    const walkthroughTimer = setTimeout(() => {
+      router.replace(WALKTHROUGH_PATH);
     }, HOME_REDIRECT_MS);
 
-    return () => clearTimeout(homeTimer);
+    return () => clearTimeout(walkthroughTimer);
   }, [initialStatus, router]);
 
   useEffect(() => {
@@ -230,7 +231,7 @@ function AccountStatusContent() {
 
               <button
                 type="button"
-                onClick={() => router.push("/home")}
+                onClick={() => router.replace(WALKTHROUGH_PATH)}
                 className="mt-16 h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] px-[10px] py-3 text-[16px] font-semibold leading-5 text-white capitalize hover:opacity-95"
               >
                 Next
@@ -251,7 +252,7 @@ function AccountStatusContent() {
                 </p>
                 {initialStatus === "submitted" && (
                   <p className="text-[14px] leading-[20px] text-black/50">
-                    Redirecting to home in a few seconds…
+                    Redirecting to app walkthrough in a few seconds…
                   </p>
                 )}
               </div>

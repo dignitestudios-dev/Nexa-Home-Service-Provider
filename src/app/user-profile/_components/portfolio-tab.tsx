@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import MediaGalleryModal from "@/components/media/media-gallery-modal";
 import { useUserDocsQuery } from "@/hooks/user/use-user-docs-query";
 import type { UserDocFile } from "@/types/user-docs.types";
 
@@ -57,12 +57,24 @@ function PortfolioSkeleton() {
 
 export function PortfolioTab() {
   const { data, isLoading } = useUserDocsQuery();
-  const [previewItem, setPreviewItem] = useState<UserDocFile | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const portfolioItems = useMemo(
     () => dedupePortfolioItems(data?.portfolioMedia ?? []),
     [data?.portfolioMedia],
   );
+
+  const galleryItems = useMemo(
+    () => portfolioItems.filter((item) => Boolean(item.url)),
+    [portfolioItems],
+  );
+
+  const openGallery = (item: UserDocFile) => {
+    const index = galleryItems.findIndex((entry) => entry.id === item.id);
+    if (index >= 0) {
+      setPreviewIndex(index);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -77,9 +89,7 @@ export function PortfolioTab() {
           No portfolio media uploaded yet.
         </div>
       ) : (
-        <div
-          className="grid grid-flow-dense grid-cols-2 gap-3 auto-rows-[120px] md:grid-cols-4 md:auto-rows-[130px] md:[grid-template-columns:2fr_1fr_1fr_2fr]"
-        >
+        <div className="grid grid-flow-dense grid-cols-2 gap-3 auto-rows-[120px] md:grid-cols-4 md:auto-rows-[130px] md:[grid-template-columns:2fr_1fr_1fr_2fr]">
           {portfolioItems.map((item, index) => {
             const { colSpan, rowSpan } = getTilePattern(index);
 
@@ -87,32 +97,35 @@ export function PortfolioTab() {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setPreviewItem(item)}
-                className="group relative h-full min-h-0 w-full overflow-hidden rounded-[14px] bg-[rgba(0,88,100,0.08)] cursor-pointer"
+                disabled={!item.url}
+                onClick={() => openGallery(item)}
+                className="group relative h-full min-h-0 w-full cursor-pointer overflow-hidden rounded-[14px] bg-[rgba(0,88,100,0.08)] disabled:cursor-default"
                 style={{
                   gridColumn: `span ${colSpan}`,
                   gridRow: `span ${rowSpan}`,
                 }}
-                aria-label="Open portfolio item"
+                aria-label={`Open portfolio item ${index + 1}`}
               >
-                {item.isVideo ? (
-                  <video
-                    src={item.url}
-                    muted
-                    playsInline
-                    preload="metadata"
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                ) : (
-                  <Image
-                    src={item.url}
-                    alt=""
-                    fill
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    unoptimized
-                  />
-                )}
+                {item.url ? (
+                  item.isVideo ? (
+                    <video
+                      src={item.url}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <Image
+                      src={item.url}
+                      alt=""
+                      fill
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      unoptimized
+                    />
+                  )
+                ) : null}
 
                 <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20" />
 
@@ -127,33 +140,16 @@ export function PortfolioTab() {
         </div>
       )}
 
-      <Dialog
-        open={Boolean(previewItem)}
-        onOpenChange={(open) => !open && setPreviewItem(null)}
-      >
-        <DialogContent className="max-w-[min(960px,95vw)] border-none bg-black/95 p-2 sm:p-4">
-          <DialogTitle className="sr-only">Portfolio preview</DialogTitle>
-          {previewItem?.url ? (
-            previewItem.isVideo ? (
-              <video
-                src={previewItem.url}
-                controls
-                autoPlay
-                className="mx-auto max-h-[80vh] w-full rounded-[12px] object-contain"
-              />
-            ) : (
-              <Image
-                src={previewItem.url}
-                alt=""
-                width={1200}
-                height={800}
-                className="mx-auto max-h-[80vh] w-auto max-w-full rounded-[12px] object-contain"
-                unoptimized
-              />
-            )
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      <MediaGalleryModal
+        open={previewIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewIndex(null);
+        }}
+        items={galleryItems}
+        currentIndex={previewIndex ?? 0}
+        onIndexChange={setPreviewIndex}
+        title="Portfolio gallery"
+      />
     </div>
   );
 }

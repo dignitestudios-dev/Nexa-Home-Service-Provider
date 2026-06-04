@@ -24,7 +24,7 @@ type OtpFormData = z.infer<typeof otpSchema>;
 function SignupVerificationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [timer, setTimer] = useState(30);
+  const [timer, setTimer] = useState(60);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
@@ -146,6 +146,15 @@ function SignupVerificationContent() {
   };
 
   useEffect(() => {
+    if (isSuccessModalOpen) return;
+
+    const loggedInUser = getPersistedAuthUser();
+    if (loggedInUser?.isEmailVerified) {
+      router.replace(getRedirectPath(loggedInUser));
+    }
+  }, [isSuccessModalOpen, router]);
+
+  useEffect(() => {
     if (timer > 0) {
       const interval = setInterval(() => setTimer((p) => p - 1), 1000);
       return () => clearInterval(interval);
@@ -155,7 +164,7 @@ function SignupVerificationContent() {
   const handleSuccessModalClose = () => {
     setIsSuccessModalOpen(false);
     const loggedInUser = getPersistedAuthUser();
-    router.push(getRedirectPath(loggedInUser));
+    router.replace(getRedirectPath(loggedInUser));
   };
 
   return (

@@ -34,7 +34,7 @@ export const settingsMenu: SettingsMenuItem[] = [
     icon: FileText,
   },
   {
-    label: "Verified Badge Plan",
+    label: "Trusted Expert Badge",
     href: "/profile-settings/verified-badge-plan",
     icon: BadgeCheck,
   },

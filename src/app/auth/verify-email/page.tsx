@@ -15,7 +15,9 @@ import {
 import {
   persistAuthFromResponse,
   persistResetTokenFromResponse,
+  getPersistedAuthUser,
 } from "@/lib/auth-session";
+import { getRedirectPath } from "@/lib/auth-utils";
 import { toast } from "@/lib/toast";
 import { authService } from "@/services/auth.service";
 import type { RootState } from "@/store/index";
@@ -69,6 +71,15 @@ function VerifyEmailContent() {
     const interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
     return () => clearInterval(interval);
   }, [timer]);
+
+  useEffect(() => {
+    if (isResetMode) return;
+
+    const effectiveUser = user ?? getPersistedAuthUser();
+    if (effectiveUser?.isEmailVerified) {
+      router.replace(getRedirectPath(effectiveUser));
+    }
+  }, [isResetMode, router, user]);
 
   const updateOtp = (value: string, index: number) => {
     if (!/^\d*$/.test(value)) return;

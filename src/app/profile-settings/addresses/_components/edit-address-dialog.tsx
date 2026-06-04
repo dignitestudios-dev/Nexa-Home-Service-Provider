@@ -13,11 +13,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { useEditAddress } from "@/hooks/addresses/use-address-mutations";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { resolveAddressCoordinates } from "@/lib/resolve-address-coordinates";
 import type { UserAddress } from "@/types/address.types";
 import AddressGoogleMapPicker from "./address-google-map-picker";
 import {
+  getZipCodeValidationError,
+  markAddressFieldsEdited,
+  mergeAddressLocationUpdate,
+  normalizeZipCodeInput,
+} from "./address-form-helpers";
+import { ZIP_CODE_MAX_LENGTH } from "@/lib/schemas/profile-setup.schema";
+import {
   addressDialogContentClass,
   addressDialogFormClass,
+  addressDialogOutsideEventHandlers,
   addressDialogSubmitClass,
   addressDialogTitleClass,
   addressFieldInputMutedClass,
@@ -45,7 +54,7 @@ function toEditForm(address: UserAddress): EditFormState {
     country: address.country,
     state: address.state,
     city: address.city,
-    zipCode: address.zipCode,
+    zipCode: normalizeZipCodeInput(address.zipCode),
     longitude: String(lng),
     latitude: String(lat),
   };
@@ -76,11 +85,19 @@ export default function EditAddressDialog({
   const editMutation = useEditAddress();
   const [form, setForm] = useState<EditFormState>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
+  const [zipCodeError, setZipCodeError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    if (!address || !open) return;
+    if (!address || !open) {
+      setMapReady(false);
+      return;
+    }
+
     setForm(toEditForm(address));
     setFormError(null);
+    setZipCodeError(null);
+    setMapReady(true);
   }, [address, open]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -89,7 +106,23 @@ export default function EditAddressDialog({
 
     setFormError(null);
 
+    const nextZipCodeError = getZipCodeValidationError(form.zipCode);
+    if (nextZipCodeError) {
+      setZipCodeError(nextZipCodeError);
+      return;
+    }
+
+    setZipCodeError(null);
+
     try {
+      const coordinates = await resolveAddressCoordinates({
+        address: form.address.trim(),
+        city: form.city.trim(),
+        state: form.state.trim(),
+        country: form.country.trim(),
+        zipCode: normalizeZipCodeInput(form.zipCode),
+      });
+
       await editMutation.mutateAsync({
         _id: address._id,
         label: form.label.trim(),
@@ -97,19 +130,25 @@ export default function EditAddressDialog({
         country: form.country.trim(),
         state: form.state.trim(),
         city: form.city.trim(),
-        zipCode: form.zipCode.trim(),
-        longitude: form.longitude.trim(),
-        latitude: form.latitude.trim(),
+        zipCode: normalizeZipCodeInput(form.zipCode),
+        longitude: coordinates.longitude,
+        latitude: coordinates.latitude,
       });
       onOpenChange(false);
     } catch (error) {
-      setFormError(getApiErrorMessage(error, "Failed to update address. Please try again."));
+      setFormError(
+        getApiErrorMessage(error, "Failed to update address. Please try again."),
+      );
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className={addressDialogContentClass}>
+      <DialogContent
+        showCloseButton={false}
+        className={addressDialogContentClass}
+        {...addressDialogOutsideEventHandlers}
+      >
         <DialogHeader className="gap-0.5 pr-8">
           <DialogTitle className={addressDialogTitleClass}>Edit Address</DialogTitle>
         </DialogHeader>
@@ -123,7 +162,17 @@ export default function EditAddressDialog({
           </button>
         </DialogClose>
 
-        <form className={addressDialogFormClass} onSubmit={onSubmit}>
+        <form
+          className={addressDialogFormClass}
+          onSubmit={onSubmit}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter") return;
+            const target = event.target;
+            if (!(target instanceof HTMLElement)) return;
+            if (target.tagName === "BUTTON") return;
+            event.preventDefault();
+          }}
+        >
           <div>
             <label htmlFor="edit-label" className={addressFieldLabelClass}>
               Address Name
@@ -144,7 +193,11 @@ export default function EditAddressDialog({
             <Input
               id="edit-address"
               value={form.address}
-              onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
+              onChange={(e) =>
+                setForm((prev) =>
+                  markAddressFieldsEdited({ ...prev, address: e.target.value }),
+                )
+              }
               className={addressFieldInputMutedClass}
               required
             />
@@ -158,7 +211,11 @@ export default function EditAddressDialog({
               <Input
                 id="edit-city"
                 value={form.city}
-                onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) =>
+                    markAddressFieldsEdited({ ...prev, city: e.target.value }),
+                  )
+                }
                 className={addressFieldInputWhiteClass}
                 required
               />
@@ -170,7 +227,11 @@ export default function EditAddressDialog({
               <Input
                 id="edit-state"
                 value={form.state}
-                onChange={(e) => setForm((prev) => ({ ...prev, state: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) =>
+                    markAddressFieldsEdited({ ...prev, state: e.target.value }),
+                  )
+                }
                 className={addressFieldInputWhiteClass}
                 required
               />
@@ -185,7 +246,11 @@ export default function EditAddressDialog({
               <Input
                 id="edit-country"
                 value={form.country}
-                onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) =>
+                    markAddressFieldsEdited({ ...prev, country: e.target.value }),
+                  )
+                }
                 className={addressFieldInputWhiteClass}
                 required
               />
@@ -197,25 +262,36 @@ export default function EditAddressDialog({
               <Input
                 id="edit-zip"
                 value={form.zipCode}
-                onChange={(e) => setForm((prev) => ({ ...prev, zipCode: e.target.value }))}
+                onChange={(e) => {
+                  setZipCodeError(null);
+                  setForm((prev) =>
+                    markAddressFieldsEdited({
+                      ...prev,
+                      zipCode: normalizeZipCodeInput(e.target.value),
+                    }),
+                  );
+                }}
+                placeholder="e.g., 12345678"
+                inputMode="numeric"
+                maxLength={ZIP_CODE_MAX_LENGTH}
                 className={addressFieldInputWhiteClass}
                 required
               />
+              {zipCodeError ? (
+                <p className="mt-1 text-[12px] text-[#FF0000]">{zipCodeError}</p>
+              ) : null}
             </div>
           </div>
 
-          {open ? (
+          {open && address && mapReady ? (
             <AddressGoogleMapPicker
+              key={address._id}
               enabled={open}
               searchInputId="edit-address-map-search"
               latitude={form.latitude}
               longitude={form.longitude}
               onLocationChange={(update) =>
-                setForm((prev) => ({
-                  ...prev,
-                  ...update,
-                  country: update.country || prev.country,
-                }))
+                setForm((prev) => mergeAddressLocationUpdate(prev, update))
               }
               compact
             />

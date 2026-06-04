@@ -12,13 +12,13 @@ export const PROFILE_IMAGE_MIME_TYPES = ["image/jpeg", "image/png"] as const;
 
 export const PROFILE_IMAGE_ACCEPT = "image/png,image/jpeg,.png,.jpg,.jpeg";
 
-export function validateProfileImage(
-  file: File | null | undefined,
-): string | null {
-  if (!file) {
-    return "Profile picture/logo is required";
-  }
+export const PROFILE_IMAGE_SIZE_ERROR =
+  "Profile image size must not exceed 5 MB";
 
+function validateProfileImageFile(
+  file: File,
+  sizeErrorMessage: string,
+): string | null {
   if (
     !PROFILE_IMAGE_MIME_TYPES.includes(
       file.type as (typeof PROFILE_IMAGE_MIME_TYPES)[number],
@@ -28,10 +28,30 @@ export function validateProfileImage(
   }
 
   if (file.size > PROFILE_IMAGE_MAX_BYTES) {
-    return "Image must be 5MB or smaller";
+    return sizeErrorMessage;
   }
 
   return null;
+}
+
+export function validateProfileImage(
+  file: File | null | undefined,
+): string | null {
+  if (!file) {
+    return "Profile picture/logo is required";
+  }
+
+  return validateProfileImageFile(file, "Image must be 5MB or smaller");
+}
+
+export function validateOptionalProfileImage(
+  file: File | null | undefined,
+): string | null {
+  if (!file) {
+    return null;
+  }
+
+  return validateProfileImageFile(file, PROFILE_IMAGE_SIZE_ERROR);
 }
 
 const profileImageSchema = z
@@ -58,6 +78,34 @@ const profileImageSchema = z
 
 /** Letters only; may include spaces, hyphens, apostrophes (2–32 chars). */
 export const PROFILE_NAME_PATTERN = /^[A-Za-z][A-Za-z\s'-]{1,31}$/;
+
+export const OFFICE_NO_MAX_LENGTH = 30;
+export const OFFICE_NO_PATTERN = /^[A-Za-z0-9]*$/;
+
+export const ZIP_CODE_MAX_LENGTH = 8;
+
+export const FREE_PROFILE_SERVICE_LIMIT = 3;
+export const SUBSCRIBED_PROFILE_SERVICE_LIMIT = 20;
+
+/** @deprecated Use getMaxProfileServices instead */
+export const MAX_PROFILE_SERVICES = FREE_PROFILE_SERVICE_LIMIT;
+
+export function getMaxProfileServices(isServiceSubscribed = false): number {
+  return isServiceSubscribed
+    ? SUBSCRIBED_PROFILE_SERVICE_LIMIT
+    : FREE_PROFILE_SERVICE_LIMIT;
+}
+
+export const CATEGORY_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
+
+const servicesSchema = (maxServices: number) =>
+  z
+    .array(z.string().regex(CATEGORY_ID_PATTERN, "Invalid category ID"))
+    .min(1, "Please select at least one service")
+    .max(
+      maxServices,
+      `You can select up to ${maxServices} services only`,
+    );
 
 export const profileSetupSchema = z.object({
   profileImage: profileImageSchema,
@@ -86,7 +134,7 @@ export const profileSetupSchema = z.object({
       return digits.length === 11 && digits.startsWith("1");
     }, "Enter a valid US phone number (e.g. (202) 555-0156)"),
 
-  services: z.array(z.string()).min(1, "Please select at least one service"),
+  services: servicesSchema(SUBSCRIBED_PROFILE_SERVICE_LIMIT),
 
   overview: z
     .string()
@@ -99,9 +147,21 @@ export const profileSetupSchema = z.object({
 
   streetName: z.string().min(2, "Street name is required"),
 
-  officeNo: z.string().optional(),
+  officeNo: z
+    .string()
+    .max(
+      OFFICE_NO_MAX_LENGTH,
+      `Office number cannot exceed ${OFFICE_NO_MAX_LENGTH} characters`,
+    )
+    .refine(
+      (value) => value === "" || OFFICE_NO_PATTERN.test(value),
+      "Office number must be alphanumeric only",
+    ),
 
-  zipCode: z.string().min(3, "Zip code is required"),
+  zipCode: z
+    .string()
+    .min(3, "Zip code is required")
+    .max(ZIP_CODE_MAX_LENGTH, `Zip code cannot exceed ${ZIP_CODE_MAX_LENGTH} characters`),
   latitude: z.string().optional(),
   longitude: z.string().optional(),
   country: z.string().optional(),

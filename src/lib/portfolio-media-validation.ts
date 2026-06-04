@@ -1,4 +1,4 @@
-export const PORTFOLIO_MAX_FILES = 5;
+export const PORTFOLIO_MAX_FILES = 10;
 
 export const PORTFOLIO_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 

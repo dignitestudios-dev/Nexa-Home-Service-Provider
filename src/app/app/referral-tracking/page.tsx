@@ -4,11 +4,10 @@ import { useMemo, useState } from "react";
 import {
   Calendar,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Copy,
   Search,
 } from "lucide-react";
+import PaginationControls from "@/components/ui/pagination-controls";
 import {
   Area,
   AreaChart,
@@ -128,14 +127,6 @@ export default function ReferralTrackingPage() {
     (safePage - 1) * rowsPerPage,
     safePage * rowsPerPage,
   );
-
-  const goToNextPage = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-  };
-
-  const goToPreviousPage = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
-  };
 
   return (
     <div className="relative min-h-screen overflow-hidden rounded-[50px] bg-[#EAFCFF] p-6">
@@ -307,27 +298,12 @@ export default function ReferralTrackingPage() {
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-end gap-4">
-          <button
-            type="button"
-            onClick={goToPreviousPage}
-            disabled={safePage === 1}
-            className="h-12 w-12 rounded-full bg-[#005864]/[0.06] text-[#005864] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <ChevronLeft className="mx-auto" size={20} />
-          </button>
-          <div className="rounded-full bg-[#F9FAFA] px-8 py-3 text-[16px] leading-5 font-medium text-black">
-            {String(safePage).padStart(2, "0")}
-          </div>
-          <button
-            type="button"
-            onClick={goToNextPage}
-            disabled={safePage === totalPages}
-            className="h-12 w-12 rounded-full bg-[#005864] text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <ChevronRight className="mx-auto" size={20} />
-          </button>
-        </div>
+        <PaginationControls
+          page={safePage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          className="mt-6 flex justify-end"
+        />
       </section>
     </div>
   );

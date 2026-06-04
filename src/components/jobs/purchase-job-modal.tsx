@@ -3,6 +3,10 @@
 import { X } from "lucide-react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  calculateCreditPackagePrice,
+  formatCreditPrice,
+} from "@/lib/credit-pricing";
 import { cleanJobDescription, formatJobType } from "@/lib/parse-provider-feed";
 import {
   formatContactPreferences,
@@ -38,6 +42,7 @@ export default function PurchaseJobModal({
   isConfirming = false,
 }: PurchaseJobModalProps) {
   const description = cleanJobDescription(job.description);
+  const purchaseAmount = calculateCreditPackagePrice(job.creditsToDeduct);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -65,7 +70,7 @@ export default function PurchaseJobModal({
             {job.categoryName}
           </h2>
 
-          <p className="mt-2 line-clamp-2 text-[14px] leading-[26px] text-[rgba(24,24,24,0.8)]">
+          <p className="mt-2 line-clamp-2 break-all text-[14px] leading-[26px] text-[rgba(24,24,24,0.8)]">
             {description || "No description provided."}
           </p>
 
@@ -98,6 +103,15 @@ export default function PurchaseJobModal({
               </span>
               <span className="text-[24px] font-bold leading-[30px] text-[#005864]">
                 {job.creditsToDeduct.toLocaleString("en-US")}
+              </span>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between gap-4 border-t border-[#E4E4E4] pt-3">
+              <span className="text-[14px] font-medium leading-5 text-black">
+                Amount:
+              </span>
+              <span className="text-[18px] font-bold leading-[30px] text-[#1C1C1C]">
+                {formatCreditPrice(purchaseAmount)}
               </span>
             </div>
           </div>

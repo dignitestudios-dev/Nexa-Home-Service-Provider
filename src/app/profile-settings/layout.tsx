@@ -11,7 +11,7 @@ export default function ProfileSettingsLayout({ children }: { children: ReactNod
 
         <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-[430px_1fr]">
           <SettingsSidebar />
-          <section className="min-h-[988px] rounded-[24px] bg-[#F8F8F8] p-6 md:p-8">
+          <section className="min-h-[988px] rounded-[24px] bg-[#F8F8F8] p-6 md:p-6">
             {children}
           </section>
         </div>
