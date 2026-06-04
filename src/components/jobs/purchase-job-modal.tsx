@@ -65,7 +65,7 @@ export default function PurchaseJobModal({
             {job.categoryName}
           </h2>
 
-          <p className="mt-2 line-clamp-2 text-[14px] leading-[26px] text-[rgba(24,24,24,0.8)]">
+          <p className="mt-2 line-clamp-2 break-all text-[14px] leading-[26px] text-[rgba(24,24,24,0.8)]">
             {description || "No description provided."}
           </p>
 

@@ -29,7 +29,12 @@ export default function MyJobDetailPage() {
           </button>
         </div>
       ) : (
-        <JobDetailView job={job} backHref="/my-jobs" showPurchaseButton={false} />
+        <JobDetailView
+          job={job}
+          backHref="/my-jobs"
+          showPurchaseButton={false}
+          showHeaderStatus
+        />
       )}
     </MainAppShell>
   );

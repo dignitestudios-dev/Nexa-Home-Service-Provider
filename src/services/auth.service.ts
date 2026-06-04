@@ -5,6 +5,7 @@ import type {
   ChangePhonePayload,
   CheckEmailPayload,
   ForgotPasswordPayload,
+  GoogleAuthPayload,
   LoginAuthPayload,
   RegisterAuthPayload,
   ResendOtpPayload,
@@ -28,6 +29,11 @@ export const authService = {
   },
 
   login: async (payload: LoginAuthPayload) => {
+    const { data } = await API.post("/auth", payload);
+    return data;
+  },
+
+  loginWithGoogle: async (payload: GoogleAuthPayload) => {
     const { data } = await API.post("/auth", payload);
     return data;
   },

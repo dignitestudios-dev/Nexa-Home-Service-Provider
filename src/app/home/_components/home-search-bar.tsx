@@ -1,6 +1,7 @@
 "use client";
 
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
+import Image from "next/image";
 
 type HomeSearchBarProps = {
   searchQuery: string;
@@ -29,7 +30,7 @@ export default function HomeSearchBar({
               onSearchSubmit?.();
             }
           }}
-          placeholder="Search job title or description"
+          placeholder="Search title, description or category"
           className="w-full bg-transparent text-[14px] text-[#1C1C1C] outline-none placeholder:text-[#1C1C1C]"
           aria-label="Search jobs"
         />
@@ -37,10 +38,17 @@ export default function HomeSearchBar({
       <button
         type="button"
         onClick={onFilterClick}
-        className="flex h-12 w-12 items-center justify-center rounded-[10px] bg-[#005864]"
+        className="flex h-11 w-11 shrink-0 items-center justify-center cursor-pointer"
         aria-label="Open filters"
       >
-        <SlidersHorizontal className="h-5 w-5 text-[#FBFBFB]" />
+        <Image
+          src="/asset/filter.svg"
+          alt=""
+          width={48}
+          height={48}
+          className="h-12 w-12"
+          aria-hidden
+        />
       </button>
     </div>
   );

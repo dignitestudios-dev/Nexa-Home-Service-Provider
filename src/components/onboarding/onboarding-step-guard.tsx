@@ -10,6 +10,7 @@ import {
   getNextOnboardingStepPath,
   isOnboardingPath,
 } from "@/lib/onboarding-steps";
+import { hasCompletedWalkthrough } from "@/lib/walkthrough-storage";
 import type { RootState } from "@/store/index";
 
 /** Blocks browser back / direct URL to completed or future onboarding steps. */
@@ -23,6 +24,11 @@ export function OnboardingStepGuard() {
 
     const effectiveUser = user ?? getPersistedAuthUser();
     if (!effectiveUser) return;
+
+    if (hasCompletedWalkthrough(effectiveUser._id)) {
+      router.replace("/home");
+      return;
+    }
 
     if (!canAccessOnboardingPath(pathname, effectiveUser)) {
       router.replace(getNextOnboardingStepPath(effectiveUser));

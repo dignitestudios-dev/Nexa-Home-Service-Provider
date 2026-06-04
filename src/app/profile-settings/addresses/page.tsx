@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ExternalLink, MapPin, Pencil, Trash2 } from "lucide-react";
 import { getAuthTokenCookie } from "@/lib/auth-session";
+import { useSetDefaultAddress } from "@/hooks/addresses/use-address-mutations";
 import { useGetAddresses } from "@/hooks/addresses/use-addresses-query";
 import type { RootState } from "@/store/index";
 import type { UserAddress } from "@/types/address.types";
@@ -43,6 +44,7 @@ export default function AddressesPage() {
   const [isEditAddressOpen, setIsEditAddressOpen] = useState(false);
   const [deletingAddress, setDeletingAddress] = useState<UserAddress | null>(null);
   const [isDeleteAddressOpen, setIsDeleteAddressOpen] = useState(false);
+  const setDefaultMutation = useSetDefaultAddress();
 
   const openEditDialog = (address: UserAddress) => {
     setEditingAddress(address);
@@ -52,6 +54,11 @@ export default function AddressesPage() {
   const openDeleteDialog = (address: UserAddress) => {
     setDeletingAddress(address);
     setIsDeleteAddressOpen(true);
+  };
+
+  const handleSetDefault = (addressId: string) => {
+    if (setDefaultMutation.isPending) return;
+    setDefaultMutation.mutate(addressId);
   };
 
   return (
@@ -106,37 +113,50 @@ export default function AddressesPage() {
             const mapUrl = getMapUrl(address);
 
             return (
-              <article key={address._id} className="rounded-[12px] bg-white p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="max-w-[520px]">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-[20px] font-[500] leading-[26px] text-[#1F1F1F]">
-                        {address.label}
-                      </h3>
-                      {address.isDefault ? (
-                        <span className="rounded-full bg-[#E8F4F5] px-2 py-0.5 text-[12px] font-[500] text-[#005864]">
-                          Default
-                        </span>
+              <article
+                key={address._id}
+                className={`rounded-[12px] p-4 transition-colors cursor-pointer ${
+                  address.isDefault
+                    ? "border border-[#005864] bg-[rgba(0,88,100,0.06)]"
+                    : "border border-transparent bg-white"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    name="default-address"
+                    checked={address.isDefault}
+                    disabled={setDefaultMutation.isPending}
+                    onChange={() => handleSetDefault(address._id)}
+                    className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#005864] disabled:cursor-not-allowed"
+                    aria-label={`Set ${address.label} as default address`}
+                  />
+                  <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
+                    <div className="max-w-[520px] min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-[20px] font-[700] leading-[26px] text-[#1F1F1F]">
+                          {address.label}
+                        </h3>
+                      
+                      </div>
+                      <div className="mt-3 flex items-start gap-2">
+                        <MapPin className="mt-1 h-[17px] w-[17px] shrink-0 text-[#1F1F1F]" />
+                        <p className="text-[15px] leading-5 text-black/60">{address.address}</p>
+                      </div>
+                      {mapUrl ? (
+                        <a
+                          href={mapUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex cursor-pointer items-center gap-1 text-[14px] font-[500] leading-[18px] text-[#005864] underline underline-offset-2"
+                        >
+                          View on Map
+                          <ExternalLink className="h-[14px] w-[14px]" />
+                        </a>
                       ) : null}
                     </div>
-                    <div className="mt-3 flex items-start gap-2">
-                      <MapPin className="mt-1 h-[17px] w-[17px] shrink-0 text-[#1F1F1F]" />
-                      <p className="text-[15px] leading-5 text-black/60">{address.address}</p>
-                    </div>
-                    {mapUrl ? (
-                      <a
-                        href={mapUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-2 inline-flex cursor-pointer items-center gap-1 text-[14px] font-[500] leading-[18px] text-[#005864] underline underline-offset-2"
-                      >
-                        View on Map
-                        <ExternalLink className="h-[14px] w-[14px]" />
-                      </a>
-                    ) : null}
-                  </div>
 
-                  <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                     <button
                       type="button"
                       aria-label={`Edit ${address.label} address`}
@@ -153,6 +173,7 @@ export default function AddressesPage() {
                     >
                       <Trash2 className="h-5 w-5" />
                     </button>
+                  </div>
                   </div>
                 </div>
               </article>

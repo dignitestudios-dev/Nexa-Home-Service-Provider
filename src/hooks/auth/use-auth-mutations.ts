@@ -1,8 +1,9 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { clearAuthSession, persistAuthFromResponse } from "@/lib/auth-session";
+import { signInWithGoogle } from "@/lib/firebase-google-auth";
 import { authService } from "@/services/auth.service";
 import { setPendingVerifyEmail } from "@/lib/verify-email-storage";
 import type {
@@ -43,6 +44,28 @@ export function useLoginAuth() {
   });
 }
 
+export function useGoogleLoginAuth() {
+  const dispatch = useDispatch();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { email, idToken } = await signInWithGoogle();
+      const response = await authService.loginWithGoogle({
+        email,
+        method: "google",
+        role: "service-provider",
+        idToken,
+      });
+
+      return { response, email };
+    },
+    onSuccess: ({ response, email }) => {
+      persistAuthFromResponse(response, dispatch);
+      setPendingVerifyEmail(email);
+    },
+  });
+}
+
 /** Verify OTP — caller handles redirect / session (signup vs reset). */
 export function useVerifyEmailMutation() {
   return useMutation({
@@ -77,10 +100,12 @@ export function useForgotPassword() {
 
 export function useLogoutAuth() {
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => authService.logout(),
     onSettled: () => {
       clearAuthSession(dispatch);
+      queryClient.clear();
     },
   });
 }

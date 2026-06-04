@@ -1,6 +1,13 @@
 // services/profileSetup.service.ts
 
 import { API } from "@/lib/axios";
+import { CATEGORY_ID_PATTERN } from "@/lib/schemas/profile-setup.schema";
+
+function normalizeCategoryIDs(ids: string[]): string[] {
+  const unique = [...new Set(ids.map((id) => id.trim()))];
+
+  return unique.filter((id) => CATEGORY_ID_PATTERN.test(id));
+}
 
 // =========================
 // TYPES
@@ -82,12 +89,16 @@ export const profileSetupService = {
     formData.append("longitude", String(payload.longitude));
     formData.append("latitude", String(payload.latitude));
 
-    // multiple categoryIDs
-    payload.categoryIDs.forEach((id) => {
-      formData.append("categoryIDs", id);
-    });
+    const categoryIDs = normalizeCategoryIDs(payload.categoryIDs);
 
-    // formData.append("categoryIDs", JSON.stringify(payload.categoryIDs));
+    if (categoryIDs.length === 1) {
+      // One repeated field is parsed as a string; indexed key keeps it an array.
+      formData.append("categoryIDs[0]", categoryIDs[0]);
+    } else {
+      categoryIDs.forEach((id) => {
+        formData.append("categoryIDs", id);
+      });
+    }
 
     const { data } = await API.post("/user/complete-profile", formData, {
       headers: {

@@ -78,6 +78,23 @@ export function cleanJobDescription(text: string): string {
   return text.replace(/\r\n/g, "\n").replace(/\s+/g, " ").trim();
 }
 
+export function jobMatchesSearch(job: ProviderFeedJob, query: string): boolean {
+  const normalizedQuery = cleanJobDescription(query).toLowerCase();
+  if (!normalizedQuery) return true;
+
+  const searchableText = [
+    job.title,
+    job.description,
+    cleanJobDescription(job.description),
+    job.categoryName,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return searchableText.includes(normalizedQuery);
+}
+
 export function formatJobWhen(when: string): string {
   if (!when.trim()) return "Not specified";
 
@@ -92,7 +109,7 @@ export function formatJobWhen(when: string): string {
 }
 
 export function formatJobType(type: string): string {
-  if (type === "one-time") return "One Time Job";
+  if (type === "one-time") return "One Time";
   if (type === "recurring") return "Recurring Job";
   return type.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
@@ -106,6 +123,7 @@ export function formatApplicationDisplayStatus(status: string): string {
     eligible: "Ready to hire",
     ongoing: "Ongoing",
     completed: "Completed",
+    no_longer_available: "No Longer Available",
     "ready-to-hire": "Ready to hire",
     "need-an-expert-right-away": "Need an expert right away",
     "researching-options": "Researching options",
@@ -113,7 +131,9 @@ export function formatApplicationDisplayStatus(status: string): string {
 
   return (
     labels[status.toLowerCase()] ??
-    status.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+    status
+      .replace(/[-_]/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase())
   );
 }
 
@@ -123,9 +143,12 @@ export function getApplicationStatusBadgeClass(status: string): string {
       return "bg-[#27AE60]";
     case "confirmed":
       return "bg-[#005864]";
+    case "ongoing":
     case "completed":
       return "bg-[#2F80ED]";
+    case "no_longer_available":
+      return "bg-red-600";
     default:
-      return "bg-[#27AE60]";
+      return "bg-red-600";
   }
 }

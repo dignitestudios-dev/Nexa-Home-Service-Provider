@@ -1,5 +1,9 @@
 import Link from "next/link";
 
+import {
+  buildJobDetailHref,
+  type HomeJobsPageParams,
+} from "@/lib/home-job-filters-url";
 import type { ProviderFeedJob } from "@/types/provider-feed.types";
 import {
   cleanJobDescription,
@@ -7,12 +11,20 @@ import {
   formatJobWhen,
 } from "@/lib/parse-provider-feed";
 
-export default function ProviderFeedJobCard({ job }: { job: ProviderFeedJob }) {
+type ProviderFeedJobCardProps = {
+  job: ProviderFeedJob;
+  homePageParams: HomeJobsPageParams;
+};
+
+export default function ProviderFeedJobCard({
+  job,
+  homePageParams,
+}: ProviderFeedJobCardProps) {
   const description = cleanJobDescription(job.description);
 
   return (
     <Link
-      href={`/jobs/${job.id}`}
+      href={buildJobDetailHref(job.id, homePageParams)}
       className="block rounded-[12px] bg-[#F8F8F8] p-4 transition-opacity hover:opacity-95"
     >
       <h3 className="text-[18px] font-[600] leading-[23px] text-[#1C1C1C]">

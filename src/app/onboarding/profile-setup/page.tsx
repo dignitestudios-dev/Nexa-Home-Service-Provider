@@ -21,13 +21,18 @@ import {
   ProfileSetupFormData,
   profileSetupSchema,
   PROFILE_IMAGE_ACCEPT,
+  MAX_PROFILE_SERVICES,
+  OFFICE_NO_MAX_LENGTH,
   validateProfileImage,
+  ZIP_CODE_MAX_LENGTH,
 } from "@/lib/schemas/profile-setup.schema";
 import { toast } from "@/lib/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGetCategories } from "@/lib/category-query";
 import { ServiceLimitModal } from "@/components/auth/service-limit-modal";
+import { LegalDocumentModal } from "@/components/legal/legal-document-modal";
+import { PRIVACY_POLICY, TERMS_AND_CONDITIONS } from "@/lib/legal-content";
 import { extractAuthFromResponse } from "@/lib/auth-session";
 import { getRedirectPath } from "@/lib/auth-utils";
 
@@ -112,6 +117,8 @@ export default function ProfileSetupOnboardingPage() {
   const [serviceSearch, setServiceSearch] = useState("");
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [isServiceLimitModalOpen, setIsServiceLimitModalOpen] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
   // ── Google Maps state ──────────────────────────────────────────────────────
   const mapRef = useRef<HTMLDivElement>(null);
@@ -192,7 +199,7 @@ export default function ProfileSetupOnboardingPage() {
   };
 
   const { data: categoriesResponse, isLoading: categoriesLoading } =
-    useGetCategories();
+    useGetCategories(1, 100);
 
   const categories = categoriesResponse?.data ?? [];
 
@@ -235,7 +242,9 @@ export default function ProfileSetupOnboardingPage() {
     if (parsed.streetName)
       setValue("streetName", parsed.streetName, { shouldValidate: true });
     if (parsed.zipCode)
-      setValue("zipCode", parsed.zipCode.slice(0, 5), { shouldValidate: true });
+      setValue("zipCode", parsed.zipCode.slice(0, ZIP_CODE_MAX_LENGTH), {
+        shouldValidate: true,
+      });
     if (parsed.country)
       setValue("country", parsed.country, { shouldValidate: true });
     if (parsed.state) setValue("state", parsed.state, { shouldValidate: true });
@@ -347,7 +356,7 @@ export default function ProfileSetupOnboardingPage() {
         zipCode: data.zipCode,
         longitude: data.longitude ? parseFloat(data.longitude) : -75.1652,
         latitude: data.latitude ? parseFloat(data.latitude) : 39.9526,
-        categoryIDs: data.services,
+        categoryIDs: [...new Set(data.services.map((id) => id.trim()).filter(Boolean))],
       });
 
       toast.fromApiSuccess(response, "Profile setup completed successfully.");
@@ -680,7 +689,7 @@ export default function ProfileSetupOnboardingPage() {
                                 checked={checked}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    if (selectedServices.length >= 4) {
+                                    if (selectedServices.length >= MAX_PROFILE_SERVICES) {
                                       setIsServiceLimitModalOpen(true);
                                       return;
                                     }
@@ -727,7 +736,7 @@ export default function ProfileSetupOnboardingPage() {
                     {...register("overview")}
                     maxLength={500}
                     placeholder="Write here"
-                    className="h-[96px] w-full resize-none bg-transparent text-[16px] leading-5 text-[#1C1C1C] placeholder:text-black/55 outline-none"
+                    className="h-[96px] w-full normal-case first-letter:uppercase resize-none bg-transparent text-[16px] leading-5 text-[#1C1C1C] placeholder:text-black/55 outline-none"
                   />
                 </div>
 
@@ -841,11 +850,23 @@ export default function ProfileSetupOnboardingPage() {
                     Office No.
                   </label>
                   <Input
-                    {...register("officeNo")}
-                    placeholder="e.g., 56"
+                    {...register("officeNo", {
+                      onChange: (event) => {
+                        const value = event.target.value
+                          .replace(/[^A-Za-z0-9]/g, "")
+                          .slice(0, OFFICE_NO_MAX_LENGTH);
+                        setValue("officeNo", value, { shouldValidate: true });
+                      },
+                    })}
+                    placeholder="e.g., 56A"
                     className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
-                    maxLength={100}
+                    maxLength={OFFICE_NO_MAX_LENGTH}
                   />
+                  {errors.officeNo && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.officeNo.message}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -857,14 +878,14 @@ export default function ProfileSetupOnboardingPage() {
                       onChange: (e) => {
                         const value = e.target.value
                           .replace(/\D/g, "")
-                          .slice(0, 5);
-                        setValue("zipCode", value);
+                          .slice(0, ZIP_CODE_MAX_LENGTH);
+                        setValue("zipCode", value, { shouldValidate: true });
                       },
                     })}
-                    placeholder="e.g., 12345"
+                    placeholder="e.g., 12345678"
                     className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
                     inputMode="numeric"
-                    maxLength={5}
+                    maxLength={ZIP_CODE_MAX_LENGTH}
                   />
                   {errors.zipCode && (
                     <p className="mt-1 text-sm text-red-500">
@@ -896,23 +917,29 @@ export default function ProfileSetupOnboardingPage() {
                 />
                 <span className="text-[15px] leading-[19px] text-black/80">
                   I accept the{" "}
-                  <a
-                    href="/profile-settings/terms-and-conditions"
-                    className="font-medium text-[#005864]"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setIsTermsModalOpen(true);
+                    }}
+                    className="cursor-pointer font-medium text-[#005864] hover:underline"
                   >
                     Terms & Conditions
-                  </a>{" "}
+                  </button>{" "}
                   and{" "}
-                  <a
-                    href="/profile-settings/privacy-policy"
-                    className="font-medium text-[#005864]"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setIsPrivacyModalOpen(true);
+                    }}
+                    className="cursor-pointer font-medium text-[#005864] hover:underline"
                   >
                     Privacy Policy
-                  </a>
+                  </button>
                 </span>
               </label>
               {errors.acceptTerms && (
@@ -938,6 +965,18 @@ export default function ProfileSetupOnboardingPage() {
           <ServiceLimitModal
             open={isServiceLimitModalOpen}
             onClose={() => setIsServiceLimitModalOpen(false)}
+          />
+
+          <LegalDocumentModal
+            open={isTermsModalOpen}
+            onClose={() => setIsTermsModalOpen(false)}
+            document={TERMS_AND_CONDITIONS}
+          />
+
+          <LegalDocumentModal
+            open={isPrivacyModalOpen}
+            onClose={() => setIsPrivacyModalOpen(false)}
+            document={PRIVACY_POLICY}
           />
         </main>
       </div>

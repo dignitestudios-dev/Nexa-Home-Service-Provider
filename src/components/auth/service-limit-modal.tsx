@@ -7,6 +7,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { MAX_PROFILE_SERVICES } from "@/lib/schemas/profile-setup.schema";
 
 interface ServiceLimitModalProps {
   open: boolean;
@@ -39,8 +40,8 @@ export function ServiceLimitModal({ open, onClose }: ServiceLimitModalProps) {
           </DialogTitle>
 
           <DialogDescription className="mt-4 text-[18px] leading-[23px] text-center text-black/80">
-            You can select up to 4 services. To add more services, please
-            upgrade to the Advance Plan.
+            You can select up to {MAX_PROFILE_SERVICES} services. To add more
+            services, please upgrade to the Advance Plan.
           </DialogDescription>
         </div>
       </DialogContent>

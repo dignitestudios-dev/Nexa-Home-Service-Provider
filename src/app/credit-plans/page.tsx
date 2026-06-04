@@ -3,29 +3,53 @@
 import { useState } from "react";
 
 import MainAppShell from "@/components/layout/main-app-shell";
+import { useCheckoutSessionMutation } from "@/hooks/billing/use-checkout-session-mutation";
 
 import CreditPackageCard from "./_components/credit-package-card";
+import CustomPackageModal from "./_components/custom-package-modal";
 
 const CREDIT_PACKAGES = [
   {
     id: "starter",
     name: "Starter Package",
-    credits: 500,
+    credits: 100,
     price: 50,
     purchased: false,
   },
   {
     id: "advanced",
     name: "Advanced Package",
-    credits: 1000,
+    credits: 500,
     price: 250,
-    purchased: true,
+    purchased: false,
   },
 ] as const;
 
 export default function CreditPlansPage() {
   const [selectedPackageId, setSelectedPackageId] =
     useState<(typeof CREDIT_PACKAGES)[number]["id"]>("starter");
+  const [isCustomPackageModalOpen, setIsCustomPackageModalOpen] =
+    useState(false);
+  const checkoutMutation = useCheckoutSessionMutation();
+
+  const selectedPackage = CREDIT_PACKAGES.find(
+    (creditPackage) => creditPackage.id === selectedPackageId,
+  );
+
+  const handleBuyNow = () => {
+    if (!selectedPackage) return;
+
+    checkoutMutation.mutate({ amount: selectedPackage.price });
+  };
+
+  const handleCustomPackageConfirm = ({
+    price,
+  }: {
+    credits: number;
+    price: number;
+  }) => {
+    checkoutMutation.mutate({ amount: price });
+  };
 
   return (
     <MainAppShell>
@@ -54,24 +78,37 @@ export default function CreditPlansPage() {
             ))}
           </div>
 
-          <div className="mx-auto mt-4 w-full max-w-[500px] rounded-[24px] bg-[#F9FAFA] px-6 py-8 text-center">
-            <h2 className="text-[20px] font-medium leading-[25px] text-[#005864]">
+          <button
+            type="button"
+            onClick={() => setIsCustomPackageModalOpen(true)}
+            className="mx-auto mt-4 w-full max-w-[500px] rounded-[24px] bg-[#F9FAFA] px-6 py-14 text-center transition hover:bg-[#F3F5F5]"
+          >
+            <h2 className="text-[24px] font-bold leading-[25px] text-[#005864]">
               Custom Package
             </h2>
             <p className="mx-auto mt-3 max-w-[430px] text-[16px] leading-5 text-black">
               Manually choose how many credits you want to buy and we&apos;ll adjust the
               price accordingly.
             </p>
-          </div>
+          </button>
 
           <button
             type="button"
-            className="mx-auto mt-8 h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold capitalize leading-5 text-white transition-opacity hover:opacity-90"
+            onClick={handleBuyNow}
+            disabled={checkoutMutation.isPending}
+            className="mx-auto mt-8 h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold capitalize leading-5 text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Buy Now
+            {checkoutMutation.isPending ? "Processing..." : "Buy Now"}
           </button>
         </div>
       </div>
+
+      <CustomPackageModal
+        open={isCustomPackageModalOpen}
+        onOpenChange={setIsCustomPackageModalOpen}
+        onConfirm={handleCustomPackageConfirm}
+        isConfirming={checkoutMutation.isPending}
+      />
     </MainAppShell>
   );
 }

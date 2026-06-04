@@ -4,6 +4,8 @@ import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
+import { getPersistedAuthUser } from "@/lib/auth-session";
+import { isEmailOtpAuthPath } from "@/lib/auth-otp-paths";
 import { getRedirectPath } from "@/lib/auth-utils";
 import {
   canAccessOnboardingPath,
@@ -12,8 +14,13 @@ import {
   isOnboardingPath,
   isPostIdentityOnboardingPath,
 } from "@/lib/onboarding-steps";
+import {
+  hasCompletedWalkthrough,
+  isWalkthroughPath,
+  shouldRequireWalkthrough,
+  WALKTHROUGH_PATH,
+} from "@/lib/walkthrough-storage";
 import { isPasswordResetFlow } from "@/lib/reset-password-storage";
-import { getPersistedAuthUser } from "@/lib/auth-session";
 import {
   getPendingVerifyEmail,
   setPendingVerifyEmail,
@@ -77,6 +84,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       return;
     }
 
+    if (
+      effectiveUser.isEmailVerified &&
+      isEmailOtpAuthPath(pathname) &&
+      !isSignupOtpHoldPath(pathname)
+    ) {
+      router.replace(getRedirectPath(effectiveUser));
+      return;
+    }
+
     if (isSignupOtpHoldPath(pathname)) {
       return;
     }
@@ -87,6 +103,29 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       pathname === "/home" || pathname.startsWith("/profile-settings");
 
     if (isPostIdentityOnboardingPath(pathname)) {
+      return;
+    }
+
+    if (isWalkthroughPath(pathname)) {
+      if (!isOnboardingComplete(effectiveUser)) {
+        router.replace(getNextOnboardingStepPath(effectiveUser));
+        return;
+      }
+
+      if (hasCompletedWalkthrough(effectiveUser._id)) {
+        router.replace("/home");
+        return;
+      }
+
+      return;
+    }
+
+    if (
+      isOnboardingComplete(effectiveUser) &&
+      shouldRequireWalkthrough(effectiveUser._id) &&
+      !isPostIdentityOnboardingPath(pathname)
+    ) {
+      router.replace(WALKTHROUGH_PATH);
       return;
     }
 
@@ -103,7 +142,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       pathname.startsWith("/onboarding") &&
       !isPostIdentityOnboardingPath(pathname)
     ) {
-      router.replace("/home");
+      router.replace(getNextOnboardingStepPath(effectiveUser));
       return;
     }
 
@@ -112,6 +151,14 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     }
 
     if (pathname === redirectPath) {
+      return;
+    }
+
+    if (
+      redirectPath.startsWith("/onboarding") &&
+      hasCompletedWalkthrough(effectiveUser._id)
+    ) {
+      router.replace("/home");
       return;
     }
 

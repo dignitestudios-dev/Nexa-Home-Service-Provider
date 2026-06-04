@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import MainAppShell from "@/components/layout/main-app-shell";
-import { DEFAULT_JOB_FILTERS, type JobFilters } from "@/types/job-filters.types";
+import {
+  buildHomeJobsPageHref,
+  parseHomeJobsPageParams,
+  type HomeJobsPageParams,
+} from "@/lib/home-job-filters-url";
+import { type JobFilters } from "@/types/job-filters.types";
 
 import AvailableJobs from "./_components/available-jobs";
 import HomeJobsFilterModal from "./_components/home-jobs-filter-modal";
@@ -13,28 +19,70 @@ import HomeWelcomeHeading from "./_components/home-welcome-heading";
 
 const SEARCH_DEBOUNCE_MS = 400;
 
-export default function ServiceProviderHomePage() {
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+function HomePageContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const pageParams = useMemo(
+    () => parseHomeJobsPageParams(searchParams),
+    [searchParams],
+  );
+
+  const [searchInput, setSearchInput] = useState(pageParams.search);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [appliedFilters, setAppliedFilters] =
-    useState<JobFilters>(DEFAULT_JOB_FILTERS);
+
+  useEffect(() => {
+    setSearchInput(pageParams.search);
+  }, [pageParams.search]);
+
+  const replaceHomeParams = useCallback(
+    (next: HomeJobsPageParams) => {
+      const nextHref = buildHomeJobsPageHref(next);
+      const currentHref =
+        pathname +
+        (searchParams.toString() ? `?${searchParams.toString()}` : "");
+
+      if (nextHref === currentHref) {
+        return;
+      }
+
+      router.replace(nextHref, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setSearchQuery(searchInput.trim());
+      const trimmedSearch = searchInput.trim();
+      if (trimmedSearch === pageParams.search) return;
+
+      replaceHomeParams({
+        filters: pageParams.filters,
+        search: trimmedSearch,
+      });
     }, SEARCH_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, pageParams.filters, pageParams.search, replaceHomeParams]);
 
   const submitSearch = () => {
-    setSearchQuery(searchInput.trim());
+    replaceHomeParams({
+      filters: pageParams.filters,
+      search: searchInput.trim(),
+    });
+  };
+
+  const applyFilters = (filters: JobFilters) => {
+    replaceHomeParams({
+      filters,
+      search: pageParams.search,
+    });
   };
 
   return (
     <MainAppShell>
-      <div className="mt-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mt-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <HomeWelcomeHeading />
 
         <HomeSearchBar
@@ -51,14 +99,26 @@ export default function ServiceProviderHomePage() {
         Available Jobs
       </h2>
 
-      <AvailableJobs searchQuery={searchQuery} filters={appliedFilters} />
+      <AvailableJobs
+        searchQuery={pageParams.search}
+        filters={pageParams.filters}
+        homePageParams={pageParams}
+      />
 
       <HomeJobsFilterModal
         open={isFilterModalOpen}
         onOpenChange={setIsFilterModalOpen}
-        appliedFilters={appliedFilters}
-        onApply={setAppliedFilters}
+        appliedFilters={pageParams.filters}
+        onApply={applyFilters}
       />
     </MainAppShell>
+  );
+}
+
+export default function ServiceProviderHomePage() {
+  return (
+    <Suspense fallback={null}>
+      <HomePageContent />
+    </Suspense>
   );
 }
