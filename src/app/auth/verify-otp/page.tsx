@@ -21,7 +21,7 @@ function VerificationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [otp, setOtp] = useState("");
-  const [timer, setTimer] = useState(30);
+  const [timer, setTimer] = useState(60);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const verifyEmailMutation = useVerifyEmailMutation();
@@ -136,7 +136,7 @@ function VerificationContent() {
         );
       }
 
-      setTimer(30);
+      setTimer(60);
       setOtp("");
       inputRefs.current[0]?.focus();
     } catch (error) {

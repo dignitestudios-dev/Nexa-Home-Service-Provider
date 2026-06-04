@@ -1,10 +1,5 @@
-import SettingsPlaceholder from "../_components/settings-placeholder";
+import DeleteAccountScreen from "./_components/delete-account-screen";
 
 export default function DeleteAccountPage() {
-  return (
-    <SettingsPlaceholder
-      title="Delete Account"
-      description="You can permanently delete your account and all linked data from this section."
-    />
-  );
+  return <DeleteAccountScreen />;
 }

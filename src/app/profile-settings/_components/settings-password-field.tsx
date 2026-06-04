@@ -10,6 +10,7 @@ type SettingsPasswordFieldProps = {
   id: string;
   label: string;
   placeholder?: string;
+  hint?: string;
   error?: string;
   registration: UseFormRegisterReturn;
 };
@@ -18,6 +19,7 @@ export default function SettingsPasswordField({
   id,
   label,
   placeholder = "••••••••",
+  hint,
   error,
   registration,
 }: SettingsPasswordFieldProps) {
@@ -36,6 +38,7 @@ export default function SettingsPasswordField({
           id={id}
           type={visible ? "text" : "password"}
           placeholder={placeholder}
+          maxLength={32}
           className="h-12 rounded-[12px] border-0 bg-white px-4 pr-12 text-[16px] shadow-none placeholder:text-[#898A8D] focus-visible:ring-2 focus-visible:ring-[#005864]/30"
           {...registration}
         />
@@ -48,7 +51,11 @@ export default function SettingsPasswordField({
           {visible ? <Eye size={18} /> : <EyeOff size={18} strokeWidth={1.5} />}
         </button>
       </div>
-      {error ? <p className="mt-1.5 text-[14px] text-[#F01A1A]">{error}</p> : null}
+      {error ? (
+        <p className="mt-1.5 text-[14px] text-[#F01A1A]">{error}</p>
+      ) : hint ? (
+        <p className="mt-1.5 text-[12px] leading-4 text-[#3C3C3C]/60">{hint}</p>
+      ) : null}
     </div>
   );
 }

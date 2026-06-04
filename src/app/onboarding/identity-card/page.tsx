@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   IdCard,
   UserRound,
@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { extractAuthFromResponse, persistAuthUser } from "@/lib/auth-session";
 import { mergeUserOnboardingFlags } from "@/lib/onboarding-steps";
+import { markWalkthroughPending } from "@/lib/walkthrough-storage";
 import type { RootState } from "@/store/index";
 import { singUp } from "@/store/slices/auth-slice";
 import {
@@ -23,6 +24,8 @@ import {
   validateIdentityCardUploadFile,
 } from "@/lib/schemas/profile-setup.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { compressImageFileIfNeeded } from "@/lib/compress-image-file";
+import { prepareIdentityCardDocumentsForUpload } from "@/lib/prepare-identity-card-documents";
 import { toast } from "@/lib/toast";
 import { useUploadIdDocsSetup } from "@/hooks/onboarding/profile-setup-mutation";
 
@@ -51,6 +54,10 @@ export default function IdentityCardOnboardingPage() {
   ] as const;
 
   const uploadIdDocsMutation = useUploadIdDocsSetup();
+  const [compressingField, setCompressingField] = useState<
+    (typeof idCardFields)[number]["key"] | null
+  >(null);
+  const [isPreparingUpload, setIsPreparingUpload] = useState(false);
 
   // =========================
   // RHF
@@ -95,7 +102,7 @@ export default function IdentityCardOnboardingPage() {
   // SUBMIT
   // =========================
 
-  const handleFileSelect = (
+  const handleFileSelect = async (
     key: (typeof idCardFields)[number]["key"],
     file: File | undefined,
     label: string,
@@ -108,16 +115,30 @@ export default function IdentityCardOnboardingPage() {
       return;
     }
 
-    setValue(key, file, { shouldValidate: true });
+    let processedFile = file;
+
+    if (file.type.startsWith("image/")) {
+      setCompressingField(key);
+
+      try {
+        processedFile = await compressImageFileIfNeeded(file);
+      } catch {
+        toast.error(`Could not optimize ${label}. Using original file.`);
+      } finally {
+        setCompressingField(null);
+      }
+    }
+
+    setValue(key, processedFile, { shouldValidate: true });
     toast.success(`${label} added successfully.`);
   };
 
   const onSubmit = async (data: IdentityCardFormData) => {
+    setIsPreparingUpload(true);
+
     try {
-      const response = await uploadIdDocsMutation.mutateAsync({
-        idCardFront: data.idCardFront,
-        idCardBack: data.idCardBack,
-      });
+      const payload = await prepareIdentityCardDocumentsForUpload(data);
+      const response = await uploadIdDocsMutation.mutateAsync(payload);
 
       toast.fromApiSuccess(
         response,
@@ -132,6 +153,7 @@ export default function IdentityCardOnboardingPage() {
         });
         persistAuthUser(nextUser);
         dispatch(singUp(nextUser));
+        markWalkthroughPending(nextUser._id);
       }
 
       router.replace("/onboarding/account-status?status=submitted");
@@ -140,6 +162,8 @@ export default function IdentityCardOnboardingPage() {
         error,
         "Could not upload identity card. Please try again.",
       );
+    } finally {
+      setIsPreparingUpload(false);
     }
   };
 
@@ -242,7 +266,8 @@ export default function IdentityCardOnboardingPage() {
                         onClick={() =>
                           document.getElementById(field.key)?.click()
                         }
-                        className="relative mx-auto flex h-[140px] w-full max-w-[620px] flex-col items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#005864] bg-[#F9FAFA]"
+                        disabled={compressingField === field.key}
+                        className="relative mx-auto flex h-[140px] w-full max-w-[620px] flex-col items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#005864] bg-[#F9FAFA] disabled:cursor-not-allowed disabled:opacity-70"
                       >
                         {previewUrl ? (
                           <>
@@ -283,7 +308,9 @@ export default function IdentityCardOnboardingPage() {
                             )}
 
                             <span className="mt-2 text-[13px] leading-[18px] text-[#1C1C1C]">
-                              {fileLabel}
+                              {compressingField === field.key
+                                ? "Optimizing image..."
+                                : fileLabel}
                             </span>
                           </>
                         )}
@@ -301,10 +328,16 @@ export default function IdentityCardOnboardingPage() {
 
               <button
                 type="submit"
-                disabled={uploadIdDocsMutation.isPending}
+                disabled={
+                  uploadIdDocsMutation.isPending ||
+                  isPreparingUpload ||
+                  compressingField !== null
+                }
                 className="mt-8 h-[48px] w-full cursor-pointer rounded-[12px] bg-[#005864] text-[16px] font-semibold leading-[20px] text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {uploadIdDocsMutation.isPending ? "Uploading..." : "Continue"}
+                {isPreparingUpload || uploadIdDocsMutation.isPending
+                  ? "Uploading..."
+                  : "Continue"}
               </button>
             </form>
           </div>

@@ -1,5 +1,13 @@
 import type { UserAddress } from "@/types/address.types";
 
+export function sortAddressesWithDefaultFirst(
+  addresses: UserAddress[],
+): UserAddress[] {
+  return [...addresses].sort(
+    (a, b) => Number(b.isDefault) - Number(a.isDefault),
+  );
+}
+
 export function parseAddressesFromResponse(data: unknown): UserAddress[] {
   if (!data || typeof data !== "object") {
     return [];
@@ -12,15 +20,15 @@ export function parseAddressesFromResponse(data: unknown): UserAddress[] {
       : null;
 
   if (nested && Array.isArray(nested.addresses)) {
-    return nested.addresses as UserAddress[];
+    return sortAddressesWithDefaultFirst(nested.addresses as UserAddress[]);
   }
 
   if (Array.isArray(record.addresses)) {
-    return record.addresses as UserAddress[];
+    return sortAddressesWithDefaultFirst(record.addresses as UserAddress[]);
   }
 
   if (Array.isArray(record.data)) {
-    return record.data as UserAddress[];
+    return sortAddressesWithDefaultFirst(record.data as UserAddress[]);
   }
 
   return [];

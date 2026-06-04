@@ -1,4 +1,4 @@
-export type AuthMethod = "email";
+export type AuthMethod = "email" | "google";
 export type AuthRole = "service-provider" | "partner";
 export type AuthMode = "verify" | "reset";
 
@@ -17,8 +17,15 @@ export interface RegisterAuthPayload {
 export interface LoginAuthPayload {
   email: string;
   password: string;
-  method: AuthMethod;
+  method: Extract<AuthMethod, "email">;
   role: AuthRole;
+}
+
+export interface GoogleAuthPayload {
+  email: string;
+  method: Extract<AuthMethod, "google">;
+  role: AuthRole;
+  idToken: string;
 }
 
 export interface VerifyEmailPayload {

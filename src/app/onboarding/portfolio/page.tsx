@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BriefcaseBusiness,
   File,
@@ -21,6 +21,8 @@ import {
   isPortfolioVideo,
   validatePortfolioFile,
 } from "@/lib/portfolio-media-validation";
+import { compressImageFileIfNeeded } from "@/lib/compress-image-file";
+import { preparePortfolioMediaForUpload } from "@/lib/prepare-portfolio-media";
 import { toast } from "@/lib/toast";
 import type { RootState } from "@/store/index";
 import { useForm } from "react-hook-form";
@@ -44,6 +46,8 @@ export default function PortfolioPage() {
   const user = useSelector((state: RootState) => state.auth.user);
 
   const uploadPortfolioMutation = useUploadPortfolioSetup();
+  const [isOptimizingFiles, setIsOptimizingFiles] = useState(false);
+  const [isPreparingUpload, setIsPreparingUpload] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,7 +86,7 @@ export default function PortfolioPage() {
     };
   }, [portfolioItems]);
 
-  const handleFilesSelected = (selectedFiles: File[]) => {
+  const handleFilesSelected = async (selectedFiles: File[]) => {
     if (selectedFiles.length === 0) return;
 
     const remaining = PORTFOLIO_MAX_FILES - portfolioFiles.length;
@@ -111,15 +115,43 @@ export default function PortfolioPage() {
 
     if (accepted.length === 0) return;
 
-    setValue("portfolioFiles", [...portfolioFiles, ...accepted], {
-      shouldValidate: true,
-    });
+    setIsOptimizingFiles(true);
+
+    try {
+      const optimizedFiles = await Promise.all(
+        accepted.map(async (file) => {
+          if (!isPortfolioImage(file)) {
+            return file;
+          }
+
+          try {
+            return await compressImageFileIfNeeded(file);
+          } catch {
+            toast.error(
+              `Could not optimize "${file.name}". Using original file.`,
+            );
+            return file;
+          }
+        }),
+      );
+
+      setValue("portfolioFiles", [...portfolioFiles, ...optimizedFiles], {
+        shouldValidate: true,
+      });
+    } finally {
+      setIsOptimizingFiles(false);
+    }
   };
 
   const onSubmit = async (data: PortfolioFormData) => {
+    setIsPreparingUpload(true);
+
     try {
+      const portfolioMedia = await preparePortfolioMediaForUpload(
+        data.portfolioFiles,
+      );
       const response = await uploadPortfolioMutation.mutateAsync({
-        portfolioMedia: data.portfolioFiles,
+        portfolioMedia,
       });
 
       toast.fromApiSuccess(response, "Portfolio uploaded successfully.");
@@ -130,11 +162,15 @@ export default function PortfolioPage() {
       });
     } catch (error) {
       toast.fromApiError(error, "Could not upload portfolio. Please try again.");
+    } finally {
+      setIsPreparingUpload(false);
     }
   };
 
   const isUploadDisabled =
     uploadPortfolioMutation.isPending ||
+    isOptimizingFiles ||
+    isPreparingUpload ||
     portfolioFiles.length >= PORTFOLIO_MAX_FILES;
 
   return (
@@ -231,6 +267,7 @@ export default function PortfolioPage() {
                   Upload up to {PORTFOLIO_MAX_FILES} items — PNG or JPEG images
                   (max 10MB each) and MP4, WebM, or MOV videos.
                 </p>
+                
               </div>
 
               <div className="mt-12">
@@ -258,7 +295,9 @@ export default function PortfolioPage() {
 
                   <div className="mt-4 text-center">
                     <p className="text-[15px] font-medium leading-[19px] text-[#1C1C1C]">
-                      Upload Image or Video
+                      {isOptimizingFiles
+                        ? "Optimizing images..."
+                        : "Upload Image or Video"}
                     </p>
 
                     <p className="mt-1 text-[15px] leading-[19px] text-black/80">
@@ -341,11 +380,13 @@ export default function PortfolioPage() {
                 type="submit"
                 disabled={
                   uploadPortfolioMutation.isPending ||
+                  isPreparingUpload ||
+                  isOptimizingFiles ||
                   portfolioFiles.length === 0
                 }
                 className="mx-auto mt-10 block h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {uploadPortfolioMutation.isPending
+                {isPreparingUpload || uploadPortfolioMutation.isPending
                   ? "Uploading..."
                   : "Continue"}
               </button>

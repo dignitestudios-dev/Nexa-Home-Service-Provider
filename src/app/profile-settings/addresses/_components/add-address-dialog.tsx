@@ -15,10 +15,16 @@ import { Input } from "@/components/ui/input";
 import { useAddAddress } from "@/hooks/addresses/use-address-mutations";
 import { getAuthTokenCookie } from "@/lib/auth-session";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { resolveAddressCoordinates } from "@/lib/resolve-address-coordinates";
 import AddressGoogleMapPicker from "./address-google-map-picker";
+import {
+  markAddressFieldsEdited,
+  mergeAddressLocationUpdate,
+} from "./address-form-helpers";
 import {
   addressDialogContentClass,
   addressDialogFormClass,
+  addressDialogOutsideEventHandlers,
   addressDialogSubmitClass,
   addressDialogTitleClass,
   addressFieldInputMutedClass,
@@ -76,6 +82,14 @@ export default function AddAddressDialog({ open, onOpenChange }: AddAddressDialo
     setFormError(null);
 
     try {
+      const coordinates = await resolveAddressCoordinates({
+        address: form.address.trim(),
+        city: form.city.trim(),
+        state: form.state.trim(),
+        country: form.country.trim(),
+        zipCode: form.zipCode.trim(),
+      });
+
       await addMutation.mutateAsync({
         label: form.label.trim(),
         address: form.address.trim(),
@@ -83,12 +97,14 @@ export default function AddAddressDialog({ open, onOpenChange }: AddAddressDialo
         state: form.state.trim(),
         city: form.city.trim(),
         zipCode: form.zipCode.trim(),
-        longitude: form.longitude.trim() || "0",
-        latitude: form.latitude.trim() || "0",
+        longitude: coordinates.longitude,
+        latitude: coordinates.latitude,
       });
       onOpenChange(false);
     } catch (error) {
-      setFormError(getApiErrorMessage(error, "Failed to add address. Please try again."));
+      setFormError(
+        getApiErrorMessage(error, "Failed to add address. Please try again."),
+      );
     }
   };
 
@@ -104,7 +120,11 @@ export default function AddAddressDialog({ open, onOpenChange }: AddAddressDialo
         </button>
       </DialogTrigger>
 
-      <DialogContent showCloseButton={false} className={addressDialogContentClass}>
+      <DialogContent
+        showCloseButton={false}
+        className={addressDialogContentClass}
+        {...addressDialogOutsideEventHandlers}
+      >
         <DialogHeader className="gap-0.5 pr-8">
           <DialogTitle className={addressDialogTitleClass}>Add Address</DialogTitle>
         </DialogHeader>
@@ -118,7 +138,17 @@ export default function AddAddressDialog({ open, onOpenChange }: AddAddressDialo
           </button>
         </DialogClose>
 
-        <form className={addressDialogFormClass} onSubmit={onSubmit}>
+        <form
+          className={addressDialogFormClass}
+          onSubmit={onSubmit}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter") return;
+            const target = event.target;
+            if (!(target instanceof HTMLElement)) return;
+            if (target.tagName === "BUTTON") return;
+            event.preventDefault();
+          }}
+        >
           <div>
             <label htmlFor="add-label" className={addressFieldLabelClass}>
               Address Name
@@ -140,7 +170,11 @@ export default function AddAddressDialog({ open, onOpenChange }: AddAddressDialo
             <Input
               id="add-address"
               value={form.address}
-              onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
+              onChange={(e) =>
+                setForm((prev) =>
+                  markAddressFieldsEdited({ ...prev, address: e.target.value }),
+                )
+              }
               placeholder="Street 123, Downtown"
               className={addressFieldInputMutedClass}
               required
@@ -155,7 +189,11 @@ export default function AddAddressDialog({ open, onOpenChange }: AddAddressDialo
               <Input
                 id="add-city"
                 value={form.city}
-                onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) =>
+                    markAddressFieldsEdited({ ...prev, city: e.target.value }),
+                  )
+                }
                 placeholder="Philadelphia"
                 className={addressFieldInputWhiteClass}
                 required
@@ -168,7 +206,11 @@ export default function AddAddressDialog({ open, onOpenChange }: AddAddressDialo
               <Input
                 id="add-state"
                 value={form.state}
-                onChange={(e) => setForm((prev) => ({ ...prev, state: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) =>
+                    markAddressFieldsEdited({ ...prev, state: e.target.value }),
+                  )
+                }
                 placeholder="Pennsylvania"
                 className={addressFieldInputWhiteClass}
                 required
@@ -184,7 +226,11 @@ export default function AddAddressDialog({ open, onOpenChange }: AddAddressDialo
               <Input
                 id="add-country"
                 value={form.country}
-                onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) =>
+                    markAddressFieldsEdited({ ...prev, country: e.target.value }),
+                  )
+                }
                 className={addressFieldInputWhiteClass}
                 required
               />
@@ -196,7 +242,11 @@ export default function AddAddressDialog({ open, onOpenChange }: AddAddressDialo
               <Input
                 id="add-zip"
                 value={form.zipCode}
-                onChange={(e) => setForm((prev) => ({ ...prev, zipCode: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) =>
+                    markAddressFieldsEdited({ ...prev, zipCode: e.target.value }),
+                  )
+                }
                 placeholder="12345"
                 className={addressFieldInputWhiteClass}
                 required
@@ -211,11 +261,7 @@ export default function AddAddressDialog({ open, onOpenChange }: AddAddressDialo
               latitude={form.latitude}
               longitude={form.longitude}
               onLocationChange={(update) =>
-                setForm((prev) => ({
-                  ...prev,
-                  ...update,
-                  country: update.country || prev.country,
-                }))
+                setForm((prev) => mergeAddressLocationUpdate(prev, update))
               }
               compact
             />

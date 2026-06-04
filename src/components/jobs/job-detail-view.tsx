@@ -1,20 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowLeft, Mail, Phone, Play } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import JobPurchasedSuccessModal from "@/components/jobs/job-purchased-success-modal";
+import AttachmentGalleryModal from "@/components/jobs/attachment-gallery-modal";
 import PurchaseJobModal from "@/components/jobs/purchase-job-modal";
 import { useApplyJobMutation } from "@/hooks/jobs/use-apply-job-mutation";
 import { useProviderDashboardQuery } from "@/hooks/wallet/use-provider-dashboard-query";
 import { toast } from "@/lib/toast";
 import {
   cleanJobDescription,
+  formatApplicationDisplayStatus,
   formatJobType,
   formatJobWhen,
+  getApplicationStatusBadgeClass,
 } from "@/lib/parse-provider-feed";
 import {
   formatContactPreferences,
@@ -40,15 +42,16 @@ type JobDetailViewProps = {
   job: JobDetail;
   backHref: string;
   showPurchaseButton?: boolean;
+  showHeaderStatus?: boolean;
 };
 
 export default function JobDetailView({
   job,
   backHref,
   showPurchaseButton = true,
+  showHeaderStatus = false,
 }: JobDetailViewProps) {
-  const [previewAttachment, setPreviewAttachment] =
-    useState<JobDetailAttachment | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const { data: dashboardData } = useProviderDashboardQuery();
@@ -60,10 +63,29 @@ export default function JobDetailView({
   const client = getClientDisplay(job);
   const description = cleanJobDescription(job.description);
   const attachmentCount = Math.max(job.attachments.length, 0);
+  const previewableAttachments = useMemo(
+    () =>
+      job.attachments.filter(
+        (attachment): attachment is JobDetailAttachment & { url: string } =>
+          Boolean(attachment.url),
+      ),
+    [job.attachments],
+  );
+
+  const openAttachmentPreview = (attachment: JobDetailAttachment) => {
+    const index = previewableAttachments.findIndex(
+      (item) => item.id === attachment.id,
+    );
+    if (index >= 0) {
+      setPreviewIndex(index);
+    }
+  };
 
   const mapUrl =
     job.address.coordinates &&
     `https://www.google.com/maps/search/?api=1&query=${job.address.coordinates[1]},${job.address.coordinates[0]}`;
+  const jobStatusValue = job.status || job.applicationDisplayStatus;
+  const jobStatusLabel = formatApplicationDisplayStatus(jobStatusValue);
 
   return (
     <div className="mx-auto w-full max-w-[1470px]">
@@ -81,7 +103,13 @@ export default function JobDetailView({
           </h1>
         </div>
 
-        {job.badge ? (
+        {showHeaderStatus && jobStatusValue ? (
+          <span
+            className={`flex h-[40px] shrink-0 items-center justify-center rounded-full px-5 text-[16px] font-semibold capitalize leading-5 text-white ${getApplicationStatusBadgeClass(jobStatusValue)}`}
+          >
+            {jobStatusLabel}
+          </span>
+        ) : job.badge ? (
           <span className="flex h-[52px] items-center justify-center rounded-full bg-[#2F80ED] px-5 text-[16px] font-semibold capitalize leading-5 text-white">
             {job.badge}
           </span>
@@ -104,7 +132,11 @@ export default function JobDetailView({
               <InfoRow label="Posted Date:" value={formatPostedDate(job.postedDate)} />
               <InfoRow
                 label="Status:"
-                value={formatJobStatus(job.status, job.jobProviderStatus)}
+                value={
+                  showHeaderStatus
+                    ? jobStatusLabel
+                    : formatJobStatus(job.status, job.jobProviderStatus)
+                }
               />
               <InfoRow label="Job Type:" value={formatJobType(job.type)} />
               <InfoRow
@@ -125,7 +157,7 @@ export default function JobDetailView({
                     key={attachment.id}
                     type="button"
                     disabled={!attachment.url}
-                    onClick={() => attachment.url && setPreviewAttachment(attachment)}
+                    onClick={() => attachment.url && openAttachmentPreview(attachment)}
                     className="relative h-[70px] w-[70px] shrink-0 overflow-hidden rounded-[12px] bg-[rgba(0,88,100,0.12)] disabled:cursor-default enabled:cursor-pointer enabled:hover:opacity-90"
                     aria-label={`Open attachment ${index + 1}`}
                   >
@@ -221,7 +253,7 @@ export default function JobDetailView({
               </div>
             )}
 
-            <p className="mt-5 text-center text-[24px] font-bold capitalize leading-[22px] text-black">
+            <p className="mx-auto mt-5 max-w-[350px] break-all text-center text-[20px] font-bold capitalize leading-[30px] text-black">
               {client.name}
             </p>
 
@@ -289,33 +321,15 @@ export default function JobDetailView({
         onClose={() => setIsSuccessModalOpen(false)}
       />
 
-      <Dialog
-        open={Boolean(previewAttachment)}
-        onOpenChange={(open) => !open && setPreviewAttachment(null)}
-      >
-        <DialogContent className="max-w-[min(960px,95vw)] border-none bg-black/95 p-2 sm:p-4">
-          <DialogTitle className="sr-only">Attachment preview</DialogTitle>
-          {previewAttachment?.url ? (
-            previewAttachment.isVideo ? (
-              <video
-                src={previewAttachment.url}
-                controls
-                autoPlay
-                className="mx-auto max-h-[80vh] w-full rounded-[12px] object-contain"
-              />
-            ) : (
-              <Image
-                src={previewAttachment.url}
-                alt="Attachment preview"
-                width={1200}
-                height={800}
-                className="mx-auto max-h-[80vh] w-auto max-w-full rounded-[12px] object-contain"
-                unoptimized
-              />
-            )
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      <AttachmentGalleryModal
+        open={previewIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewIndex(null);
+        }}
+        attachments={previewableAttachments}
+        currentIndex={previewIndex ?? 0}
+        onIndexChange={setPreviewIndex}
+      />
     </div>
   );
 }

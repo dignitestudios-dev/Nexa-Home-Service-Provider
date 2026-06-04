@@ -10,7 +10,7 @@ export default function RefundPolicyPage() {
         {
           heading: "1. Subscription and Plan Fees",
           paragraphs: [
-            "Subscription fees for service plans, verified badge plans, or ad promotions are generally non-refundable once the billing period has started.",
+            "Subscription fees for service plans, Trusted Expert Badges, or ad promotions are generally non-refundable once the billing period has started.",
             "If you were charged in error or experienced a duplicate transaction, contact support within 7 days for review.",
           ],
         },

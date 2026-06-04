@@ -23,6 +23,8 @@ import {
   type BusinessDocumentFieldKey,
 } from "@/lib/schemas/profile-setup.schema";
 import { useUploadBusinessDocsSetup } from "@/hooks/onboarding/profile-setup-mutation";
+import { compressImageFileIfNeeded } from "@/lib/compress-image-file";
+import { prepareBusinessDocumentsForUpload } from "@/lib/prepare-business-documents";
 import { toast } from "@/lib/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,6 +49,10 @@ export default function BusinessDocumentsPage() {
   const uploadDocsMutation = useUploadBusinessDocsSetup();
 
   const [files, setFiles] = useState<Partial<Record<DocumentKey, File>>>({});
+  const [compressingField, setCompressingField] = useState<DocumentKey | null>(
+    null,
+  );
+  const [isPreparingUpload, setIsPreparingUpload] = useState(false);
 
   const {
     handleSubmit,
@@ -93,23 +99,23 @@ export default function BusinessDocumentsPage() {
   const hasAnyDocument = useMemo(() => Object.keys(files).length > 0, [files]);
 
   const onSubmit = async (data: BusinessDocumentsFormData) => {
+    setIsPreparingUpload(true);
+
     try {
-      const response = await uploadDocsMutation.mutateAsync({
-        businessLicense: data.businessLicense,
-
-        taxRegistration: data.taxRegistration,
-
-        businessOwnershipCert: data.ownershipCertificate,
-
-        proofOfAddress: data.proofOfAddress,
-      });
+      const payload = await prepareBusinessDocumentsForUpload(data);
+      const response = await uploadDocsMutation.mutateAsync(payload);
 
       navigateToNextOnboardingStep(router, dispatch, user, {
         apiResponse: response,
         completedFlags: { businessDocsSubmitted: true },
       });
     } catch (error) {
-      console.log(error);
+      toast.fromApiError(
+        error,
+        "Could not upload business documents. Please try again.",
+      );
+    } finally {
+      setIsPreparingUpload(false);
     }
   };
 
@@ -215,7 +221,7 @@ export default function BusinessDocumentsPage() {
 
                 <p className="mt-4 text-[16px] leading-5 tracking-[-0.014em] text-black/80">
                   Upload your business license, proof of identity,
-                  certifications (if any)
+                  certifications.
                 </p>
               </div>
 
@@ -252,7 +258,7 @@ export default function BusinessDocumentsPage() {
                         type="file"
                         className="hidden"
                         accept={BUSINESS_DOC_ACCEPT}
-                        onChange={(event) => {
+                        onChange={async (event) => {
                           const file = event.target.files?.[0] ?? null;
                           if (!file) return;
 
@@ -274,17 +280,39 @@ export default function BusinessDocumentsPage() {
                             return;
                           }
 
+                          let processedFile = file;
+
+                          if (file.type.startsWith("image/")) {
+                            setCompressingField(field.key);
+
+                            try {
+                              processedFile = await compressImageFileIfNeeded(file);
+                            } catch {
+                              toast.error(
+                                `Could not optimize ${field.label}. Using original file.`,
+                              );
+                            } finally {
+                              setCompressingField(null);
+                            }
+                          }
+
                           clearErrors(field.key);
-                          setValue(field.key, file!, {
+                          setValue(field.key, processedFile, {
                             shouldValidate: true,
                           });
+                          setFiles((current) => ({
+                            ...current,
+                            [field.key]: processedFile,
+                          }));
+                          event.target.value = "";
                         }}
                       />
 
                       <button
                         type="button"
                         onClick={() => fileRefs.current[field.key]?.click()}
-                        className="relative flex h-[100px] w-full flex-col items-center justify-center overflow-hidden rounded-[12px] border border-[#BEBEBE] bg-[rgba(0,88,100,0.06)] px-3"
+                        disabled={compressingField === field.key}
+                        className="relative flex h-[100px] w-full flex-col items-center justify-center overflow-hidden rounded-[12px] border border-[#BEBEBE] bg-[rgba(0,88,100,0.06)] px-3 disabled:cursor-not-allowed disabled:opacity-70"
                       >
                         {isImage ? (
                           <>
@@ -307,7 +335,9 @@ export default function BusinessDocumentsPage() {
                             )}
 
                             <span className="mt-3 w-full truncate text-center text-[12px] leading-[127.5%] text-[#1C1C1C]">
-                              {fileText}
+                              {compressingField === field.key
+                                ? "Optimizing image..."
+                                : fileText}
                             </span>
                           </>
                         )}
@@ -325,10 +355,16 @@ export default function BusinessDocumentsPage() {
 
               <button
                 type="submit"
-                disabled={uploadDocsMutation.isPending}
+                disabled={
+                  uploadDocsMutation.isPending ||
+                  isPreparingUpload ||
+                  compressingField !== null
+                }
                 className="mx-auto mt-10 block h-12 w-full cursor-pointer max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {uploadDocsMutation.isPending ? "Uploading..." : "Continue"}
+                {isPreparingUpload || uploadDocsMutation.isPending
+                  ? "Uploading..."
+                  : "Continue"}
               </button>
             </form>
           </section>

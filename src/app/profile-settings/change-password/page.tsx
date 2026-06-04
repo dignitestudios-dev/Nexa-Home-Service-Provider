@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import SettingsPasswordField from "@/app/profile-settings/_components/settings-p
 import { useChangePassword } from "@/hooks/auth/use-change-password-mutation";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { changePasswordSchema } from "@/lib/schemas/auth.schema";
+import { toast } from "@/lib/toast";
 
 type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 
@@ -26,12 +27,25 @@ export default function ChangePasswordPage() {
     formState: { errors },
   } = useForm<ChangePasswordFormData>({
     resolver: zodResolver(changePasswordSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: {
       password: "",
       newPassword: "",
       confirmPassword: "",
     },
   });
+
+  const showValidationToast = (fieldErrors: FieldErrors<ChangePasswordFormData>) => {
+    const message =
+      fieldErrors.password?.message ||
+      fieldErrors.newPassword?.message ||
+      fieldErrors.confirmPassword?.message;
+
+    if (message) {
+      toast.error(message);
+    }
+  };
 
   const onSubmit = async (data: ChangePasswordFormData) => {
     setFormError(null);
@@ -60,7 +74,7 @@ export default function ChangePasswordPage() {
       </h2>
 
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(onSubmit, showValidationToast)}
         className="mt-10 flex w-full max-w-[426px] flex-col gap-6"
       >
         <SettingsPasswordField

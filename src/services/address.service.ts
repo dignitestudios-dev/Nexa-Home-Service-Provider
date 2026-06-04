@@ -6,6 +6,7 @@ import type {
   EditAddressPayload,
   EditAddressResponse,
   GetAddressesResponse,
+  SetDefaultAddressResponse,
 } from "@/types/address.types";
 
 export const addressService = {
@@ -27,6 +28,11 @@ export const addressService = {
 
   addAddress: async (payload: AddAddressBody): Promise<AddAddressResponse> => {
     const { data } = await API.post("/address/add-address", payload);
+    return data;
+  },
+
+  setDefaultAddress: async (addressId: string): Promise<SetDefaultAddressResponse> => {
+    const { data } = await API.post(`/address/set-default/${addressId}`);
     return data;
   },
 };

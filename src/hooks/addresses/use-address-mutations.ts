@@ -2,7 +2,10 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { parseAddressesFromResponse } from "@/lib/parse-addresses-response";
+import {
+  parseAddressesFromResponse,
+  sortAddressesWithDefaultFirst,
+} from "@/lib/parse-addresses-response";
 import { addressService } from "@/services/address.service";
 import type {
   AddAddressBody,
@@ -11,9 +14,10 @@ import type {
 } from "@/types/address.types";
 
 import { ADDRESSES_QUERY_KEY } from "./use-addresses-query";
+import { PROVIDER_FEED_QUERY_KEY } from "../jobs/use-provider-feed-query";
 
 function toAddressList(data: unknown): UserAddress[] {
-  if (Array.isArray(data)) return data;
+  if (Array.isArray(data)) return sortAddressesWithDefaultFirst(data);
   return parseAddressesFromResponse(data);
 }
 
@@ -53,11 +57,13 @@ export function useEditAddress() {
 
       queryClient.setQueryData<UserAddress[]>(ADDRESSES_QUERY_KEY, (current) => {
         const list = toAddressList(current);
-        return list.map((item) => {
-          if (item._id !== variables._id) return item;
-          if (serverAddress) return serverAddress;
-          return buildUpdatedAddress(item, variables);
-        });
+        return sortAddressesWithDefaultFirst(
+          list.map((item) => {
+            if (item._id !== variables._id) return item;
+            if (serverAddress) return serverAddress;
+            return buildUpdatedAddress(item, variables);
+          }),
+        );
       });
 
       void queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
@@ -75,7 +81,9 @@ export function useAddAddress() {
 
       queryClient.setQueryData<UserAddress[]>(ADDRESSES_QUERY_KEY, (current) => {
         const list = toAddressList(current);
-        if (serverAddress) return [...list, serverAddress];
+        if (serverAddress) {
+          return sortAddressesWithDefaultFirst([...list, serverAddress]);
+        }
         return list;
       });
 
@@ -96,6 +104,44 @@ export function useDeleteAddress() {
       });
 
       void queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+    },
+  });
+}
+
+export function useSetDefaultAddress() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (addressId: string) => addressService.setDefaultAddress(addressId),
+    onMutate: async (addressId) => {
+      await queryClient.cancelQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      const previous = queryClient.getQueryData<UserAddress[]>(ADDRESSES_QUERY_KEY);
+
+      queryClient.setQueryData<UserAddress[]>(ADDRESSES_QUERY_KEY, (current) => {
+        const list = toAddressList(current);
+        return sortAddressesWithDefaultFirst(
+          list.map((item) => ({
+            ...item,
+            isDefault: item._id === addressId,
+          })),
+        );
+      });
+
+      return { previous };
+    },
+    onError: (_error, _addressId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(ADDRESSES_QUERY_KEY, context.previous);
+      }
+    },
+    onSuccess: (response) => {
+      const addresses = parseAddressesFromResponse(response);
+      if (addresses.length > 0) {
+        queryClient.setQueryData(ADDRESSES_QUERY_KEY, addresses);
+      }
+
+      void queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: PROVIDER_FEED_QUERY_KEY });
     },
   });
 }

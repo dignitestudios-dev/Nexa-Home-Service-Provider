@@ -1,14 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { MapPin, Phone, Star, SquarePen } from "lucide-react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import MainAppShell from "@/components/layout/main-app-shell";
 import { BasicInfoTab } from "./_components/basic-info-tab";
+import EditPortfolioDialog from "./_components/edit-portfolio-dialog";
+import EditProfileDialog from "./_components/edit-profile-dialog";
 import ProfileJobStats from "./_components/profile-job-stats";
 import { PortfolioTab } from "./_components/portfolio-tab";
 import { ReviewsTab } from "./_components/reviews-tab";
+import { useGetAddresses } from "@/hooks/addresses/use-addresses-query";
+import { useReceivedReviewsQuery } from "@/hooks/reviews/use-received-reviews-query";
 import { useCurrentUserQuery } from "@/hooks/user/use-current-user-query";
+import { useUserDocsQuery } from "@/hooks/user/use-user-docs-query";
+import {
+  formatAddressDisplay,
+  getDefaultAddress,
+} from "@/lib/home-address";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import {
@@ -24,11 +34,69 @@ const TABS = ["Basic Info", "Portfolio", "Reviews"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function ProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfilePageContent />
+    </Suspense>
+  );
+}
+
+function ProfilePageContent() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>("Basic Info");
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isEditPortfolioOpen, setIsEditPortfolioOpen] = useState(false);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab")?.trim().toLowerCase();
+
+    if (tab === "reviews") {
+      setActiveTab("Reviews");
+      return;
+    }
+
+    if (tab === "portfolio") {
+      setActiveTab("Portfolio");
+    }
+  }, [searchParams]);
 
   const { data: currentUser } = useCurrentUserQuery();
   const storedUser = useSelector((state: RootState) => state.auth.user);
   const user = currentUser ?? storedUser;
+  const userId = user?._id;
+
+  const { data: reviewsData, isLoading: isReviewsLoading } = useReceivedReviewsQuery({
+    userId,
+  });
+  const {
+    data: addresses = [],
+    isLoading: isAddressesLoading,
+    isPending: isAddressesPending,
+    isFetching: isAddressesFetching,
+    isFetched: isAddressesFetched,
+  } = useGetAddresses();
+  const averageRating = reviewsData?.summary.averageRating ?? 0;
+  const { data: userDocs } = useUserDocsQuery();
+  const portfolioItems = userDocs?.portfolioMedia ?? [];
+
+  const handleEditClick = () => {
+    if (activeTab === "Portfolio") {
+      setIsEditPortfolioOpen(true);
+      return;
+    }
+
+    setIsEditProfileOpen(true);
+  };
+
+  const isLoadingAddresses =
+    isAddressesLoading ||
+    isAddressesPending ||
+    (isAddressesFetching && !isAddressesFetched);
+
+  const defaultAddress = useMemo(
+    () => getDefaultAddress(addresses),
+    [addresses],
+  );
 
   const companyName = user?.companyName?.trim() ?? "";
   const userName = user?.name?.trim() ?? "";
@@ -38,23 +106,37 @@ export default function ProfilePage() {
 
   return (
     <MainAppShell>
+      <EditProfileDialog
+        user={user ?? null}
+        open={isEditProfileOpen}
+        onOpenChange={setIsEditProfileOpen}
+      />
+
+      <EditPortfolioDialog
+        open={isEditPortfolioOpen}
+        onOpenChange={setIsEditPortfolioOpen}
+        portfolioItems={portfolioItems}
+      />
+
       <div className="mt-10 px-0">
         <div className="flex items-start justify-between mb-6">
           {/* Page Heading */}
           <h1 className=" text-[32px] font-semibold leading-[40px] text-[#1C1C1C]">
             Profile
           </h1>
-          {/* Edit Button */}
-          <button
-            type="button"
-            className="  flex items-center gap-[8px] rounded-[16px] bg-[#005864] px-8 py-3 shadow-[0px_10px_24px_rgba(0,0,0,0.04)]"
-          >
-            <SquarePen className="h-5 w-5 text-white" />
+          {activeTab !== "Reviews" ? (
+            <button
+              type="button"
+              onClick={handleEditClick}
+              className="flex cursor-pointer items-center gap-[8px] rounded-[16px] bg-[#005864] px-8 py-3 shadow-[0px_10px_24px_rgba(0,0,0,0.04)]"
+            >
+              <SquarePen className="h-5 w-5 text-white" />
 
-            <span className="text-[16px] font-semibold capitalize text-white">
-              Edit
-            </span>
-          </button>
+              <span className="text-[16px] font-semibold capitalize text-white">
+                Edit
+              </span>
+            </button>
+          ) : null}
         </div>
         {/* Profile Card */}
         <div className="relative mb-6 rounded-[12px] bg-[#F8F8F8] px-6 py-6">
@@ -78,15 +160,25 @@ export default function ProfilePage() {
                 )}
 
                 {/* Online indicator */}
-                <span className="absolute bottom-2 right-5 h-4 w-4 rounded-full border-2 border-white bg-green-400" />
               </div>
 
               {/* Info */}
               <div className="flex flex-col gap-2">
                 <div className="flex flex-col gap-1">
-                  <h2 className="text-[32px] font-semibold capitalize leading-[40px] text-[#1C1C1C]">
-                    {companyName || userName || "User Name Not Available"}
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-[32px] font-semibold capitalize leading-[40px] text-[#1C1C1C]">
+                      {companyName || userName || "User Name Not Available"}
+                    </h2>
+                    {user?.isBadgeVerified ? (
+                      <Image
+                        src="/asset/badge.png"
+                        alt="Verified badge"
+                        width={32}
+                        height={32}
+                        className="h-8 w-8 shrink-0 object-contain"
+                      />
+                    ) : null}
+                  </div>
                   {companyName && userName ? (
                     <p className="text-[16px] leading-[20px] text-[rgba(24,24,24,0.6)]">
                       {userName}
@@ -96,21 +188,43 @@ export default function ProfilePage() {
 
                 {/* Stars */}
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-4 w-4 ${i < 4 ? "fill-[#EDAF35] text-[#EDAF35]" : "fill-none text-[rgba(24,24,24,0.3)]"}`}
-                    />
-                  ))}
-                  <span className="ml-1 text-[16px] leading-[20px] text-[#181818]">
-                    4.5
-                  </span>
+                  {isReviewsLoading ? (
+                    <>
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="h-4 w-4 animate-pulse rounded-sm bg-[#E8E8E8]"
+                        />
+                      ))}
+                      <div className="ml-1 h-5 w-8 animate-pulse rounded-md bg-[#E8E8E8]" />
+                    </>
+                  ) : (
+                    <>
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < Math.round(averageRating)
+                              ? "fill-[#EDAF35] text-[#EDAF35]"
+                              : "fill-none text-[rgba(24,24,24,0.3)]"
+                          }`}
+                        />
+                      ))}
+                      <span className="ml-1 text-[16px] leading-[20px] text-[#181818]">
+                        {averageRating.toFixed(1)}
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 {/* Location */}
                 <div className="flex items-center gap-1 text-[16px] leading-[20px] text-[rgba(24,24,24,0.8)]">
-                  <MapPin className="h-4 w-4 text-[#005864]" />
-                  Los Angeles, United States
+                  <MapPin className="h-4 w-4 shrink-0 text-[#005864]" />
+                  <span className="truncate">
+                    {isLoadingAddresses
+                      ? "Loading address..."
+                      : formatAddressDisplay(defaultAddress)}
+                  </span>
                 </div>
 
                 {/* Phone */}

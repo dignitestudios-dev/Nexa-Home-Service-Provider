@@ -69,3 +69,11 @@ export interface AddAddressResponse {
     address?: UserAddress;
   };
 }
+
+export interface SetDefaultAddressResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    addresses?: UserAddress[];
+  };
+}
