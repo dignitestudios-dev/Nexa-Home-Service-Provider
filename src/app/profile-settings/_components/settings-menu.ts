@@ -61,17 +61,17 @@ export const settingsMenu: SettingsMenuItem[] = [
   },
   {
     label: "Terms and Conditions",
-    href: "/profile-settings/terms-and-conditions",
+    href: "https://www.nexahomeapp.com/experts/terms-and-conditions",
     icon: CircleHelp,
   },
   {
     label: "Privacy Policy",
-    href: "/profile-settings/privacy-policy",
+    href: "https://www.nexahomeapp.com/experts/privacy-policy",
     icon: ShieldAlert,
   },
   {
     label: "Refund Policy",
-    href: "/profile-settings/refund-policy",
+    href: "https://www.nexahomeapp.com/experts/refund-policy",
     icon: HandCoins,
   },
   {
