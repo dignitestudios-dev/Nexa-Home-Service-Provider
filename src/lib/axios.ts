@@ -8,7 +8,7 @@ import { clearAuthTokenCookie, getAuthTokenCookie } from "@/lib/auth-session";
 
 //  export const baseURL = "https://api.dev.nexahomeapp.com";
 
-  export const baseURL = "https://api.staging.nexahomeapp.com";
+  export const baseURL = "https://api.nexahomeapp.com";
 
 
 
