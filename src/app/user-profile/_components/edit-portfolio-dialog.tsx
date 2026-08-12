@@ -41,7 +41,7 @@ type EditPortfolioDialogProps = {
 };
 
 const PORTFOLIO_THUMBNAIL_CLASS =
-  "relative aspect-square w-[calc((100%-3.75rem)/6)] shrink-0 overflow-hidden rounded-[12px] bg-[#F1F3F4]";
+  "relative aspect-square h-[90px] w-[90px] shrink-0 overflow-hidden rounded-[12px] bg-[#F1F3F4]";
 
 function createNewPortfolioItem(file: File, index: number): NewPortfolioItem {
   return {

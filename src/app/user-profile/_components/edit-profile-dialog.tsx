@@ -35,6 +35,7 @@ import {
 import {
   getMaxProfileServices,
   PROFILE_IMAGE_ACCEPT,
+  PROFILE_OVERVIEW_MAX_LENGTH,
   validateOptionalProfileImage,
 } from "@/lib/schemas/profile-setup.schema";
 import type { User, UserCategory } from "@/store/slices/auth-slice";
@@ -380,7 +381,7 @@ export default function EditProfileDialog({
             <div className="mt-1 rounded-[12px] bg-[#F8F8F8] p-3">
               <textarea
                 {...register("overview")}
-                maxLength={500}
+                maxLength={PROFILE_OVERVIEW_MAX_LENGTH}
                 placeholder="Write here"
                 className="h-[120px] w-full resize-none bg-transparent text-[16px] leading-5 text-[#1C1C1C] placeholder:text-black/55 outline-none"
               />
@@ -392,7 +393,7 @@ export default function EditProfileDialog({
                 <span />
               )}
               <span className="text-[14px] text-black/50">
-                {overview.length}/500
+                {overview.length}/{PROFILE_OVERVIEW_MAX_LENGTH}
               </span>
             </div>
           </div>

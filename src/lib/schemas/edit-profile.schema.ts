@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import {
   CATEGORY_ID_PATTERN,
+  PROFILE_OVERVIEW_MAX_LENGTH,
   SUBSCRIBED_PROFILE_SERVICE_LIMIT,
   validateOptionalProfileImage,
 } from "@/lib/schemas/profile-setup.schema";
@@ -13,7 +14,10 @@ export const editProfileSchema = z.object({
     .string()
     .trim()
     .min(10, "Overview must be at least 10 characters")
-    .max(500, "Overview cannot exceed 500 characters"),
+    .max(
+      PROFILE_OVERVIEW_MAX_LENGTH,
+      `Overview cannot exceed ${PROFILE_OVERVIEW_MAX_LENGTH} characters`,
+    ),
 
   categoryIDs: z
     .array(

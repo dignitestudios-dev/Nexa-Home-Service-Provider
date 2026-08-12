@@ -14,6 +14,25 @@ export default function SettingsSidebar() {
         {settingsMenu.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
+          const isDisabled = item.disabled;
+
+          if (isDisabled) {
+            return (
+              <div
+                key={item.href}
+                aria-disabled="true"
+                className="flex h-14 w-full cursor-not-allowed items-center justify-between rounded-[12px] border-[0.8px] border-[#EAEAEA] bg-[#F5F5F5] px-3 text-left opacity-60 select-none text-[#8C8C8C]"
+              >
+                <span className="flex items-center gap-3">
+                  <Icon className="h-5 w-5 shrink-0 text-[#8C8C8C]" />
+                  <span className="text-[16px] capitalize leading-5 font-[400] text-[#8C8C8C]">
+                    {item.label}
+                  </span>
+                </span>
+                <ChevronRight className="h-5 w-5 shrink-0 text-[#8C8C8C]" />
+              </div>
+            );
+          }
 
           return (
             <Link

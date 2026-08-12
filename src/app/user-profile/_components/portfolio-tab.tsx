@@ -7,22 +7,6 @@ import MediaGalleryModal from "@/components/media/media-gallery-modal";
 import { useUserDocsQuery } from "@/hooks/user/use-user-docs-query";
 import type { UserDocFile } from "@/types/user-docs.types";
 
-type TileSize = { colSpan: number; rowSpan: number };
-
-/** Repeating Pinterest-style mix: large, small, tall, wide tiles. */
-const TILE_PATTERNS: TileSize[] = [
-  { colSpan: 2, rowSpan: 2 },
-  { colSpan: 1, rowSpan: 1 },
-  { colSpan: 1, rowSpan: 2 },
-  { colSpan: 1, rowSpan: 1 },
-  { colSpan: 2, rowSpan: 1 },
-  { colSpan: 1, rowSpan: 1 },
-  { colSpan: 1, rowSpan: 2 },
-  { colSpan: 1, rowSpan: 1 },
-  { colSpan: 1, rowSpan: 1 },
-  { colSpan: 1, rowSpan: 2 },
-];
-
 function dedupePortfolioItems(items: UserDocFile[]): UserDocFile[] {
   const seen = new Set<string>();
 
@@ -34,21 +18,13 @@ function dedupePortfolioItems(items: UserDocFile[]): UserDocFile[] {
   });
 }
 
-function getTilePattern(index: number): TileSize {
-  return TILE_PATTERNS[index % TILE_PATTERNS.length];
-}
-
 function PortfolioSkeleton() {
   return (
-    <div className="grid grid-flow-dense grid-cols-2 gap-3 auto-rows-[120px] md:grid-cols-4 md:auto-rows-[130px] md:[grid-template-columns:2fr_1fr_1fr_2fr]">
-      {TILE_PATTERNS.map((pattern, index) => (
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4">
+      {Array.from({ length: 8 }).map((_, index) => (
         <div
           key={index}
-          className="animate-pulse rounded-[14px] bg-[#E8E8E8]"
-          style={{
-            gridColumn: `span ${pattern.colSpan}`,
-            gridRow: `span ${pattern.rowSpan}`,
-          }}
+          className="aspect-[4/3] w-full animate-pulse rounded-[14px] bg-[#E8E8E8]"
         />
       ))}
     </div>
@@ -89,21 +65,15 @@ export function PortfolioTab() {
           No portfolio media uploaded yet.
         </div>
       ) : (
-        <div className="grid grid-flow-dense grid-cols-2 gap-3 auto-rows-[120px] md:grid-cols-4 md:auto-rows-[130px] md:[grid-template-columns:2fr_1fr_1fr_2fr]">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4">
           {portfolioItems.map((item, index) => {
-            const { colSpan, rowSpan } = getTilePattern(index);
-
             return (
               <button
                 key={item.id}
                 type="button"
                 disabled={!item.url}
                 onClick={() => openGallery(item)}
-                className="group relative h-full min-h-0 w-full cursor-pointer overflow-hidden rounded-[14px] bg-[rgba(0,88,100,0.08)] disabled:cursor-default"
-                style={{
-                  gridColumn: `span ${colSpan}`,
-                  gridRow: `span ${rowSpan}`,
-                }}
+                className="group relative aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-[14px] bg-[rgba(0,88,100,0.08)] shadow-sm transition hover:shadow-md disabled:cursor-default"
                 aria-label={`Open portfolio item ${index + 1}`}
               >
                 {item.url ? (
@@ -120,7 +90,7 @@ export function PortfolioTab() {
                       src={item.url}
                       alt=""
                       fill
-                      sizes="(max-width: 768px) 50vw, 25vw"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                       unoptimized
                     />

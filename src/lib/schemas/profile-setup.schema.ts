@@ -96,6 +96,8 @@ export function getMaxProfileServices(isServiceSubscribed = false): number {
     : FREE_PROFILE_SERVICE_LIMIT;
 }
 
+export const PROFILE_OVERVIEW_MAX_LENGTH = 1500;
+
 export const CATEGORY_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
 
 const servicesSchema = (maxServices: number) =>
@@ -139,7 +141,10 @@ export const profileSetupSchema = z.object({
   overview: z
     .string()
     .min(10, "Overview must be at least 10 characters")
-    .max(500, "Overview cannot exceed 500 characters"),
+    .max(
+      PROFILE_OVERVIEW_MAX_LENGTH,
+      `Overview cannot exceed ${PROFILE_OVERVIEW_MAX_LENGTH} characters`,
+    ),
 
   label: z.string().min(2, "Label is required"),
 

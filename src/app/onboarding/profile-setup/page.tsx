@@ -28,6 +28,7 @@ import {
   ProfileSetupFormData,
   profileSetupSchema,
   PROFILE_IMAGE_ACCEPT,
+  PROFILE_OVERVIEW_MAX_LENGTH,
   getMaxProfileServices,
   OFFICE_NO_MAX_LENGTH,
   validateProfileImage,
@@ -834,7 +835,7 @@ export default function ProfileSetupOnboardingPage() {
                 <div className="mt-1 rounded-[12px] bg-[#F8F8F8] p-3">
                   <textarea
                     {...register("overview")}
-                    maxLength={500}
+                    maxLength={PROFILE_OVERVIEW_MAX_LENGTH}
                     placeholder="Write here"
                     className="h-[96px] w-full normal-case first-letter:uppercase resize-none bg-transparent text-[16px] leading-5 text-[#1C1C1C] placeholder:text-black/55 outline-none"
                   />
@@ -847,7 +848,7 @@ export default function ProfileSetupOnboardingPage() {
                     </p>
                   )}
                   <p className="ml-auto text-right text-[16px] leading-5 text-black/60">
-                    {overview.length}/500
+                    {overview.length}/{PROFILE_OVERVIEW_MAX_LENGTH}
                   </p>
                 </div>
               </div>
