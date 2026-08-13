@@ -24,6 +24,9 @@ import {
   formatPostedDate,
   getClientDisplay,
   getClientInitials,
+  getJobAddressDisplay,
+  shouldHideClientContactDetails,
+  shouldMaskClientContact,
 } from "@/lib/parse-job-detail";
 import type { JobDetail, JobDetailAttachment } from "@/types/job-detail.types";
 
@@ -81,7 +84,9 @@ export default function JobDetailView({
     }
   };
 
+  const isAddressMasked = shouldMaskClientContact(job) || shouldHideClientContactDetails(job);
   const mapUrl =
+    !isAddressMasked &&
     job.address.coordinates &&
     `https://www.google.com/maps/search/?api=1&query=${job.address.coordinates[1]},${job.address.coordinates[0]}`;
   const jobStatusValue = job.status || job.applicationDisplayStatus;
@@ -143,6 +148,7 @@ export default function JobDetailView({
                 label="Contact Preferences:"
                 value={formatContactPreferences(job.contactPreferences)}
               />
+              <InfoRow label="Credits:" value={String(job.creditsToDeduct ?? 0)} />
             </div>
           </section>
 
@@ -203,9 +209,7 @@ export default function JobDetailView({
                   {job.address.label}
                 </p>
                 <p className="mt-2 max-w-[413px] break-words text-[16px] leading-5 text-[rgba(24,24,24,0.8)]">
-                  {[job.address.address, job.address.city, job.address.state, job.address.zipCode]
-                    .filter(Boolean)
-                    .join(", ")}
+                  {getJobAddressDisplay(job)}
                 </p>
               </div>
               {mapUrl ? (

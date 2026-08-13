@@ -318,6 +318,15 @@ export function shouldMaskClientContact(job: JobDetail): boolean {
   return job.applicationDisplayStatus.toLowerCase() === "pending";
 }
 
+export function getJobAddressDisplay(job: JobDetail): string {
+  const isMasked = shouldMaskClientContact(job) || shouldHideClientContactDetails(job);
+  const street = isMasked ? "*******" : job.address.address;
+
+  return [street, job.address.city, job.address.state, job.address.zipCode]
+    .filter(Boolean)
+    .join(", ");
+}
+
 export function getClientDisplay(job: JobDetail) {
   if (shouldHideClientContactDetails(job)) {
     return {
