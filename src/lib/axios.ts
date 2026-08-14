@@ -121,9 +121,7 @@ API.interceptors.response.use(
         clearAuthTokenCookie();
 
         if (typeof window !== "undefined") {
-
-          // window.location.href = "/auth/login";
-
+          window.location.href = "/auth/login";
         }
 
       }
