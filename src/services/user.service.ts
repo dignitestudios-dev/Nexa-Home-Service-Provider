@@ -102,4 +102,14 @@ export const userService = {
     const { data } = await API.delete("/user");
     return data;
   },
+
+  startVerification: async () => {
+    const { data } = await API.post("/user/start-verification");
+    return data;
+  },
+
+  getVerificationStatus: async () => {
+    const { data } = await API.get("/user/verification-status");
+    return data;
+  },
 };

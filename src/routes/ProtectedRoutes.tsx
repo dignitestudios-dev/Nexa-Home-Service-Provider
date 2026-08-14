@@ -69,6 +69,16 @@ const isBillingReturnPath = (path: string) =>
       path === billingPath || path.startsWith(`${billingPath}/`),
   );
 
+const isDashboardPath = (path: string) =>
+  path === "/home" ||
+  path.startsWith("/home/") ||
+  path === "/jobs" ||
+  path.startsWith("/jobs/") ||
+  path === "/wallet" ||
+  path.startsWith("/wallet/") ||
+  path === "/my-jobs" ||
+  path.startsWith("/my-jobs/");
+
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -172,6 +182,17 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       !isPostIdentityOnboardingPath(pathname)
     ) {
       router.replace(getNextOnboardingStepPath(effectiveUser));
+      return;
+    }
+
+    // Lock all access for non-approved identity (full-screen block)
+    if (
+      isOnboardingComplete(effectiveUser) &&
+      effectiveUser.identityStatus?.trim().toLowerCase() !== "approved" &&
+      !isPublicAuthPath &&
+      pathname !== "/identity-verification"
+    ) {
+      router.replace("/identity-verification");
       return;
     }
 

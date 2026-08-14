@@ -30,7 +30,7 @@ export const settingsMenu: SettingsMenuItem[] = [
     icon: Bell,
   },
   {
-    label: "Service Plan",
+    label: "Advanced Category Plan",
     href: "/profile-settings/service-plan",
     icon: FileText,
   },

@@ -178,7 +178,8 @@ export default function CustomPackageModal({
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={isConfirming || hasMinError}
+            // disabled={isConfirming || hasMinError}
+            disabled={true}
             className="mt-6 h-12 w-full rounded-[12px] bg-[#005864] text-[16px] font-semibold leading-5 text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isConfirming ? "Processing..." : "Buy Now"}

@@ -6,9 +6,9 @@ import { clearAuthTokenCookie, getAuthTokenCookie } from "@/lib/auth-session";
 
 // export const baseURL = "https://0hw8tf6g-3050.inc1.devtunnels.ms";
 
-//  export const baseURL = "https://api.dev.nexahomeapp.com";
+ export const baseURL = "https://api.nexahomeapp.com";
 
-  export const baseURL = "https://api.nexahomeapp.com";
+// export const baseURL = "https://0hw8tf6g-3050.inc1.devtunnels.ms/";
 
 
 

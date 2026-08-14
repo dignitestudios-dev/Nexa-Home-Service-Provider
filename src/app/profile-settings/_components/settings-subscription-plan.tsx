@@ -198,11 +198,10 @@ export default function SettingsSubscriptionPlan({
       />
 
       <h2
-        className={`font-[700] text-[#1C1C1C] ${
-          compact
+        className={`font-[700] text-[#1C1C1C] ${compact
             ? "text-[24px] leading-[26px] text-center"
             : "text-[24px] leading-[30px] text-center"
-        }`}
+          }`}
       >
         {title}
       </h2>
@@ -228,9 +227,8 @@ export default function SettingsSubscriptionPlan({
         <>
           {variant === "service" && plans.length > 1 ? (
             <div
-              className={`mx-auto flex w-full max-w-[494px] flex-col gap-3 sm:flex-row ${
-                compact ? "mt-5" : "mt-8"
-              }`}
+              className={`mx-auto flex w-full max-w-[494px] flex-col gap-3 sm:flex-row ${compact ? "mt-5" : "mt-8"
+                }`}
             >
               {plans.map((plan) => {
                 const isSelected = selectedPlan?.id === plan.id;
@@ -240,13 +238,11 @@ export default function SettingsSubscriptionPlan({
                     key={plan.id}
                     type="button"
                     onClick={() => onSelectPlan?.(plan.id)}
-                    className={`relative flex-1 rounded-[16px] border text-left transition ${
-                      compact ? "px-3 py-3" : "px-4 py-4"
-                    } ${
-                      isSelected
+                    className={`relative flex-1 rounded-[16px] border text-left transition ${compact ? "px-3 py-3" : "px-4 py-4"
+                      } ${isSelected
                         ? "border-[#005864] bg-[rgba(0,88,100,0.06)]"
                         : "border-transparent bg-[#F8F8F8] hover:bg-[#F3F5F5]"
-                    }`}
+                      }`}
                   >
                     {plan.isSubscribed ? (
                       <span className="absolute right-2 top-2 rounded-full bg-[#005864] px-2 py-0.5 text-[10px] font-[600] leading-4 text-white">
@@ -254,11 +250,10 @@ export default function SettingsSubscriptionPlan({
                       </span>
                     ) : null}
                     <p
-                      className={`pr-12 font-[600] text-[#1C1C1C] ${
-                        compact
+                      className={`pr-12 font-[600] text-[#1C1C1C] ${compact
                           ? "text-[14px] leading-[18px]"
                           : "text-[16px] leading-5"
-                      }`}
+                        }`}
                     >
                       {plan.name}
                     </p>
@@ -273,9 +268,8 @@ export default function SettingsSubscriptionPlan({
 
           {variant === "service" ? (
             <div
-              className={`mx-auto w-full max-w-[494px] text-center ${
-                compact ? "mt-6" : "mt-10"
-              }`}
+              className={`mx-auto w-full max-w-[494px] text-center ${compact ? "mt-6" : "mt-10"
+                }`}
             >
               <PlanPriceDisplay
                 plan={selectedPlan}
@@ -285,11 +279,10 @@ export default function SettingsSubscriptionPlan({
               />
               {displayPlanName ? (
                 <p
-                  className={`mt-1.5 font-[600] capitalize tracking-[-0.008em] text-[#1C1C1C] ${
-                    compact
+                  className={`mt-1.5 font-[600] capitalize tracking-[-0.008em] text-[#1C1C1C] ${compact
                       ? "text-[22px] leading-[28px]"
                       : "text-[30px] leading-[38px]"
-                  }`}
+                    }`}
                 >
                   {displayPlanName}
                 </p>
@@ -308,9 +301,8 @@ export default function SettingsSubscriptionPlan({
           )}
 
           <div
-            className={`mx-auto w-full max-w-[494px] rounded-[24px] bg-[rgba(0,88,100,0.06)] px-5 ${
-              compact ? "mt-5 py-5" : "mt-8 px-6 py-8"
-            }`}
+            className={`mx-auto w-full max-w-[494px] rounded-[24px] bg-[rgba(0,88,100,0.06)] px-5 ${compact ? "mt-5 py-5" : "mt-8 px-6 py-8"
+              }`}
           >
             {variant === "verified-badge" ? (
               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -327,18 +319,16 @@ export default function SettingsSubscriptionPlan({
             ) : null}
 
             <ul
-              className={`list-disc pl-5 marker:text-[#005864] ${
-                compact ? "space-y-3" : "space-y-5"
-              }`}
+              className={`list-disc pl-5 marker:text-[#005864] ${compact ? "space-y-3" : "space-y-5"
+                }`}
             >
               {displayFeatures.map((feature) => (
                 <li
                   key={feature}
-                  className={`pl-1 text-[#1C1C1C] ${
-                    compact
+                  className={`pl-1 text-[#1C1C1C] ${compact
                       ? "text-[14px] leading-5 tracking-[0.04px]"
                       : "text-[16px] leading-6 tracking-[0.08px]"
-                  }`}
+                    }`}
                 >
                   {feature}
                 </li>
@@ -347,11 +337,10 @@ export default function SettingsSubscriptionPlan({
           </div>
 
           <p
-            className={`mx-auto w-full max-w-[494px] text-center font-[600] text-black ${
-              compact
+            className={`mx-auto w-full max-w-[494px] text-center font-[600] text-black ${compact
                 ? "mt-5 text-[14px] leading-[18px]"
                 : "mt-8 text-[16px] leading-5"
-            }`}
+              }`}
           >
             {displayExpiryLabel}
           </p>
@@ -361,12 +350,12 @@ export default function SettingsSubscriptionPlan({
               <Button
                 type="button"
                 onClick={handlePurchasePlan}
-                disabled={isBuyNowDisabled}
-                className={`w-full cursor-pointer rounded-[12px] bg-[#005864] px-[10px] font-[600] capitalize text-white hover:bg-[#004d57] disabled:cursor-not-allowed disabled:opacity-60 ${
-                  compact
+                // disabled={isBuyNowDisabled}
+                disabled={true}
+                className={`w-full cursor-pointer rounded-[12px] bg-[#005864] px-[10px] font-[600] capitalize text-white hover:bg-[#004d57] disabled:cursor-not-allowed disabled:opacity-60 ${compact
                     ? "h-10 py-2 text-[14px] leading-[18px]"
                     : "h-12 py-3 text-[16px] leading-5"
-                }`}
+                  }`}
               >
                 {isPurchasing ? "Processing..." : "Buy Now"}
               </Button>
@@ -384,11 +373,10 @@ export default function SettingsSubscriptionPlan({
                 type="button"
                 onClick={handleCancelSubscription}
                 disabled={isCancelling}
-                className={`w-full cursor-pointer rounded-[12px] bg-[#005864] px-[10px] font-[600] capitalize text-white hover:bg-[#004d57] disabled:cursor-not-allowed disabled:opacity-60 ${
-                  compact
+                className={`w-full cursor-pointer rounded-[12px] bg-[#005864] px-[10px] font-[600] capitalize text-white hover:bg-[#004d57] disabled:cursor-not-allowed disabled:opacity-60 ${compact
                     ? "h-10 py-2 text-[14px] leading-[18px]"
                     : "h-12 py-3 text-[16px] leading-5"
-                }`}
+                  }`}
               >
                 {isCancelling ? "Cancelling..." : "Cancel Subscription"}
               </Button>
