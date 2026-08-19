@@ -350,8 +350,8 @@ export default function SettingsSubscriptionPlan({
               <Button
                 type="button"
                 onClick={handlePurchasePlan}
-                // disabled={isBuyNowDisabled}
-                disabled={true}
+                disabled={isBuyNowDisabled}
+                // disabled={true}
                 className={`w-full cursor-pointer rounded-[12px] bg-[#005864] px-[10px] font-[600] capitalize text-white hover:bg-[#004d57] disabled:cursor-not-allowed disabled:opacity-60 ${compact
                     ? "h-10 py-2 text-[14px] leading-[18px]"
                     : "h-12 py-3 text-[16px] leading-5"
