@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useGoogleLoginAuth } from "@/hooks/auth/use-auth-mutations";
 import { extractAuthFromResponse } from "@/lib/auth-session";
@@ -20,6 +20,7 @@ export function GoogleSignInButton({
   onConflict,
 }: GoogleSignInButtonProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const googleLoginMutation = useGoogleLoginAuth();
 
   const handleGoogleSignIn = async () => {
@@ -43,7 +44,11 @@ export function GoogleSignInButton({
       }
 
       const { user } = extractAuthFromResponse(response);
-      const redirectPath = getRedirectPath(user);
+      
+      const redirectParam = searchParams.get("redirect");
+      const redirectPath = (redirectParam && redirectParam.startsWith("/")) 
+        ? redirectParam 
+        : getRedirectPath(user);
 
       if (redirectPath === "/auth/verify-email") {
         setPendingVerifyEmail(email);

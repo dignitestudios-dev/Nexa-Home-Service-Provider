@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Input } from "@/components/ui/input";
 import { AccountCreatedModal } from "@/components/auth/account-created-modal";
@@ -29,6 +29,7 @@ type LoginFormData = z.infer<typeof loginFlowEmailSchema>;
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [checkedEmail, setCheckedEmail] = useState<string | null>(null);
@@ -164,7 +165,11 @@ export default function LoginForm() {
           role: "service-provider",
         });
         const { user: loggedInUser } = extractAuthFromResponse(response);
-        const redirectPath = getRedirectPath(loggedInUser);
+        
+        const redirectParam = searchParams.get("redirect");
+        const redirectPath = (redirectParam && redirectParam.startsWith("/")) 
+          ? redirectParam 
+          : getRedirectPath(loggedInUser);
 
         if (redirectPath === "/auth/verify-email") {
           setPendingVerifyEmail(currentEmail);
