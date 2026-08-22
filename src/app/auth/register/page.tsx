@@ -1,7 +1,7 @@
 "use client";
 
 import { Eye, EyeClosed } from "lucide-react";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -52,7 +52,8 @@ export default function RegisterPage() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-[388px] py-2 lg:py-8">
+    <Suspense fallback={null}>
+      <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-[388px] py-2 lg:py-8">
       <div className="text-center">
         <h1 className="text-[32px] font-semibold leading-[40px] tracking-[-0.82px] text-[#1C1C1C]">
           Sign Up
@@ -285,6 +286,7 @@ export default function RegisterPage() {
         </div>
       </div>
     </form>
+    </Suspense>
   );
 }
 
