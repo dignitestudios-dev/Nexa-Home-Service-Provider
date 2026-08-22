@@ -213,7 +213,9 @@ function createBusinessDocumentFileSchema(field: BusinessDocumentFieldKey) {
     )
     .refine((file) => file.size <= BUSINESS_DOC_MAX_BYTES, {
       message: `${label} must be 10MB or smaller`,
-    });
+    })
+    .optional()
+    .nullable();
 }
 
 export function validateBusinessDocumentFile(
@@ -221,7 +223,7 @@ export function validateBusinessDocumentFile(
   field: BusinessDocumentFieldKey,
 ): string | null {
   if (!file) {
-    return `${BUSINESS_DOC_LABELS[field]} is required`;
+    return null;
   }
 
   const result = createBusinessDocumentFileSchema(field).safeParse(file);

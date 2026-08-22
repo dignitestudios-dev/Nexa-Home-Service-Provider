@@ -10,12 +10,17 @@ export const ONBOARDING_STEPS = [
   {
     id: "business-docs",
     path: "/onboarding/business-documents",
-    isComplete: (user: User) => user.businessDocsSubmitted,
+    isComplete: (user: User) => 
+      user.businessDocsSubmitted || 
+      user.portfolioMediaUploaded ||
+      isIdentityStepComplete(user.identityStatus),
   },
   {
     id: "portfolio",
     path: "/onboarding/portfolio",
-    isComplete: (user: User) => user.portfolioMediaUploaded,
+    isComplete: (user: User) => 
+      user.portfolioMediaUploaded ||
+      isIdentityStepComplete(user.identityStatus),
   },
   {
     id: "identity",
@@ -110,6 +115,17 @@ export function canAccessOnboardingPath(pathname: string, user: User): boolean {
     ONBOARDING_STEPS[3].path === basePath &&
     needsIdentityResubmit(user.identityStatus)
   ) {
+    return true;
+  }
+
+  // Always allow accessing business docs if they haven't submitted them
+  if (pathStepIndex === 1 && !user.businessDocsSubmitted) {
+    return true;
+  }
+
+  // Remove docs protection on all other routes: 
+  // allow accessing any forward route if currently on business-docs
+  if (currentStepIndex === 1 && pathStepIndex > 1) {
     return true;
   }
 

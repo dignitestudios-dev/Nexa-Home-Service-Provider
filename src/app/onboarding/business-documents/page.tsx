@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { navigateToNextOnboardingStep } from "@/lib/onboarding-navigation";
+
 import type { RootState } from "@/store/index";
 import {
   BUSINESS_DOC_ACCEPT,
@@ -118,6 +119,7 @@ export default function BusinessDocumentsPage() {
       setIsPreparingUpload(false);
     }
   };
+
 
   return (
     <div className="h-screen w-full overflow-hidden bg-white py-3 pr-3 pl-1 md:py-5 md:pr-10 md:pl-0">
@@ -353,19 +355,34 @@ export default function BusinessDocumentsPage() {
                 })}
               </div>
 
-              <button
-                type="submit"
-                disabled={
-                  uploadDocsMutation.isPending ||
-                  isPreparingUpload ||
-                  compressingField !== null
-                }
-                className="mx-auto mt-10 block h-12 w-full cursor-pointer max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isPreparingUpload || uploadDocsMutation.isPending
-                  ? "Uploading..."
-                  : "Continue"}
-              </button>
+              <div className="mx-auto mt-10 flex w-full max-w-[500px] flex-col gap-4">
+                <button
+                  type="submit"
+                  disabled={
+                    uploadDocsMutation.isPending ||
+                    isPreparingUpload ||
+                    compressingField !== null
+                  }
+                  className="block h-12 w-full cursor-pointer rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isPreparingUpload || uploadDocsMutation.isPending
+                    ? "Uploading..."
+                    : "Continue"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={()=>router.replace("/onboarding/portfolio")}
+                  disabled={
+                    uploadDocsMutation.isPending ||
+                    isPreparingUpload ||
+                    compressingField !== null
+                  }
+                  className="block h-12 w-full cursor-pointer rounded-[12px] border border-[#005864] bg-transparent text-[16px] font-semibold text-[#005864] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Skip
+                </button>
+              </div>
             </form>
           </section>
         </main>

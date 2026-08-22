@@ -186,7 +186,7 @@ export function persistAuthFromResponse(
   data: unknown,
   dispatch: AppDispatch,
 ): { token: string | null; user: User | null } {
-  const { token, user } = extractAuthFromResponse(data);
+  const { token, user  } = extractAuthFromResponse(data);
 
   if (token) {
     setAuthTokenCookie(token);

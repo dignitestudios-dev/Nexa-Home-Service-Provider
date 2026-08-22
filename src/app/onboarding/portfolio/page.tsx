@@ -32,6 +32,10 @@ import {
 } from "@/lib/schemas/profile-setup.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUploadPortfolioSetup } from "@/hooks/onboarding/profile-setup-mutation";
+import { userService } from "@/services/user.service";
+import { parseUserProfileFromResponse } from "@/lib/parse-user-profile";
+import { useQueryClient } from "@tanstack/react-query";
+import { CURRENT_USER_QUERY_KEY } from "@/hooks/user/use-current-user-query";
 
 const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: false },
@@ -43,6 +47,7 @@ const stepItems = [
 export default function PortfolioPage() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const user = useSelector((state: RootState) => state.auth.user);
 
   const uploadPortfolioMutation = useUploadPortfolioSetup();
@@ -156,8 +161,14 @@ export default function PortfolioPage() {
 
       toast.fromApiSuccess(response, "Portfolio uploaded successfully.");
 
-      navigateToNextOnboardingStep(router, dispatch, user, {
-        apiResponse: response,
+      const ownResponse = await userService.getOwn();
+      const freshUser = parseUserProfileFromResponse(ownResponse);
+
+      if (freshUser) {
+        queryClient.setQueryData(CURRENT_USER_QUERY_KEY, freshUser);
+      }
+
+      navigateToNextOnboardingStep(router, dispatch, freshUser || user, {
         completedFlags: { portfolioMediaUploaded: true },
       });
     } catch (error) {
