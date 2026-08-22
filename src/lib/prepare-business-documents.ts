@@ -18,9 +18,9 @@ export async function prepareBusinessDocumentsForUpload(
   ]);
 
   return {
-    businessLicense,
-    taxRegistration,
-    businessOwnershipCert: ownershipCertificate,
-    proofOfAddress,
+    businessLicense: businessLicense ?? undefined,
+    taxRegistration: taxRegistration ?? undefined,
+    businessOwnershipCert: ownershipCertificate ?? undefined,
+    proofOfAddress: proofOfAddress ?? undefined,
   };
 }

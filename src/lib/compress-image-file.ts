@@ -74,15 +74,16 @@ function buildCompressedFileName(fileName: string): string {
   return `${baseName}.jpg`;
 }
 
-export function shouldCompressImageFile(file: File): boolean {
+export function shouldCompressImageFile(file: File | null | undefined): boolean {
+  if (!file) return false;
   return (
     COMPRESSIBLE_IMAGE_TYPES.has(file.type) &&
     file.size > COMPRESS_IF_LARGER_THAN_BYTES
   );
 }
 
-export async function compressImageFileIfNeeded(file: File): Promise<File> {
-  if (!shouldCompressImageFile(file)) {
+export async function compressImageFileIfNeeded<T extends File | null | undefined>(file: T): Promise<File | T> {
+  if (!file || !shouldCompressImageFile(file)) {
     return file;
   }
 
