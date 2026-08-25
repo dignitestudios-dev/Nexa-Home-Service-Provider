@@ -6,7 +6,7 @@ import { clearAuthTokenCookie, getAuthTokenCookie } from "@/lib/auth-session";
 
 // export const baseURL = "https://0hw8tf6g-3050.inc1.devtunnels.ms";
 
- export const baseURL = "https://api.nexahomeapp.com";
+export const baseURL = process.env.NEXT_PUBLIC_API_URL || "https://api.staging.nexahomeapp.com";
 
 // export const baseURL = "https://0hw8tf6g-3050.inc1.devtunnels.ms/";
 
@@ -110,7 +110,7 @@ API.interceptors.response.use(
 
   (error) => {
 
-    if (error?.response?.status === 401) {
+    if (error?.response?.status === 403) {
 
       const requestUrl = error?.config?.url || "";
 
