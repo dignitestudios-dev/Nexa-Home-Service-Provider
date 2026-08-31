@@ -853,25 +853,6 @@ export default function ProfileSetupOnboardingPage() {
                 </div>
               </div>
 
-              {/* LABEL */}
-
-              <div>
-                <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                  Label This Address*
-                </label>
-                <Input
-                  maxLength={50}
-                  {...register("label")}
-                  placeholder="e.g., Home, Office"
-                  className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
-                />
-                {errors.label && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.label.message}
-                  </p>
-                )}
-              </div>
-
               {/* ========================= */}
               {/* GOOGLE MAP — placed before address fields */}
               {/* ========================= */}
@@ -907,6 +888,25 @@ export default function ProfileSetupOnboardingPage() {
                 </p>
               </div>
 
+              {/* LABEL */}
+
+              <div>
+                <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                  Label This Address*
+                </label>
+                <Input
+                  maxLength={50}
+                  {...register("label")}
+                  placeholder="e.g., Home, Office"
+                  className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
+                />
+                {errors.label && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.label.message}
+                  </p>
+                )}
+              </div>
+
               {/* ADDRESS */}
 
               <div>
@@ -915,7 +915,6 @@ export default function ProfileSetupOnboardingPage() {
                 </label>
                 <Input
                   {...register("address")}
-                  placeholder="Los Angeles, CA"
                   className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
                 />
                 {errors.address && (
@@ -933,7 +932,6 @@ export default function ProfileSetupOnboardingPage() {
                 </label>
                 <Input
                   {...register("streetName")}
-                  placeholder="Bay Street"
                   className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
                 />
                 {errors.streetName && (
@@ -959,7 +957,6 @@ export default function ProfileSetupOnboardingPage() {
                         setValue("officeNo", value, { shouldValidate: true });
                       },
                     })}
-                    placeholder="e.g., 56A"
                     className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
                     maxLength={OFFICE_NO_MAX_LENGTH}
                   />
@@ -983,7 +980,6 @@ export default function ProfileSetupOnboardingPage() {
                         setValue("zipCode", value, { shouldValidate: true });
                       },
                     })}
-                    placeholder="e.g., 12345678"
                     className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
                     inputMode="numeric"
                     maxLength={ZIP_CODE_MAX_LENGTH}

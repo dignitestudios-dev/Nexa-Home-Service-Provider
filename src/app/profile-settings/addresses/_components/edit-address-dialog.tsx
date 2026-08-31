@@ -77,6 +77,15 @@ type EditAddressDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+type FormErrors = {
+  label?: string;
+  address?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  zipCode?: string;
+};
+
 export default function EditAddressDialog({
   address,
   open,
@@ -86,6 +95,7 @@ export default function EditAddressDialog({
   const [form, setForm] = useState<EditFormState>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
   const [zipCodeError, setZipCodeError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
@@ -97,6 +107,7 @@ export default function EditAddressDialog({
     setForm(toEditForm(address));
     setFormError(null);
     setZipCodeError(null);
+    setFieldErrors({});
     setMapReady(true);
   }, [address, open]);
 
@@ -106,6 +117,19 @@ export default function EditAddressDialog({
 
     setFormError(null);
 
+    const errors: FormErrors = {};
+    if (!form.label.trim()) errors.label = "Address Name is required";
+    if (!form.address.trim()) errors.address = "Address is required";
+    if (!form.country.trim()) errors.country = "Country is required";
+    if (!form.state.trim()) errors.state = "State is required";
+    if (!form.city.trim()) errors.city = "City is required";
+    if (!form.zipCode.trim()) errors.zipCode = "Zip Code is required";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
     const nextZipCodeError = getZipCodeValidationError(form.zipCode);
     if (nextZipCodeError) {
       setZipCodeError(nextZipCodeError);
@@ -113,6 +137,7 @@ export default function EditAddressDialog({
     }
 
     setZipCodeError(null);
+    setFieldErrors({});
 
     try {
       const coordinates = await resolveAddressCoordinates({
@@ -173,116 +198,6 @@ export default function EditAddressDialog({
             event.preventDefault();
           }}
         >
-          <div>
-            <label htmlFor="edit-label" className={addressFieldLabelClass}>
-              Address Name
-            </label>
-            <Input
-              id="edit-label"
-              value={form.label}
-              onChange={(e) => setForm((prev) => ({ ...prev, label: e.target.value }))}
-              className={addressFieldInputMutedClass}
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="edit-address" className={addressFieldLabelClass}>
-              Address
-            </label>
-            <Input
-              id="edit-address"
-              value={form.address}
-              onChange={(e) =>
-                setForm((prev) =>
-                  markAddressFieldsEdited({ ...prev, address: e.target.value }),
-                )
-              }
-              className={addressFieldInputMutedClass}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor="edit-city" className={addressFieldLabelClass}>
-                City
-              </label>
-              <Input
-                id="edit-city"
-                value={form.city}
-                onChange={(e) =>
-                  setForm((prev) =>
-                    markAddressFieldsEdited({ ...prev, city: e.target.value }),
-                  )
-                }
-                className={addressFieldInputWhiteClass}
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="edit-state" className={addressFieldLabelClass}>
-                State
-              </label>
-              <Input
-                id="edit-state"
-                value={form.state}
-                onChange={(e) =>
-                  setForm((prev) =>
-                    markAddressFieldsEdited({ ...prev, state: e.target.value }),
-                  )
-                }
-                className={addressFieldInputWhiteClass}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor="edit-country" className={addressFieldLabelClass}>
-                Country
-              </label>
-              <Input
-                id="edit-country"
-                value={form.country}
-                onChange={(e) =>
-                  setForm((prev) =>
-                    markAddressFieldsEdited({ ...prev, country: e.target.value }),
-                  )
-                }
-                className={addressFieldInputWhiteClass}
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="edit-zip" className={addressFieldLabelClass}>
-                Zip Code
-              </label>
-              <Input
-                id="edit-zip"
-                value={form.zipCode}
-                onChange={(e) => {
-                  setZipCodeError(null);
-                  setForm((prev) =>
-                    markAddressFieldsEdited({
-                      ...prev,
-                      zipCode: normalizeZipCodeInput(e.target.value),
-                    }),
-                  );
-                }}
-                placeholder="e.g., 12345678"
-                inputMode="numeric"
-                maxLength={ZIP_CODE_MAX_LENGTH}
-                className={addressFieldInputWhiteClass}
-                required
-              />
-              {zipCodeError ? (
-                <p className="mt-1 text-[12px] text-[#FF0000]">{zipCodeError}</p>
-              ) : null}
-            </div>
-          </div>
-
           {open && address && mapReady ? (
             <AddressGoogleMapPicker
               key={address._id}
@@ -296,6 +211,122 @@ export default function EditAddressDialog({
               compact
             />
           ) : null}
+
+          <div>
+            <label htmlFor="edit-label" className={addressFieldLabelClass}>
+              Address Name *
+            </label>
+            <Input
+              id="edit-label"
+              value={form.label}
+              onChange={(e) => {
+                setForm((prev) => ({ ...prev, label: e.target.value }));
+                if (fieldErrors.label) setFieldErrors((prev) => ({ ...prev, label: undefined }));
+              }}
+              className={addressFieldInputMutedClass}
+            />
+            {fieldErrors.label && <p className="mt-1 text-[12px] text-[#FF0000]">{fieldErrors.label}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="edit-address" className={addressFieldLabelClass}>
+              Address *
+            </label>
+            <Input
+              id="edit-address"
+              value={form.address}
+              onChange={(e) => {
+                setForm((prev) =>
+                  markAddressFieldsEdited({ ...prev, address: e.target.value }),
+                );
+                if (fieldErrors.address) setFieldErrors((prev) => ({ ...prev, address: undefined }));
+              }}
+              className={addressFieldInputMutedClass}
+            />
+            {fieldErrors.address && <p className="mt-1 text-[12px] text-[#FF0000]">{fieldErrors.address}</p>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label htmlFor="edit-city" className={addressFieldLabelClass}>
+                City *
+              </label>
+              <Input
+                id="edit-city"
+                value={form.city}
+                onChange={(e) => {
+                  setForm((prev) =>
+                    markAddressFieldsEdited({ ...prev, city: e.target.value }),
+                  );
+                  if (fieldErrors.city) setFieldErrors((prev) => ({ ...prev, city: undefined }));
+                }}
+                className={addressFieldInputWhiteClass}
+              />
+              {fieldErrors.city && <p className="mt-1 text-[12px] text-[#FF0000]">{fieldErrors.city}</p>}
+            </div>
+            <div>
+              <label htmlFor="edit-state" className={addressFieldLabelClass}>
+                State *
+              </label>
+              <Input
+                id="edit-state"
+                value={form.state}
+                onChange={(e) => {
+                  setForm((prev) =>
+                    markAddressFieldsEdited({ ...prev, state: e.target.value }),
+                  );
+                  if (fieldErrors.state) setFieldErrors((prev) => ({ ...prev, state: undefined }));
+                }}
+                className={addressFieldInputWhiteClass}
+              />
+              {fieldErrors.state && <p className="mt-1 text-[12px] text-[#FF0000]">{fieldErrors.state}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label htmlFor="edit-country" className={addressFieldLabelClass}>
+                Country *
+              </label>
+              <Input
+                id="edit-country"
+                value={form.country}
+                onChange={(e) => {
+                  setForm((prev) =>
+                    markAddressFieldsEdited({ ...prev, country: e.target.value }),
+                  );
+                  if (fieldErrors.country) setFieldErrors((prev) => ({ ...prev, country: undefined }));
+                }}
+                className={addressFieldInputWhiteClass}
+              />
+              {fieldErrors.country && <p className="mt-1 text-[12px] text-[#FF0000]">{fieldErrors.country}</p>}
+            </div>
+            <div>
+              <label htmlFor="edit-zip" className={addressFieldLabelClass}>
+                Zip Code *
+              </label>
+              <Input
+                id="edit-zip"
+                value={form.zipCode}
+                onChange={(e) => {
+                  setZipCodeError(null);
+                  if (fieldErrors.zipCode) setFieldErrors((prev) => ({ ...prev, zipCode: undefined }));
+                  setForm((prev) =>
+                    markAddressFieldsEdited({
+                      ...prev,
+                      zipCode: normalizeZipCodeInput(e.target.value),
+                    }),
+                  );
+                }}
+                inputMode="numeric"
+                maxLength={ZIP_CODE_MAX_LENGTH}
+                className={addressFieldInputWhiteClass}
+              />
+              {(fieldErrors.zipCode || zipCodeError) ? (
+                <p className="mt-1 text-[12px] text-[#FF0000]">{fieldErrors.zipCode || zipCodeError}</p>
+              ) : null}
+            </div>
+          </div>
 
           {formError ? <p className="text-[12px] text-[#FF0000]">{formError}</p> : null}
 
