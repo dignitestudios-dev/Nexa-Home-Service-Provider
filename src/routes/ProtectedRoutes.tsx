@@ -10,6 +10,7 @@ import { getRedirectPath } from "@/lib/auth-utils";
 import {
   canAccessOnboardingPath,
   getNextOnboardingStepPath,
+  isIdentityRejected,
   isOnboardingComplete,
   isOnboardingPath,
   isPostIdentityOnboardingPath,
@@ -185,12 +186,33 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       return;
     }
 
-    // Lock all access for non-approved identity (full-screen block)
+    const normalizedIdentity = effectiveUser.identityStatus?.trim().toLowerCase();
+    const isIdentityApproved = normalizedIdentity === "approved";
+    const isRejected = isIdentityRejected(effectiveUser.identityStatus);
+
+    // If currently on /identity-verification:
+    // Approved users are redirected to home dashboard; otherwise remain on verification screen.
+    if (pathname === "/identity-verification") {
+      if (isIdentityApproved) {
+        router.replace("/home");
+      }
+      return;
+    }
+
+    // Immediately block rejected users from all protected paths and send to /identity-verification
+    if (isRejected && !isPublicAuthPath) {
+      router.replace("/identity-verification");
+      return;
+    }
+
+    // Lock all access for non-approved identity (full-screen block) after onboarding/walkthrough
     if (
-      isOnboardingComplete(effectiveUser) &&
-      effectiveUser.identityStatus?.trim().toLowerCase() !== "approved" &&
+      !isIdentityApproved &&
+      (isOnboardingComplete(effectiveUser) || hasCompletedWalkthrough(effectiveUser._id)) &&
       !isPublicAuthPath &&
-      pathname !== "/identity-verification"
+      !isOnboardingPath(pathname) &&
+      !isPostIdentityOnboardingPath(pathname) &&
+      !isWalkthroughPath(pathname)
     ) {
       router.replace("/identity-verification");
       return;
@@ -238,6 +260,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
     router.replace(redirectPath);
   }, [isLoggedIn, isPublicAuthPath, user, pathname, router]);
+
+  const effectiveUser = user ?? getPersistedAuthUser();
+  const isRejected = isIdentityRejected(effectiveUser?.identityStatus);
+  const shouldBlockContent =
+    isRejected && !isPublicAuthPath && pathname !== "/identity-verification";
+
+  if (shouldBlockContent) {
+    return null;
+  }
 
   return <>{children}</>;
 };

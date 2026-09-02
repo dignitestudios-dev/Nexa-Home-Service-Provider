@@ -20,7 +20,9 @@ import { Button } from "@/components/ui/button";
 
 // Lucide Icons
 import { Clock, LayoutPanelLeft, UserRound, Filter } from "lucide-react";
-import { LucideIcon } from "lucide-react";
+import type { ComponentType } from "react";
+
+export type LucideIcon = ComponentType<any>;
 
 /* ================= TYPES ================= */
 

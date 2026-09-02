@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { userService } from "@/services/user.service";
 import { useLogoutAuth } from "@/hooks/auth/use-auth-mutations";
@@ -18,6 +20,9 @@ import {
 import { compressImageFileIfNeeded } from "@/lib/compress-image-file";
 import { prepareIdentityCardDocumentsForUpload } from "@/lib/prepare-identity-card-documents";
 import { useUploadIdDocsSetup } from "@/hooks/onboarding/profile-setup-mutation";
+import { parseUserProfileFromResponse } from "@/lib/parse-user-profile";
+import { CURRENT_USER_QUERY_KEY } from "@/hooks/user/use-current-user-query";
+import type { RootState } from "@/store/index";
 
 type IdentityStatus =
   | "not-provided"
@@ -40,7 +45,20 @@ const idCardFields = [
 
 export default function IdentityVerificationPage() {
   const router = useRouter();
-  const [status, setStatus] = useState<IdentityStatus>("loading");
+  const queryClient = useQueryClient();
+  const authUser = useSelector((state: RootState) => state.auth.user);
+
+  const resolveInitialStatus = (): IdentityStatus => {
+    const raw = authUser?.identityStatus?.trim().toLowerCase();
+    if (raw === "rejected") return "rejected";
+    if (raw === "approved") return "approved";
+    if (raw === "pending" || raw === "submitted") return "pending";
+    if (raw === "resubmission" || raw === "resubmit") return "resubmission";
+    if (raw === "not-provided") return "not-provided";
+    return "loading";
+  };
+
+  const [status, setStatus] = useState<IdentityStatus>(resolveInitialStatus);
   const [attemptsRemaining, setAttemptsRemaining] = useState<number>(3);
   const [isFetchingStatus, setIsFetchingStatus] = useState(false);
   
@@ -85,24 +103,79 @@ export default function IdentityVerificationPage() {
     setIsFetchingStatus(true);
     try {
       const response = await userService.getVerificationStatus();
-      const data = response.data;
+      const data = response?.data;
       if (data) {
-        setStatus(data.identityStatus);
-        setAttemptsRemaining(data.attemptsRemaining);
+        if (data.identityStatus) {
+          setStatus(data.identityStatus);
+        }
+        const remaining =
+          data.attemptsRemaining ??
+          (data as Record<string, unknown>).remainingAttempts;
+        if (typeof remaining === "number") {
+          setAttemptsRemaining(remaining);
+        }
 
         // If approved, redirect to home dashboard immediately
         if (data.identityStatus === "approved") {
           router.replace("/home");
+          return;
         }
       }
     } catch (error) {
-      const msg = getApiErrorMessage(error, "Failed to load verification status.");
-      if (msg) toast.error(msg);
-      setStatus("not-provided");
+      // Fallback: check /user/own or Redux user before falling back to not-provided
+      try {
+        const ownResponse = await userService.getOwn();
+        const ownUser = parseUserProfileFromResponse(ownResponse);
+        const ownStatus = ownUser?.identityStatus?.trim().toLowerCase();
+        if (ownStatus) {
+          if (ownStatus === "rejected") {
+            setStatus("rejected");
+            return;
+          }
+          if (ownStatus === "approved") {
+            setStatus("approved");
+            router.replace("/home");
+            return;
+          }
+          if (ownStatus === "pending" || ownStatus === "submitted") {
+            setStatus("pending");
+            return;
+          }
+          if (ownStatus === "resubmission" || ownStatus === "resubmit") {
+            setStatus("resubmission");
+            return;
+          }
+        }
+      } catch {
+        // ignore fallback error
+      }
+
+      if (authUser?.identityStatus?.trim().toLowerCase() === "rejected") {
+        setStatus("rejected");
+      } else {
+        const msg = getApiErrorMessage(error, "Failed to load verification status.");
+        if (msg) toast.error(msg);
+        setStatus("not-provided");
+      }
     } finally {
       setIsFetchingStatus(false);
     }
   };
+
+  useEffect(() => {
+    if (!authUser?.identityStatus) return;
+    const raw = authUser.identityStatus.trim().toLowerCase();
+    if (raw === "rejected") {
+      setStatus("rejected");
+    } else if (raw === "approved") {
+      setStatus("approved");
+      router.replace("/home");
+    } else if (raw === "pending" || raw === "submitted") {
+      setStatus("pending");
+    } else if (raw === "resubmission" || raw === "resubmit") {
+      setStatus("resubmission");
+    }
+  }, [authUser?.identityStatus, router]);
 
   useEffect(() => {
     fetchStatus();
@@ -165,6 +238,7 @@ export default function IdentityVerificationPage() {
       const payload = await prepareIdentityCardDocumentsForUpload(data);
       const response = await uploadIdDocsMutation.mutateAsync(payload);
       toast.fromApiSuccess(response, "Identity card uploaded successfully.");
+      queryClient.invalidateQueries({ queryKey: CURRENT_USER_QUERY_KEY });
       fetchStatus();
     } catch (error) {
       toast.fromApiError(error, "Could not upload identity card. Please try again.");

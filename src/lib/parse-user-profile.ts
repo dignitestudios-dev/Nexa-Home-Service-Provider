@@ -73,19 +73,34 @@ export function parseUserProfileFromResponse(data: unknown): User | null {
   }
 
   const record = data as Record<string, unknown>;
-  const profile =
+  const rawData =
     record.data && typeof record.data === "object"
       ? (record.data as Record<string, unknown>)
-      : typeof record._id === "string"
-        ? record
-        : null;
+      : null;
+
+  const profile =
+    (rawData?.user && typeof rawData.user === "object"
+      ? (rawData.user as Record<string, unknown>)
+      : null) ||
+    (rawData && typeof rawData._id === "string" ? rawData : null) ||
+    (record.user && typeof record.user === "object"
+      ? (record.user as Record<string, unknown>)
+      : null) ||
+    (typeof record._id === "string" ? record : null);
 
   if (!profile || typeof profile._id !== "string") {
     return null;
   }
 
+  const identityStatusRaw =
+    toString(profile.identityStatus) ||
+    toString(profile.verificationStatus) ||
+    (profile as unknown as User).identityStatus ||
+    "";
+
   return {
     ...(profile as unknown as User),
+    identityStatus: identityStatusRaw,
     profilePicture: normalizeProfilePicture(profile.profilePicture),
     selectedCategories: parseSelectedCategories(profile),
     isServiceSubscribed: Boolean(profile.isServiceSubscribed),
