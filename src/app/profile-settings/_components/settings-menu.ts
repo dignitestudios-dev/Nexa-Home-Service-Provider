@@ -13,8 +13,10 @@ import {
   HandCoins,
   TriangleAlert,
   UserRoundX,
-  type LucideIcon,
 } from "lucide-react";
+import type { ComponentType } from "react";
+
+export type LucideIcon = ComponentType<any>;
 
 export type SettingsMenuItem = {
   label: string;

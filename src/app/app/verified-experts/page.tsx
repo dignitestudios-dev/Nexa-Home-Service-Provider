@@ -12,8 +12,10 @@ import { Button } from "@/components/ui/button";
 
 // Lucide Icons
 import { BadgeCheck, Filter } from "lucide-react";
-import { LucideIcon } from "lucide-react";
+import type { ComponentType } from "react";
 import { ExpertTable } from "./_components/ExpertTable";
+
+export type LucideIcon = ComponentType<any>;
 
 /* ================= TYPES ================= */
 
