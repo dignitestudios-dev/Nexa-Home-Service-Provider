@@ -45,10 +45,14 @@ export function GoogleSignInButton({
 
       const { user } = extractAuthFromResponse(response);
       
+      const isRejected =
+        user?.identityStatus?.trim().toLowerCase() === "rejected";
       const redirectParam = searchParams.get("redirect");
-      const redirectPath = (redirectParam && redirectParam.startsWith("/")) 
-        ? redirectParam 
-        : getRedirectPath(user);
+      const redirectPath = isRejected
+        ? "/identity-verification"
+        : redirectParam && redirectParam.startsWith("/") 
+          ? redirectParam 
+          : getRedirectPath(user);
 
       if (redirectPath === "/auth/verify-email") {
         setPendingVerifyEmail(email);

@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeClosed } from "lucide-react";
+import { Eye, EyeClosed } from "lucide-react"
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -167,10 +167,14 @@ export default function LoginForm() {
         });
         const { user: loggedInUser } = extractAuthFromResponse(response);
         
+        const isRejected =
+          loggedInUser?.identityStatus?.trim().toLowerCase() === "rejected";
         const redirectParam = searchParams.get("redirect");
-        const redirectPath = (redirectParam && redirectParam.startsWith("/")) 
-          ? redirectParam 
-          : getRedirectPath(loggedInUser);
+        const redirectPath = isRejected
+          ? "/identity-verification"
+          : redirectParam && redirectParam.startsWith("/")
+            ? redirectParam
+            : getRedirectPath(loggedInUser);
 
         if (redirectPath === "/auth/verify-email") {
           setPendingVerifyEmail(currentEmail);
