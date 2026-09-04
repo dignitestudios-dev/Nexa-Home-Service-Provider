@@ -1,4 +1,4 @@
-export type AuthMethod = "email" | "google";
+export type AuthMethod = "email" | "google" | "apple";
 export type AuthRole = "service-provider" | "partner";
 export type AuthMode = "verify" | "reset";
 
@@ -24,6 +24,13 @@ export interface LoginAuthPayload {
 export interface GoogleAuthPayload {
   email: string;
   method: Extract<AuthMethod, "google">;
+  role: AuthRole;
+  idToken: string;
+}
+
+export interface AppleAuthPayload {
+  email?: string;
+  method: Extract<AuthMethod, "apple">;
   role: AuthRole;
   idToken: string;
 }

@@ -1,6 +1,7 @@
 import { API } from "@/lib/axios";
 import { parseEmailExists } from "@/lib/auth-utils";
 import type {
+  AppleAuthPayload,
   ChangePasswordPayload,
   ChangePhonePayload,
   CheckEmailPayload,
@@ -34,6 +35,11 @@ export const authService = {
   },
 
   loginWithGoogle: async (payload: GoogleAuthPayload) => {
+    const { data } = await API.post("/auth", payload);
+    return data;
+  },
+
+  loginWithApple: async (payload: AppleAuthPayload) => {
     const { data } = await API.post("/auth", payload);
     return data;
   },

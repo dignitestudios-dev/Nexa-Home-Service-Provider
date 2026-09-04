@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { AppleSignInButton } from "@/components/auth/apple-sign-in-button";
 import { Input } from "@/components/ui/input";
 import { signupSchema } from "@/lib/schemas/auth.schema";
 
@@ -263,19 +264,7 @@ export default function RegisterPage() {
         <div className="mt-5 flex items-center justify-between">
           <GoogleSignInButton />
 
-          <button
-            type="button"
-            className="w-[188px] h-[50px] bg-[#F8F8F8] rounded-[15px] flex items-center justify-center gap-2 text-[14px] font-[500] text-[#181818]"
-          >
-            <img
-              src="/asset/apple.png"
-              alt="Apple"
-              width={24}
-              height={24}
-              className="w-[24px] h-[24px] object-contain"
-            />
-            <span>Apple</span>
-          </button>
+          <AppleSignInButton />
         </div>
 
         <div className="mt-6 text-center text-[16px] leading-[20px] text-black/80">

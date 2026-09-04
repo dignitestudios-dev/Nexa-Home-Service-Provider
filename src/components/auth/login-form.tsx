@@ -11,6 +11,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { AccountCreatedModal } from "@/components/auth/account-created-modal";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { AppleSignInButton } from "@/components/auth/apple-sign-in-button";
 import {
   useCheckEmail,
   useLoginAuth,
@@ -213,7 +214,7 @@ export default function LoginForm() {
     >
       <div className="text-center">
         <h1 className="text-[36px] leading-[45px] tracking-[-0.82px] font-semibold text-[#1C1C1C]">
-          Welcome back!
+          Welcome!
         </h1>
         <p className="mt-2 text-[16px] leading-[22px] text-black/80">
           Enter your details below to login.
@@ -292,19 +293,7 @@ export default function LoginForm() {
         <div className="mt-8 flex items-center justify-between">
           <GoogleSignInButton onConflict={() => setShowConflictModal(true)} />
 
-          <button
-            type="button"
-            className="w-[188px] h-[50px] bg-[#F8F8F8] rounded-[15px] flex items-center justify-center gap-2 text-[14px] font-[500] text-[#181818]"
-          >
-            <img
-              src="/asset/apple.png"
-              alt="Apple"
-              width={24}
-              height={24}
-              className="w-[24px] h-[24px] object-contain"
-            />
-            <span>Apple</span>
-          </button>
+          <AppleSignInButton onConflict={() => setShowConflictModal(true)} />
         </div>
       </div>
 

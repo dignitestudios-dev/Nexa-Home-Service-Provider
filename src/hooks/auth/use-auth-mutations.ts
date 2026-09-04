@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { clearAuthSession, persistAuthFromResponse } from "@/lib/auth-session";
 import { signInWithGoogle } from "@/lib/firebase-google-auth";
+import { signInWithApple } from "@/lib/firebase-apple-auth";
 import { authService } from "@/services/auth.service";
 import { setPendingVerifyEmail } from "@/lib/verify-email-storage";
 import type {
@@ -62,6 +63,31 @@ export function useGoogleLoginAuth() {
     onSuccess: ({ response, email }) => {
       persistAuthFromResponse(response, dispatch);
       setPendingVerifyEmail(email);
+    },
+  });
+}
+
+export function useAppleLoginAuth() {
+  const dispatch = useDispatch();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { email, idToken } = await signInWithApple();
+      const response = await authService.loginWithApple({
+        ...(email ? { email } : {}),
+        method: "apple",
+        role: "service-provider",
+        idToken,
+      });
+
+      return { response, email };
+    },
+    onSuccess: ({ response, email }) => {
+      const { user } = persistAuthFromResponse(response, dispatch);
+      const effectiveEmail = email || user?.email;
+      if (effectiveEmail) {
+        setPendingVerifyEmail(effectiveEmail);
+      }
     },
   });
 }
