@@ -194,7 +194,9 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     // Approved users are redirected to home dashboard; otherwise remain on verification screen.
     if (pathname === "/identity-verification") {
       if (isIdentityApproved) {
-        router.replace("/home");
+        if (typeof window !== "undefined") {
+          window.location.href = "/home";
+        }
       }
       return;
     }

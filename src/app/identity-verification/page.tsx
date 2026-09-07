@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { userService } from "@/services/user.service";
@@ -22,6 +22,12 @@ import { prepareIdentityCardDocumentsForUpload } from "@/lib/prepare-identity-ca
 import { useUploadIdDocsSetup } from "@/hooks/onboarding/profile-setup-mutation";
 import { parseUserProfileFromResponse } from "@/lib/parse-user-profile";
 import { CURRENT_USER_QUERY_KEY } from "@/hooks/user/use-current-user-query";
+import {
+  extractAuthFromResponse,
+  getPersistedAuthUser,
+  persistAuthUser,
+} from "@/lib/auth-session";
+import { singUp } from "@/store/slices/auth-slice";
 import type { RootState } from "@/store/index";
 
 type IdentityStatus =
@@ -43,10 +49,18 @@ const idCardFields = [
   },
 ] as const;
 
+const getStorageKey = (userId?: string | null) =>
+  `nexa_id_attempts_remaining_${userId || "current"}`;
+
+const getMaxAttemptsKey = (userId?: string | null) =>
+  `nexa_id_max_attempts_${userId || "current"}`;
+
 export default function IdentityVerificationPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const queryClient = useQueryClient();
   const authUser = useSelector((state: RootState) => state.auth.user);
+  const userId = authUser?._id ?? null;
 
   const resolveInitialStatus = (): IdentityStatus => {
     const raw = authUser?.identityStatus?.trim().toLowerCase();
@@ -59,13 +73,69 @@ export default function IdentityVerificationPage() {
   };
 
   const [status, setStatus] = useState<IdentityStatus>(resolveInitialStatus);
-  const [attemptsRemaining, setAttemptsRemaining] = useState<number>(3);
+  const [attemptsRemaining, setAttemptsRemaining] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(getStorageKey(userId));
+      if (stored !== null) {
+        const parsed = Number(stored);
+        if (!Number.isNaN(parsed)) return parsed;
+      }
+    }
+    return 5;
+  });
+  const [maxAttempts, setMaxAttempts] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(getMaxAttemptsKey(userId));
+      if (stored !== null) {
+        const parsed = Number(stored);
+        if (!Number.isNaN(parsed)) return parsed;
+      }
+    }
+    return 5;
+  });
   const [isFetchingStatus, setIsFetchingStatus] = useState(false);
-  
+
   const logoutMutation = useLogoutAuth();
   const uploadIdDocsMutation = useUploadIdDocsSetup();
-  
+
+  const isApprovedInitial =
+    authUser?.identityStatus?.trim().toLowerCase() === "approved";
+  const isApprovedOrRedirectingRef = useRef(isApprovedInitial);
+  const hasRedirectedRef = useRef(false);
+
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const justSubmittedRef = useRef(false);
+
+  const clearPolling = () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  };
+
+  const handleApproved = (userSource?: any) => {
+    clearPolling();
+    isApprovedOrRedirectingRef.current = true;
+    setStatus("approved");
+
+    const baseUser = userSource ?? authUser ?? getPersistedAuthUser();
+    if (baseUser) {
+      const approvedUser = {
+        ...baseUser,
+        identityStatus: "approved",
+      };
+      persistAuthUser(approvedUser);
+      dispatch(singUp(approvedUser));
+    }
+    queryClient.invalidateQueries({ queryKey: CURRENT_USER_QUERY_KEY });
+
+    if (!hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
+      if (typeof window !== "undefined") {
+        window.location.href = "/home";
+      }
+    }
+  };
 
   const [compressingField, setCompressingField] = useState<
     (typeof idCardFields)[number]["key"] | null
@@ -100,25 +170,58 @@ export default function IdentityVerificationPage() {
   }, [watch()]);
 
   const fetchStatus = async () => {
+    if (isApprovedOrRedirectingRef.current || status === "approved") {
+      clearPolling();
+      return;
+    }
+
     setIsFetchingStatus(true);
     try {
       const response = await userService.getVerificationStatus();
-      const data = response?.data;
+      const data = response?.data ?? response;
       if (data) {
-        if (data.identityStatus) {
-          setStatus(data.identityStatus);
-        }
-        const remaining =
-          data.attemptsRemaining ??
-          (data as Record<string, unknown>).remainingAttempts;
-        if (typeof remaining === "number") {
-          setAttemptsRemaining(remaining);
+        const idStatus = data.identityStatus?.trim().toLowerCase();
+
+        // If approved, stop polling immediately, sync auth state, and navigate to home
+        if (idStatus === "approved") {
+          handleApproved(data.user);
+          return;
         }
 
-        // If approved, redirect to home dashboard immediately
-        if (data.identityStatus === "approved") {
-          router.replace("/home");
-          return;
+        if (data.identityStatus) {
+          if (!justSubmittedRef.current || data.identityStatus !== "rejected") {
+            setStatus(data.identityStatus);
+          }
+        }
+        const rawRemaining =
+          data.attemptsRemaining ??
+          (data as Record<string, unknown>).remainingAttempts ??
+          (typeof data.attempts === "number" && typeof data.maxAttempts === "number"
+            ? data.maxAttempts - data.attempts
+            : undefined);
+
+        if (typeof rawRemaining === "number") {
+          let effectiveRemaining = rawRemaining;
+          if (typeof window !== "undefined") {
+            const stored = localStorage.getItem(getStorageKey(userId));
+            if (stored !== null) {
+              const parsed = Number(stored);
+              if (!Number.isNaN(parsed)) {
+                effectiveRemaining = Math.min(rawRemaining, parsed);
+              }
+            }
+            localStorage.setItem(getStorageKey(userId), String(effectiveRemaining));
+          }
+
+          setAttemptsRemaining(effectiveRemaining);
+
+          const max = data.maxAttempts ?? (effectiveRemaining > 3 ? effectiveRemaining : 5);
+          if (typeof max === "number") {
+            setMaxAttempts(max);
+            if (typeof window !== "undefined") {
+              localStorage.setItem(getMaxAttemptsKey(userId), String(max));
+            }
+          }
         }
       }
     } catch (error) {
@@ -128,13 +231,12 @@ export default function IdentityVerificationPage() {
         const ownUser = parseUserProfileFromResponse(ownResponse);
         const ownStatus = ownUser?.identityStatus?.trim().toLowerCase();
         if (ownStatus) {
-          if (ownStatus === "rejected") {
-            setStatus("rejected");
+          if (ownStatus === "approved") {
+            handleApproved(ownUser);
             return;
           }
-          if (ownStatus === "approved") {
-            setStatus("approved");
-            router.replace("/home");
+          if (ownStatus === "rejected") {
+            setStatus("rejected");
             return;
           }
           if (ownStatus === "pending" || ownStatus === "submitted") {
@@ -165,41 +267,45 @@ export default function IdentityVerificationPage() {
   useEffect(() => {
     if (!authUser?.identityStatus) return;
     const raw = authUser.identityStatus.trim().toLowerCase();
-    if (raw === "rejected") {
+    if (raw === "approved") {
+      handleApproved(authUser);
+    } else if (raw === "rejected") {
       setStatus("rejected");
-    } else if (raw === "approved") {
-      setStatus("approved");
-      router.replace("/home");
     } else if (raw === "pending" || raw === "submitted") {
       setStatus("pending");
     } else if (raw === "resubmission" || raw === "resubmit") {
       setStatus("resubmission");
     }
-  }, [authUser?.identityStatus, router]);
+  }, [authUser?.identityStatus]);
 
   useEffect(() => {
-    fetchStatus();
-    
+    if (!isApprovedOrRedirectingRef.current && status !== "approved") {
+      fetchStatus();
+    }
+
     return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
+      clearPolling();
     };
   }, []);
 
   useEffect(() => {
-    if (status === "pending") {
+    if (status === "pending" && !isApprovedOrRedirectingRef.current) {
       if (!pollingRef.current) {
         pollingRef.current = setInterval(() => {
+          if (isApprovedOrRedirectingRef.current) {
+            clearPolling();
+            return;
+          }
           fetchStatus();
         }, 10000); // Poll every 10 seconds
       }
     } else {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
+      clearPolling();
     }
+
+    return () => {
+      clearPolling();
+    };
   }, [status]);
 
   const handleFileSelect = async (
@@ -238,8 +344,37 @@ export default function IdentityVerificationPage() {
       const payload = await prepareIdentityCardDocumentsForUpload(data);
       const response = await uploadIdDocsMutation.mutateAsync(payload);
       toast.fromApiSuccess(response, "Identity card uploaded successfully.");
+
+      justSubmittedRef.current = true;
+
+      // Decrement attempts remaining for this reattempt
+      const nextRemaining = Math.max(0, attemptsRemaining - 1);
+      setAttemptsRemaining(nextRemaining);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(getStorageKey(userId), String(nextRemaining));
+      }
+
+      // Update auth user if returned
+      const { user: apiUser } = extractAuthFromResponse(response);
+      const baseUser = apiUser ?? authUser;
+      if (baseUser) {
+        const nextUser = {
+          ...baseUser,
+          identityStatus: apiUser?.identityStatus ?? "pending",
+        };
+        persistAuthUser(nextUser);
+        dispatch(singUp(nextUser));
+      }
+
+      setStatus("pending");
       queryClient.invalidateQueries({ queryKey: CURRENT_USER_QUERY_KEY });
-      fetchStatus();
+
+      setTimeout(() => {
+        justSubmittedRef.current = false;
+        if (!isApprovedOrRedirectingRef.current) {
+          fetchStatus();
+        }
+      }, 2500);
     } catch (error) {
       toast.fromApiError(error, "Could not upload identity card. Please try again.");
     } finally {
@@ -408,11 +543,11 @@ export default function IdentityVerificationPage() {
               </p>
             ) : (
               <p className="text-[14px] font-bold text-red-700 bg-red-100 py-2 px-5 rounded-full inline-block">
-                Maximum 3 attempts reached. Please contact support.
+                Maximum {maxAttempts} attempts reached. Please contact support.
               </p>
             )}
           </div>
-          
+
           {attemptsRemaining > 0 && renderUploadForm()}
         </div>
       );
@@ -449,7 +584,7 @@ export default function IdentityVerificationPage() {
           {logoutMutation.isPending ? "Logging out..." : "Log out"}
         </Button>
       </div>
-      
+
       <div className="w-full max-w-[540px] bg-white rounded-[28px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 md:p-10 border border-gray-100">
         {renderContent()}
       </div>

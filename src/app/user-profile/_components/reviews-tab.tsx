@@ -51,7 +51,7 @@ function ReviewsSkeleton() {
 function ReviewCard({ review }: { review: UserReview }) {
   return (
     <div className="relative min-w-0 pt-[61px]">
-      <div className="absolute left-[26px] top-0 z-10 h-[122px] w-[122px] overflow-hidden rounded-full border-4 border-[#F8F8F8] bg-[#005864] shadow-sm">
+      {/* <div className="absolute left-[26px] top-0 z-10 h-[122px] w-[122px] overflow-hidden rounded-full border-4 border-[#F8F8F8] bg-[#005864] shadow-sm">
         {review.profilePictureUrl ? (
           <Image
             src={review.profilePictureUrl}
@@ -66,12 +66,12 @@ function ReviewCard({ review }: { review: UserReview }) {
             {review.initials}
           </span>
         )}
-      </div>
+      </div> */}
 
       <div className="h-full min-w-0 overflow-hidden rounded-[34px] bg-[rgba(0,88,100,0.06)] px-5 pb-5 pt-[70px]">
         <div className="mb-3 flex min-w-0 flex-col items-start gap-[2px]">
           <span className="break-words text-[20px] font-medium leading-[25px] text-[#000000]">
-            {review.name}
+            {review.name.split(" ")[0] + " " + review.name.split(" ")[1].slice(0, 1).toUpperCase() + "..."}
           </span>
           <span className="break-words text-[16px] font-medium leading-[20px] text-[#005864]">
             {review.jobTitle}

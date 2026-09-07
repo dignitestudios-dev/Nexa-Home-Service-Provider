@@ -396,7 +396,7 @@ export default function DashboardPage() {
         ))}
       </div>
       <h1 className="text-[24px] leading-[45px] font-[500] text-[#1A1A1A]">
-      Referral Performance
+        Referral Performance
       </h1>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 mt-2">
@@ -460,7 +460,7 @@ export default function DashboardPage() {
         {/* Growth Tracking */}
         <Card className="xl:col-span-2 rounded-[28px] border-none shadow-sm bg-white p-6 min-h-[430px] flex flex-col">
           <div className="flex justify-between items-center mb-5">
-          <h2 className="text-[18px] font-[700] text-[#1A1A1A]">
+            <h2 className="text-[18px] font-[700] text-[#1A1A1A]">
               Growth Tracking
             </h2>
             <div className="bg-[#F4F9F9] px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-gray-500">

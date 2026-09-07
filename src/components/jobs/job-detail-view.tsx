@@ -59,10 +59,10 @@ export default function JobDetailView({
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const { data: dashboardData } = useProviderDashboardQuery();
   const applyJobMutation = useApplyJobMutation();
+  const isPurchased =
+    job.hasApplied || job.jobProviderStatus.toLowerCase() === "applied";
   const canPurchase =
-    showPurchaseButton &&
-    !job.hasApplied &&
-    job.jobProviderStatus.toLowerCase() !== "applied";
+    showPurchaseButton && !isPurchased;
   const client = getClientDisplay(job);
   const description = cleanJobDescription(job.description);
   const attachmentCount = Math.max(job.attachments.length, 0);
@@ -243,14 +243,20 @@ export default function JobDetailView({
             </h3>
 
             {job.client.profilePicture ? (
-              <Image
-                src={job.client.profilePicture}
-                alt={client.name}
-                width={140}
-                height={140}
-                className="mx-auto mt-6 h-[140px] w-[140px] rounded-full object-cover"
-                unoptimized
-              />
+              <div className="relative mx-auto mt-6 h-[140px] w-[140px] overflow-hidden rounded-full">
+                <Image
+                  src={job.client.profilePicture}
+                  alt={client.name}
+                  width={140}
+                  height={140}
+                  className={`h-full w-full rounded-full object-cover transition-all duration-300 ${
+                    !isPurchased
+                      ? "scale-110 blur-md pointer-events-none select-none"
+                      : ""
+                  }`}
+                  unoptimized
+                />
+              </div>
             ) : (
               <div className="mx-auto mt-6 flex h-[140px] w-[140px] items-center justify-center rounded-full bg-[#005864] text-[40px] font-bold text-white">
                 {getClientInitials(client.name)}

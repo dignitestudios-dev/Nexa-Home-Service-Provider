@@ -720,6 +720,10 @@ export default function ProfileSetupOnboardingPage() {
                     {errors.phoneNumber.message}
                   </p>
                 )}
+                <p className="mt-1.5 text-[13px] leading-5 text-black/60">
+                  <span className="font-semibold text-black/80">Important:</span>{" "}
+                  Please provide a phone number that can receive SMS/text messages. Do not use a company main line or landline.
+                </p>
               </div>
 
               {/* ========================= */}
@@ -861,7 +865,7 @@ export default function ProfileSetupOnboardingPage() {
                 {/* Map search input */}
                 <div>
                   <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                    Search Location
+                    Search Location *
                   </label>
                   <input
                     ref={searchInputRef}
