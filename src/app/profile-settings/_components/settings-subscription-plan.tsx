@@ -199,8 +199,8 @@ export default function SettingsSubscriptionPlan({
 
       <h2
         className={`font-[700] text-[#1C1C1C] ${compact
-            ? "text-[24px] leading-[26px] text-center"
-            : "text-[24px] leading-[30px] text-center"
+          ? "text-[24px] leading-[26px] text-center"
+          : "text-[24px] leading-[30px] text-center"
           }`}
       >
         {title}
@@ -251,8 +251,8 @@ export default function SettingsSubscriptionPlan({
                     ) : null}
                     <p
                       className={`pr-12 font-[600] text-[#1C1C1C] ${compact
-                          ? "text-[14px] leading-[18px]"
-                          : "text-[16px] leading-5"
+                        ? "text-[14px] leading-[18px]"
+                        : "text-[16px] leading-5"
                         }`}
                     >
                       {plan.name}
@@ -280,8 +280,8 @@ export default function SettingsSubscriptionPlan({
               {displayPlanName ? (
                 <p
                   className={`mt-1.5 font-[600] capitalize tracking-[-0.008em] text-[#1C1C1C] ${compact
-                      ? "text-[22px] leading-[28px]"
-                      : "text-[30px] leading-[38px]"
+                    ? "text-[22px] leading-[28px]"
+                    : "text-[30px] leading-[38px]"
                     }`}
                 >
                   {displayPlanName}
@@ -326,8 +326,8 @@ export default function SettingsSubscriptionPlan({
                 <li
                   key={feature}
                   className={`pl-1 text-[#1C1C1C] ${compact
-                      ? "text-[14px] leading-5 tracking-[0.04px]"
-                      : "text-[16px] leading-6 tracking-[0.08px]"
+                    ? "text-[14px] leading-5 tracking-[0.04px]"
+                    : "text-[16px] leading-6 tracking-[0.08px]"
                     }`}
                 >
                   {feature}
@@ -338,8 +338,8 @@ export default function SettingsSubscriptionPlan({
 
           <p
             className={`mx-auto w-full max-w-[494px] text-center font-[600] text-black ${compact
-                ? "mt-5 text-[14px] leading-[18px]"
-                : "mt-8 text-[16px] leading-5"
+              ? "mt-5 text-[14px] leading-[18px]"
+              : "mt-8 text-[16px] leading-5"
               }`}
           >
             {displayExpiryLabel}
@@ -350,11 +350,12 @@ export default function SettingsSubscriptionPlan({
               <Button
                 type="button"
                 onClick={handlePurchasePlan}
-                disabled={isBuyNowDisabled}
+                // disabled={isBuyNowDisabled}
+                disabled={true}
                 // disabled={true}
                 className={`w-full cursor-pointer rounded-[12px] bg-[#005864] px-[10px] font-[600] capitalize text-white hover:bg-[#004d57] disabled:cursor-not-allowed disabled:opacity-60 ${compact
-                    ? "h-10 py-2 text-[14px] leading-[18px]"
-                    : "h-12 py-3 text-[16px] leading-5"
+                  ? "h-10 py-2 text-[14px] leading-[18px]"
+                  : "h-12 py-3 text-[16px] leading-5"
                   }`}
               >
                 {isPurchasing ? "Processing..." : "Buy Now"}
@@ -374,8 +375,8 @@ export default function SettingsSubscriptionPlan({
                 onClick={handleCancelSubscription}
                 disabled={isCancelling}
                 className={`w-full cursor-pointer rounded-[12px] bg-[#005864] px-[10px] font-[600] capitalize text-white hover:bg-[#004d57] disabled:cursor-not-allowed disabled:opacity-60 ${compact
-                    ? "h-10 py-2 text-[14px] leading-[18px]"
-                    : "h-12 py-3 text-[16px] leading-5"
+                  ? "h-10 py-2 text-[14px] leading-[18px]"
+                  : "h-12 py-3 text-[16px] leading-5"
                   }`}
               >
                 {isCancelling ? "Cancelling..." : "Cancel Subscription"}

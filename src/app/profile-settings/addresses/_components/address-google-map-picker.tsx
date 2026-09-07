@@ -259,7 +259,7 @@ export default function AddressGoogleMapPicker({
     <div className="space-y-2">
       <div ref={searchWrapperRef} className="relative z-30 overflow-visible">
         <label htmlFor={searchInputId} className="mb-1 block text-[12px] font-[500] leading-4 text-[#181818]">
-          Search Location
+          Search Location *
         </label>
         <input
           ref={searchInputRef}
