@@ -85,11 +85,10 @@ function ReviewCard({ review }: { review: UserReview }) {
           {Array.from({ length: 5 }).map((_, starIndex) => (
             <Star
               key={starIndex}
-              className={`h-[15px] w-[15px] shrink-0 ${
-                starIndex < review.rating
-                  ? "fill-[#EDAF35] text-[#EDAF35]"
-                  : "fill-none text-[rgba(24,24,24,0.2)]"
-              }`}
+              className={`h-[15px] w-[15px] shrink-0 ${starIndex < review.rating
+                ? "fill-[#EDAF35] text-[#EDAF35]"
+                : "fill-none text-[rgba(24,24,24,0.2)]"
+                }`}
             />
           ))}
         </div>

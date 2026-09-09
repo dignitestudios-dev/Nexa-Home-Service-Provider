@@ -110,7 +110,7 @@ API.interceptors.response.use(
 
   (error) => {
 
-    if (error?.response?.status === 403) {
+    if (error?.response?.status === 403 || error?.response?.status === 401) {
 
       const requestUrl = error?.config?.url || "";
 

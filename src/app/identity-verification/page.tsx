@@ -64,15 +64,17 @@ export default function IdentityVerificationPage() {
 
   const resolveInitialStatus = (): IdentityStatus => {
     const raw = authUser?.identityStatus?.trim().toLowerCase();
-    if (raw === "rejected") return "rejected";
     if (raw === "approved") return "approved";
     if (raw === "pending" || raw === "submitted") return "pending";
-    if (raw === "resubmission" || raw === "resubmit") return "resubmission";
-    if (raw === "not-provided") return "not-provided";
+    // Always default to "loading" for any other state (rejected, resubmission, not-provided, or unset)
+    // until verified by the API so the UI does not prematurely flash the reupload form.
     return "loading";
   };
 
   const [status, setStatus] = useState<IdentityStatus>(resolveInitialStatus);
+  const [isInitialLoading, setIsInitialLoading] = useState(
+    () => resolveInitialStatus() === "loading",
+  );
   const [attemptsRemaining, setAttemptsRemaining] = useState<number>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem(getStorageKey(userId));
@@ -169,18 +171,20 @@ export default function IdentityVerificationPage() {
     );
   }, [watch()]);
 
-  const fetchStatus = async () => {
+  const fetchStatus = async (silent = false) => {
     if (isApprovedOrRedirectingRef.current || status === "approved") {
       clearPolling();
       return;
     }
 
-    setIsFetchingStatus(true);
+    if (!silent) {
+      setIsFetchingStatus(true);
+    }
     try {
       const response = await userService.getVerificationStatus();
       const data = response?.data ?? response;
       if (data) {
-        const idStatus = data.identityStatus?.trim().toLowerCase();
+        const idStatus = (data.identityStatus?.trim().toLowerCase() || "") as IdentityStatus;
 
         // If approved, stop polling immediately, sync auth state, and navigate to home
         if (idStatus === "approved") {
@@ -188,11 +192,23 @@ export default function IdentityVerificationPage() {
           return;
         }
 
-        if (data.identityStatus) {
-          if (!justSubmittedRef.current || data.identityStatus !== "rejected") {
-            setStatus(data.identityStatus);
+        if (idStatus) {
+          if (!justSubmittedRef.current || idStatus !== "rejected") {
+            setStatus(idStatus);
           }
         }
+
+        // Keep Redux and localStorage authUser in sync with the server status
+        const baseUser = data.user ?? authUser ?? getPersistedAuthUser();
+        if (baseUser && idStatus) {
+          const updatedUser = {
+            ...baseUser,
+            identityStatus: idStatus,
+          };
+          persistAuthUser(updatedUser);
+          dispatch(singUp(updatedUser));
+        }
+
         const rawRemaining =
           data.attemptsRemaining ??
           (data as Record<string, unknown>).remainingAttempts ??
@@ -252,8 +268,13 @@ export default function IdentityVerificationPage() {
         // ignore fallback error
       }
 
-      if (authUser?.identityStatus?.trim().toLowerCase() === "rejected") {
+      const currentAuthStatus = authUser?.identityStatus?.trim().toLowerCase();
+      if (currentAuthStatus === "pending" || currentAuthStatus === "submitted") {
+        setStatus("pending");
+      } else if (currentAuthStatus === "rejected") {
         setStatus("rejected");
+      } else if (currentAuthStatus === "resubmission" || currentAuthStatus === "resubmit") {
+        setStatus("resubmission");
       } else {
         const msg = getApiErrorMessage(error, "Failed to load verification status.");
         if (msg) toast.error(msg);
@@ -261,26 +282,30 @@ export default function IdentityVerificationPage() {
       }
     } finally {
       setIsFetchingStatus(false);
+      setIsInitialLoading(false);
     }
   };
 
   useEffect(() => {
+    if (isInitialLoading) return;
     if (!authUser?.identityStatus) return;
     const raw = authUser.identityStatus.trim().toLowerCase();
     if (raw === "approved") {
       handleApproved(authUser);
     } else if (raw === "rejected") {
-      setStatus("rejected");
+      if (!justSubmittedRef.current) {
+        setStatus("rejected");
+      }
     } else if (raw === "pending" || raw === "submitted") {
       setStatus("pending");
     } else if (raw === "resubmission" || raw === "resubmit") {
       setStatus("resubmission");
     }
-  }, [authUser?.identityStatus]);
+  }, [authUser?.identityStatus, isInitialLoading]);
 
   useEffect(() => {
     if (!isApprovedOrRedirectingRef.current && status !== "approved") {
-      fetchStatus();
+      fetchStatus(false);
     }
 
     return () => {
@@ -296,8 +321,8 @@ export default function IdentityVerificationPage() {
             clearPolling();
             return;
           }
-          fetchStatus();
-        }, 10000); // Poll every 10 seconds
+          fetchStatus(true);
+        }, 10000); // Poll every 10 seconds silently
       }
     } else {
       clearPolling();
@@ -372,7 +397,7 @@ export default function IdentityVerificationPage() {
       setTimeout(() => {
         justSubmittedRef.current = false;
         if (!isApprovedOrRedirectingRef.current) {
-          fetchStatus();
+          fetchStatus(true);
         }
       }, 2500);
     } catch (error) {
@@ -419,7 +444,7 @@ export default function IdentityVerificationPage() {
                 <button
                   type="button"
                   onClick={() => document.getElementById(`verify-${field.key}`)?.click()}
-                  disabled={compressingField === field.key}
+                  disabled={compressingField === field.key || isPreparingUpload || uploadIdDocsMutation.isPending}
                   className="relative mx-auto flex h-[140px] w-full flex-col items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#005864] bg-[#F9FAFA] disabled:cursor-not-allowed disabled:opacity-70 transition-colors hover:bg-gray-50"
                 >
                   {previewUrl ? (
@@ -471,20 +496,31 @@ export default function IdentityVerificationPage() {
         <Button
           type="submit"
           disabled={uploadIdDocsMutation.isPending || isPreparingUpload || compressingField !== null}
-          className="mt-8 h-14 w-full rounded-full bg-[#005864] text-white hover:bg-[#004d57] font-[600] text-[17px] transition-all disabled:opacity-70"
+          className="mt-8 h-14 w-full rounded-full bg-[#005864] text-white hover:bg-[#004d57] font-[600] text-[17px] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
         >
-          {isPreparingUpload || uploadIdDocsMutation.isPending ? "Uploading..." : "Submit Documents"}
+          {isPreparingUpload || uploadIdDocsMutation.isPending ? (
+            <>
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <span>Uploading documents...</span>
+            </>
+          ) : (
+            "Submit Documents"
+          )}
         </Button>
       </form>
     );
   };
 
   const renderContent = () => {
-    if (status === "loading" || isFetchingStatus && status !== "pending" && status !== "rejected" && status !== "resubmission" && status !== "approved" && status !== "not-provided") {
+    if (
+      status === "loading" ||
+      isInitialLoading ||
+      (isFetchingStatus && status !== "pending")
+    ) {
       return (
-        <div className="flex flex-col items-center gap-4 text-center py-10">
+        <div className="flex flex-col items-center gap-4 text-center py-12">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[#005864]" />
-          <p className="text-[16px] font-medium text-gray-500">Loading your verification status...</p>
+          <p className="text-[16px] font-medium text-gray-500">Checking your verification status...</p>
         </div>
       );
     }
