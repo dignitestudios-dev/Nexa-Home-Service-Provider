@@ -146,9 +146,18 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       return;
     }
 
+    const normalizedIdentity = effectiveUser.identityStatus?.trim().toLowerCase();
+    const isIdentityApproved = normalizedIdentity === "approved";
+    const isRejected = isIdentityRejected(effectiveUser.identityStatus);
+
     if (isWalkthroughPath(pathname)) {
       if (!isOnboardingComplete(effectiveUser)) {
         router.replace(getNextOnboardingStepPath(effectiveUser));
+        return;
+      }
+
+      if (!isIdentityApproved) {
+        router.replace("/identity-verification");
         return;
       }
 
@@ -160,8 +169,39 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       return;
     }
 
+    // Immediately block rejected users from all protected paths and send to /identity-verification
+    if (isRejected && !isPublicAuthPath) {
+      router.replace("/identity-verification");
+      return;
+    }
+
+    // Require non-approved users who completed onboarding steps to remain on /identity-verification
+    if (
+      !isIdentityApproved &&
+      isOnboardingComplete(effectiveUser) &&
+      !isPublicAuthPath &&
+      !isOnboardingPath(pathname) &&
+      !isPostIdentityOnboardingPath(pathname)
+    ) {
+      router.replace("/identity-verification");
+      return;
+    }
+
+    // If currently on /identity-verification:
+    // Approved users are redirected to walkthrough if needed, or home dashboard.
+    if (pathname === "/identity-verification") {
+      if (isIdentityApproved) {
+        const targetPath = !hasCompletedWalkthrough(effectiveUser._id)
+          ? WALKTHROUGH_PATH
+          : "/home";
+        router.replace(targetPath);
+      }
+      return;
+    }
+
     if (
       isOnboardingComplete(effectiveUser) &&
+      isIdentityApproved &&
       shouldRequireWalkthrough(effectiveUser._id) &&
       !isPostIdentityOnboardingPath(pathname)
     ) {
@@ -183,40 +223,6 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       !isPostIdentityOnboardingPath(pathname)
     ) {
       router.replace(getNextOnboardingStepPath(effectiveUser));
-      return;
-    }
-
-    const normalizedIdentity = effectiveUser.identityStatus?.trim().toLowerCase();
-    const isIdentityApproved = normalizedIdentity === "approved";
-    const isRejected = isIdentityRejected(effectiveUser.identityStatus);
-
-    // If currently on /identity-verification:
-    // Approved users are redirected to home dashboard; otherwise remain on verification screen.
-    if (pathname === "/identity-verification") {
-      if (isIdentityApproved) {
-        if (typeof window !== "undefined") {
-          window.location.href = "/home";
-        }
-      }
-      return;
-    }
-
-    // Immediately block rejected users from all protected paths and send to /identity-verification
-    if (isRejected && !isPublicAuthPath) {
-      router.replace("/identity-verification");
-      return;
-    }
-
-    // Lock all access for non-approved identity (full-screen block) after onboarding/walkthrough
-    if (
-      !isIdentityApproved &&
-      (isOnboardingComplete(effectiveUser) || hasCompletedWalkthrough(effectiveUser._id)) &&
-      !isPublicAuthPath &&
-      !isOnboardingPath(pathname) &&
-      !isPostIdentityOnboardingPath(pathname) &&
-      !isWalkthroughPath(pathname)
-    ) {
-      router.replace("/identity-verification");
       return;
     }
 

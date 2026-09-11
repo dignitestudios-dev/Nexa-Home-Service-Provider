@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import {
@@ -156,7 +156,7 @@ export default function IdentityCardOnboardingPage() {
         markWalkthroughPending(nextUser._id);
       }
 
-      router.replace("/onboarding/account-status?status=submitted");
+      router.replace("/identity-verification");
     } catch (error) {
       toast.fromApiError(
         error,

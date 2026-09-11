@@ -71,8 +71,8 @@ export function isWalkthroughPending(userId: string | null | undefined): boolean
 export function shouldRequireWalkthrough(
   userId: string | null | undefined,
 ): boolean {
-  if (!userId || hasCompletedWalkthrough(userId)) return false;
-  return isWalkthroughPending(userId);
+  if (!userId) return false;
+  return !hasCompletedWalkthrough(userId);
 }
 
 export function markWalkthroughCompleted(userId: string): void {
@@ -85,5 +85,5 @@ export function markWalkthroughCompleted(userId: string): void {
 }
 
 export function getPostOnboardingEntryPath(userId: string): string {
-  return shouldRequireWalkthrough(userId) ? WALKTHROUGH_PATH : "/home";
+  return hasCompletedWalkthrough(userId) ? "/home" : WALKTHROUGH_PATH;
 }

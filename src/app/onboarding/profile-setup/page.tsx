@@ -184,12 +184,63 @@ export default function ProfileSetupOnboardingPage() {
   // =========================
 
   const profileFile = watch("profileImage");
+  const companyName = watch("companyName");
+  const phoneNumber = watch("phoneNumber");
   const selectedServices = watch("services");
   const overview = watch("overview");
+  const label = watch("label");
+  const address = watch("address");
+  const streetName = watch("streetName");
+  const zipCode = watch("zipCode");
+  const acceptTerms = watch("acceptTerms");
   const latitude = watch("latitude");
   const longitude = watch("longitude");
   const userId = user?._id ?? null;
   const isDraftReadyRef = useRef(false);
+
+  const isAllRequiredFilled = useMemo(() => {
+    const hasProfileImage = Boolean(profileFile);
+    const hasCompanyName = Boolean(companyName?.trim());
+    const digits = (phoneNumber ?? "").replace(/\D/g, "");
+    const hasValidPhone =
+      digits.length === 10 || (digits.length === 11 && digits.startsWith("1"));
+    const hasServices =
+      Array.isArray(selectedServices) && selectedServices.length > 0;
+    const hasOverview = Boolean(
+      overview?.trim() && overview.trim().length >= 10,
+    );
+    const hasLabel = Boolean(label?.trim() && label.trim().length >= 2);
+    const hasAddress = Boolean(address?.trim() && address.trim().length >= 3);
+    const hasStreetName = Boolean(
+      streetName?.trim() && streetName.trim().length >= 2,
+    );
+    const hasZipCode = Boolean(zipCode?.trim() && zipCode.trim().length >= 3);
+    const hasAcceptedTerms = Boolean(acceptTerms);
+
+    return (
+      hasProfileImage &&
+      hasCompanyName &&
+      hasValidPhone &&
+      hasServices &&
+      hasOverview &&
+      hasLabel &&
+      hasAddress &&
+      hasStreetName &&
+      hasZipCode &&
+      hasAcceptedTerms
+    );
+  }, [
+    profileFile,
+    companyName,
+    phoneNumber,
+    selectedServices,
+    overview,
+    label,
+    address,
+    streetName,
+    zipCode,
+    acceptTerms,
+  ]);
 
   useEffect(() => {
     const draft = loadProfileSetupDraft(userId);
@@ -1054,8 +1105,10 @@ export default function ProfileSetupOnboardingPage() {
 
             <button
               type="submit"
-              disabled={completeProfileMutation.isPending}
-              className="mx-auto mt-6 block h-12 w-full cursor-pointer max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:opacity-50"
+              disabled={
+                completeProfileMutation.isPending || !isAllRequiredFilled
+              }
+              className="mx-auto mt-6 block h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {completeProfileMutation.isPending
                 ? "Please wait..."

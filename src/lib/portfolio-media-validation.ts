@@ -1,6 +1,6 @@
 export const PORTFOLIO_MAX_FILES = 10;
 
-export const PORTFOLIO_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+export const PORTFOLIO_IMAGE_MAX_BYTES = 100 * 1024 * 1024;
 
 /** Videos allowed; max size when no separate limit is specified. */
 export const PORTFOLIO_VIDEO_MAX_BYTES = 50 * 1024 * 1024;
@@ -14,31 +14,25 @@ export const PORTFOLIO_VIDEO_MIME_TYPES = [
 ] as const;
 
 export const PORTFOLIO_ACCEPT_INPUT =
-  "image/png,image/jpeg,.png,.jpg,.jpeg,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov";
+  "image/*,video/*,.png,.jpg,.jpeg,.webp,.gif,.bmp,.svg,.heic,.heif,.mp4,.webm,.mov";
 
 export function isPortfolioImage(file: File): boolean {
-  return PORTFOLIO_IMAGE_MIME_TYPES.includes(
-    file.type as (typeof PORTFOLIO_IMAGE_MIME_TYPES)[number],
+  if (file.type && file.type.startsWith("image/")) return true;
+  const name = (file.name || "").toLowerCase();
+  return /\.(jpe?g|png|webp|gif|bmp|svg|avif|heic|heif|jfif|tiff|ico|raw|cr2|nef)$/i.test(
+    name,
   );
 }
 
 export function isPortfolioVideo(file: File): boolean {
-  return PORTFOLIO_VIDEO_MIME_TYPES.includes(
-    file.type as (typeof PORTFOLIO_VIDEO_MIME_TYPES)[number],
-  );
+  if (file.type && file.type.startsWith("video/")) return true;
+  const name = (file.name || "").toLowerCase();
+  return /\.(mp4|webm|mov|mkv|avi|wmv|flv|m4v|3gp|ogv|ts)$/i.test(name);
 }
 
 export function validatePortfolioFile(file: File): string | null {
   if (!isPortfolioImage(file) && !isPortfolioVideo(file)) {
-    return `"${file.name}" must be PNG/JPEG image or MP4/WebM/MOV video.`;
-  }
-
-  if (isPortfolioImage(file) && file.size > PORTFOLIO_IMAGE_MAX_BYTES) {
-    return `"${file.name}" exceeds 10MB image limit.`;
-  }
-
-  if (isPortfolioVideo(file) && file.size > PORTFOLIO_VIDEO_MAX_BYTES) {
-    return `"${file.name}" exceeds 50MB video limit.`;
+    return `"${file.name}" must be an image or video file.`;
   }
 
   return null;

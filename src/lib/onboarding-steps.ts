@@ -146,6 +146,10 @@ export function needsIdentityResubmit(
 /** Next onboarding step only (no verify-email) — use after completing a step. */
 export function getNextOnboardingStepPath(user: User): string {
   if (isOnboardingComplete(user)) {
+    const normalizedIdentity = user.identityStatus?.trim().toLowerCase();
+    if (normalizedIdentity !== "approved") {
+      return "/identity-verification";
+    }
     return getPostOnboardingEntryPath(user._id);
   }
 
@@ -173,9 +177,12 @@ export function getOnboardingRedirectPath(user: User | null): string {
     return "/identity-verification";
   }
 
-  if (hasCompletedWalkthrough(user._id)) {
-    if (normalizedIdentity && normalizedIdentity !== "approved") {
+  if (isOnboardingComplete(user)) {
+    if (normalizedIdentity !== "approved") {
       return "/identity-verification";
+    }
+    if (!hasCompletedWalkthrough(user._id)) {
+      return getPostOnboardingEntryPath(user._id);
     }
     return "/home";
   }

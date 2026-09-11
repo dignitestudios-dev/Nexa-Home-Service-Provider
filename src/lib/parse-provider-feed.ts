@@ -173,6 +173,7 @@ export function formatApplicationDisplayStatus(status: string): string {
 export function getApplicationStatusBadgeClass(status: string): string {
   switch (status.toLowerCase()) {
     case "pending":
+      return "bg-[#F01A1A]";
     case "accepted":
       return "bg-[#27AE60]";
     case "confirmed":
@@ -181,8 +182,8 @@ export function getApplicationStatusBadgeClass(status: string): string {
     case "completed":
       return "bg-[#2F80ED]";
     case "no_longer_available":
-      return "bg-red-600";
+      return "bg-[#F01A1A]";
     default:
-      return "bg-red-600";
+      return "bg-[#F01A1A]";
   }
 }

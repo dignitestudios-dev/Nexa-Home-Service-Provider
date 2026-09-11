@@ -92,24 +92,10 @@ function AccountStatusContent() {
   }, [initialStatus]);
 
   useEffect(() => {
-    if (initialStatus !== "submitted") return;
-
-    const walkthroughTimer = setTimeout(() => {
-      router.replace(WALKTHROUGH_PATH);
-    }, HOME_REDIRECT_MS);
-
-    return () => clearTimeout(walkthroughTimer);
+    if (initialStatus === "submitted") {
+      router.replace("/identity-verification");
+    }
   }, [initialStatus, router]);
-
-  useEffect(() => {
-    if (status !== "submitted") return;
-
-    const approvalTimer = setTimeout(() => {
-      setStatus("approved");
-    }, 3500);
-
-    return () => clearTimeout(approvalTimer);
-  }, [status]);
 
   const content = statusContent[status];
   const shouldShowWalkthrough = initialStatus === "submitted" && showWalkthrough;

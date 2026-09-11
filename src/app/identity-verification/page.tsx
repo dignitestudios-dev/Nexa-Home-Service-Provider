@@ -6,8 +6,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { userService } from "@/services/user.service";
-import { useLogoutAuth } from "@/hooks/auth/use-auth-mutations";
-import { LogOut, Upload, File as FileIcon, X } from "lucide-react";
+import OnboardingLogoutButton from "@/components/onboarding/onboarding-logout-button";
+import { Upload, File as FileIcon, X } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useForm } from "react-hook-form";
@@ -27,6 +27,10 @@ import {
   getPersistedAuthUser,
   persistAuthUser,
 } from "@/lib/auth-session";
+import {
+  hasCompletedWalkthrough,
+  WALKTHROUGH_PATH,
+} from "@/lib/walkthrough-storage";
 import { singUp } from "@/store/slices/auth-slice";
 import type { RootState } from "@/store/index";
 
@@ -97,7 +101,6 @@ export default function IdentityVerificationPage() {
   });
   const [isFetchingStatus, setIsFetchingStatus] = useState(false);
 
-  const logoutMutation = useLogoutAuth();
   const uploadIdDocsMutation = useUploadIdDocsSetup();
 
   const isApprovedInitial =
@@ -134,7 +137,14 @@ export default function IdentityVerificationPage() {
     if (!hasRedirectedRef.current) {
       hasRedirectedRef.current = true;
       if (typeof window !== "undefined") {
-        window.location.href = "/home";
+        const targetUser = baseUser;
+        const targetPath =
+          targetUser && !hasCompletedWalkthrough(targetUser._id)
+            ? WALKTHROUGH_PATH
+            : "/home";
+        setTimeout(() => {
+          window.location.href = targetPath;
+        }, 1200);
       }
     }
   };
@@ -532,7 +542,7 @@ export default function IdentityVerificationPage() {
             <span className="mr-2">✅</span> Identity Verified
           </div>
           <p className="text-[16px] text-gray-600 max-w-sm">
-            Thank you! Your identity has been successfully verified. Redirecting to your dashboard...
+            Thank you! Your identity has been successfully verified. Continuing to app walkthrough...
           </p>
         </div>
       );
@@ -603,23 +613,7 @@ export default function IdentityVerificationPage() {
 
   return (
     <div className="min-h-screen bg-[#F9FAFA] flex flex-col items-center justify-center p-4 md:p-8 relative">
-      <div className="absolute top-6 right-6">
-        <Button
-          variant="outline"
-          onClick={() => {
-            logoutMutation.mutate(undefined, {
-              onSuccess: () => {
-                router.replace("/auth/login");
-              }
-            });
-          }}
-          disabled={logoutMutation.isPending}
-          className="flex items-center gap-2 rounded-full font-medium shadow-sm hover:bg-gray-100 transition-colors"
-        >
-          <LogOut size={16} />
-          {logoutMutation.isPending ? "Logging out..." : "Log out"}
-        </Button>
-      </div>
+      <OnboardingLogoutButton />
 
       <div className="w-full max-w-[540px] bg-white rounded-[28px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 md:p-10 border border-gray-100">
         {renderContent()}

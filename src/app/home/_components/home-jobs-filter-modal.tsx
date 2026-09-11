@@ -28,22 +28,8 @@ const JOB_TYPE_OPTIONS: { value: JobTypeFilter; label: string }[] = [
   { value: "recurring", label: "Recurring Job" },
 ];
 
-function getDistanceTooltipStyle(miles: number): {
-  left: string;
-  transform: string;
-} {
-  const range = MAX_FILTER_DISTANCE_MILES - MIN_FILTER_DISTANCE_MILES;
-  const percent = ((miles - MIN_FILTER_DISTANCE_MILES) / range) * 100;
-
-  if (percent >= 92) {
-    return { left: "100%", transform: "translateX(-100%)" };
-  }
-
-  if (percent <= 8) {
-    return { left: "0%", transform: "translateX(0)" };
-  }
-
-  return { left: `${percent}%`, transform: "translateX(-50%)" };
+function getMileUnit(count: number): string {
+  return count === 1 ? "mile" : "miles";
 }
 
 export default function HomeJobsFilterModal({
@@ -107,35 +93,38 @@ export default function HomeJobsFilterModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="fixed top-0 right-0 left-auto flex h-full w-[490px] max-w-full translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-none p-0 shadow-xl data-open:animate-in data-open:slide-in-from-right data-closed:animate-out data-closed:slide-out-to-right sm:max-w-[490px]"
+        className="fixed top-0 right-0 left-auto flex h-full w-full sm:w-[420px] max-w-full translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-none bg-white p-0 shadow-2xl data-open:animate-in data-open:slide-in-from-right data-closed:animate-out data-closed:slide-out-to-right"
       >
         <DialogTitle className="sr-only">Filters</DialogTitle>
 
-        <div className="flex items-start justify-between px-[30px] pt-14">
-          <h2 className="text-[32px] font-semibold capitalize leading-10 text-[#1C1C1C]">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b border-black/5 px-6 py-4">
+          <h2 className="text-[20px] font-semibold text-[#1C1C1C]">
             Filters
           </h2>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="flex h-10 w-10 items-center justify-center cursor-pointer"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-black/60 transition hover:bg-black/5 hover:text-black cursor-pointer"
             aria-label="Close filters"
           >
-            <X className="h-5 w-5 text-[rgba(24,24,24,0.8)]" strokeWidth={1.8} />
+            <X className="h-4 w-4" strokeWidth={2} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-x-hidden overflow-y-auto px-[30px] pb-6">
-          <section className="mt-10">
-            <h3 className="text-[20px] font-semibold capitalize leading-[25px] text-[#1C1C1C]">
+        {/* Modal Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+          {/* Job Type Section */}
+          <section>
+            <h3 className="text-[15px] font-semibold capitalize text-[#1C1C1C]">
               Job Type
             </h3>
 
-            <div className="mt-6 flex flex-col gap-4">
+            <div className="mt-2.5 flex flex-col gap-2">
               {JOB_TYPE_OPTIONS.map((option) => (
                 <label
                   key={option.value ?? "all"}
-                  className="flex cursor-pointer items-center gap-3"
+                  className="flex cursor-pointer items-center gap-3 py-0.5 text-[14px] text-[#1C1C1C] hover:text-[#005864] transition-colors"
                 >
                   <input
                     type="radio"
@@ -147,9 +136,9 @@ export default function HomeJobsFilterModal({
                         jobType: option.value,
                       }))
                     }
-                    className="h-6 w-6 cursor-pointer border border-[rgba(24,24,24,0.8)] accent-[#005864]"
+                    className="h-4 w-4 cursor-pointer accent-[#005864]"
                   />
-                  <span className="text-[16px] leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                  <span className="font-medium text-[#1C1C1C]/90">
                     {option.label}
                   </span>
                 </label>
@@ -157,53 +146,63 @@ export default function HomeJobsFilterModal({
             </div>
           </section>
 
-          <section className="mt-10">
-            <h3 className="text-[20px] font-semibold capitalize leading-[25px] text-[#1C1C1C]">
-              Category
-            </h3>
-            <p className="mt-2 max-w-[384px] text-[14px] leading-[18px] text-black/70">
-              You can select minimum 1 category and maximum 20 categories.
+          {/* Category Section */}
+          <section>
+            <div className="flex items-center justify-between">
+              <h3 className="text-[15px] font-semibold capitalize text-[#1C1C1C]">
+                Category
+              </h3>
+              {draftFilters.categoryIds.length > 0 ? (
+                <span className="text-[12px] font-medium text-[#005864]">
+                  {draftFilters.categoryIds.length}/{MAX_FILTER_CATEGORIES} selected
+                </span>
+              ) : null}
+            </div>
+
+            <p className="mt-1 text-[12.5px] leading-4 text-black/60">
+              Select 1 to {MAX_FILTER_CATEGORIES} categories.
             </p>
 
-            <div className="mt-4 flex max-h-[205px] flex-col gap-5 overflow-y-auto pr-1">
+            <div className="mt-2.5 max-h-[170px] space-y-1.5 overflow-y-auto rounded-[10px] border border-black/8 bg-[#FBFBFA] p-3 pr-2">
               {categoriesLoading ? (
-                <p className="text-[14px] text-black/60">Loading categories...</p>
+                <p className="py-2 text-center text-[13px] text-black/50">
+                  Loading categories...
+                </p>
               ) : categories.length > 0 ? (
                 categories.map((category) => (
                   <label
                     key={category._id}
-                    className="flex cursor-pointer items-center gap-3"
+                    className="flex cursor-pointer items-center gap-2.5 py-1 text-[13.5px] text-[#1C1C1C] hover:text-[#005864] transition-colors"
                   >
                     <input
                       type="checkbox"
                       checked={draftFilters.categoryIds.includes(category._id)}
                       onChange={() => toggleCategory(category._id)}
-                      className="h-6 w-6 cursor-pointer rounded-[4px] border border-[rgba(24,24,24,0.8)] accent-[#005864]"
+                      className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-[#005864]"
                     />
-                    <span className="text-[18px] leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                      {category.name}
-                    </span>
+                    <span className="font-medium">{category.name}</span>
                   </label>
                 ))
               ) : (
-                <p className="text-[14px] text-black/60">No categories available.</p>
+                <p className="py-2 text-center text-[13px] text-black/50">
+                  No categories available.
+                </p>
               )}
             </div>
           </section>
 
-          <section className="mt-10">
-            <h3 className="text-[20px] font-medium capitalize leading-[25px] text-[#1C1C1C]">
-              Distance
-            </h3>
+          {/* Distance Section */}
+          <section>
+            <div className="flex items-center justify-between">
+              <h3 className="text-[15px] font-semibold capitalize text-[#1C1C1C]">
+                Distance
+              </h3>
+              <span className="rounded-full bg-[#005864]/10 px-2.5 py-0.5 text-[12px] font-semibold text-[#005864]">
+                {draftFilters.distanceMiles} {getMileUnit(draftFilters.distanceMiles)}
+              </span>
+            </div>
 
-            <div className="relative mt-3 pt-10 pb-2">
-              <div
-                className="absolute top-0 whitespace-nowrap rounded-[10px] bg-[#005864] px-3 py-2 text-[12px] font-medium leading-none text-white"
-                style={getDistanceTooltipStyle(draftFilters.distanceMiles)}
-              >
-                {draftFilters.distanceMiles} miles
-              </div>
-
+            <div className="mt-4">
               <input
                 type="range"
                 min={MIN_FILTER_DISTANCE_MILES}
@@ -215,43 +214,48 @@ export default function HomeJobsFilterModal({
                     distanceMiles: Number(event.target.value),
                   }))
                 }
-                className="h-[6px] w-full cursor-pointer appearance-none rounded-[13.5px] bg-[rgba(0,88,100,0.36)] accent-[#005864]"
+                className="h-[5px] w-full cursor-pointer appearance-none rounded-full bg-[rgba(0,88,100,0.2)] accent-[#005864]"
               />
             </div>
 
-            <div className="mt-8 flex items-center justify-between">
-              <span className="text-[16px] font-medium capitalize leading-5 text-[#1C1C1C]">
-                {String(MIN_FILTER_DISTANCE_MILES).padStart(2, "0")} miles
+            <div className="mt-2.5 flex items-center justify-between text-[12.5px] font-medium text-black/60">
+              <span>
+                {String(MIN_FILTER_DISTANCE_MILES).padStart(2, "0")}{" "}
+                {getMileUnit(MIN_FILTER_DISTANCE_MILES)}
               </span>
-              <span className="text-[16px] font-medium capitalize leading-5 text-[#1C1C1C]">
-                {MAX_FILTER_DISTANCE_MILES} miles
+              <span>
+                {MAX_FILTER_DISTANCE_MILES} {getMileUnit(MAX_FILTER_DISTANCE_MILES)}
               </span>
             </div>
           </section>
         </div>
 
-        <div className="rounded-t-[24px] bg-[#F8F8F8] px-[30px] py-[30px]">
-          <button
-            type="button"
-            onClick={handleResetAll}
-            className="mb-4 h-12 w-full cursor-pointer rounded-[12px] border border-[#005864] bg-white text-[16px] font-semibold capitalize leading-5 text-[#005864]"
-          >
-            Reset All Filters
-          </button>
+        {/* Modal Footer */}
+        <div className="border-t border-black/5 bg-[#F9FAFA] px-6 py-4">
+          <div className="mb-3 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={handleResetAll}
+              className="text-[13px] font-semibold text-[#005864] transition hover:text-[#004851] hover:underline cursor-pointer"
+            >
+              Reset All Filters
+            </button>
+          </div>
+
           <div className="flex gap-3">
             <button
               type="button"
               onClick={handleCancel}
-              className="h-12 flex-1 cursor-pointer rounded-[12px] bg-[rgba(0,88,100,0.06)] text-[16px] font-semibold capitalize leading-5 text-[#005864]"
+              className="h-10 flex-1 cursor-pointer rounded-[10px] border border-black/10 bg-white text-[14px] font-semibold text-[#1C1C1C] transition hover:bg-black/[0.02]"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleApply}
-              className="h-12 flex-1 cursor-pointer rounded-[12px] bg-[#005864] text-[16px] font-semibold capitalize leading-5 text-white"
+              className="h-10 flex-1 cursor-pointer rounded-[10px] bg-[#005864] text-[14px] font-semibold text-white transition hover:bg-[#004851]"
             >
-              Apply
+              Apply Filters
             </button>
           </div>
         </div>

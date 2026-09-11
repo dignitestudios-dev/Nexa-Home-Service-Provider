@@ -117,6 +117,7 @@ export default function CreditPlansContent({
           type="button"
           onClick={handleBuyNow}
           disabled={true}
+          // disabled={checkoutMutation.isPending || !selectedPackage}
           className="mx-auto mt-8 h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold capitalize leading-5 text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {checkoutMutation.isPending ? "Processing..." : "Buy Now"}
