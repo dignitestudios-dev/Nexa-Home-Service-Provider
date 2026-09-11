@@ -116,7 +116,7 @@ export default function DeleteAccountScreen() {
           <button
             type="button"
             onClick={() => setIsDeleteDialogOpen(true)}
-            className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-[#D91717]/10 px-6 text-[14px] font-[600] leading-5 text-[#D91717] transition hover:bg-[#d91717]"
+            className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-[#D91717]/10 px-6 text-[14px] hover:text-white font-[600] leading-5 text-[#D91717] transition hover:bg-[#d91717]"
           >
             <Trash2 className="h-4 w-4" strokeWidth={2.2} />
             Delete Account

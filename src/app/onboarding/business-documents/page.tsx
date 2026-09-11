@@ -7,6 +7,7 @@ import {
   File,
   FileText,
   IdCard,
+  Info,
   Upload,
   UserRound,
 } from "lucide-react";
@@ -100,6 +101,13 @@ export default function BusinessDocumentsPage() {
   const hasAnyDocument = useMemo(() => Object.keys(files).length > 0, [files]);
 
   const onSubmit = async (data: BusinessDocumentsFormData) => {
+    if (!hasAnyDocument) {
+      toast.error(
+        "Please upload at least one business document before continuing, or choose 'Skip' to proceed without uploading.",
+      );
+      return;
+    }
+
     setIsPreparingUpload(true);
 
     try {
@@ -222,9 +230,19 @@ export default function BusinessDocumentsPage() {
                 </h1>
 
                 <p className="mt-4 text-[16px] leading-5 tracking-[-0.014em] text-black/80">
-                  Upload your business license, proof of identity,
+                  Upload your business license, proof of identity, and
                   certifications.
                 </p>
+              </div>
+
+              <div className="mt-6 flex items-start gap-3.5 rounded-[14px] border border-[#005864]/20 bg-[#005864]/[0.04] p-4 text-left">
+                <Info size={20} className="mt-0.5 shrink-0 text-[#005864]" />
+                <div className="text-[14px] leading-[21px] text-[#1C1C1C]/80">
+                  <p className="font-semibold text-[#005864]">Document Submission Notice</p>
+                  <p className="mt-1 text-[#333333]">
+                    Uploading business documents is optional at this stage. You may upload your documents and select <strong className="font-semibold text-[#1C1C1C]">Continue</strong>, or choose <strong className="font-semibold text-[#1C1C1C]">Skip</strong> to proceed and provide them later. If you choose to continue, please ensure all required files are attached prior to submission.
+                  </p>
+                </div>
               </div>
 
               {/* GLOBAL ERROR */}

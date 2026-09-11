@@ -44,6 +44,75 @@ const stepItems = [
   { label: "Identity Card", icon: IdCard, active: false },
 ];
 
+function formatFileSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
+function OnboardingPortfolioItemThumbnail({
+  item,
+  onRemove,
+}: {
+  item: {
+    id: string;
+    file: File;
+    isImage: boolean;
+    isVideo: boolean;
+    previewUrl: string;
+  };
+  onRemove: () => void;
+}) {
+  const [loadError, setLoadError] = useState(false);
+
+  return (
+    <div className="relative h-[90px] w-[90px] overflow-hidden rounded-[12px] bg-[#F1F3F4]">
+      {item.isImage && item.previewUrl && !loadError ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={item.previewUrl}
+          alt={item.file.name}
+          className="h-full w-full object-cover"
+          onError={() => setLoadError(true)}
+        />
+      ) : item.isVideo && item.previewUrl && !loadError ? (
+        <div className="relative h-full w-full">
+          <video
+            src={item.previewUrl}
+            className="h-full w-full object-cover"
+            muted
+            playsInline
+            onError={() => setLoadError(true)}
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+            <Play size={22} className="text-white" fill="white" />
+          </div>
+        </div>
+      ) : (
+        <div className="flex h-full w-full flex-col items-center justify-center bg-[#EBF2F3] p-1.5 text-center">
+          <FileText size={22} className="text-[#005864]" />
+          <span className="mt-1 w-full truncate px-1 text-[10px] font-medium text-[#1C1C1C]">
+            {item.file.name}
+          </span>
+          <span className="text-[9px] text-[#005864]/80">
+            {formatFileSize(item.file.size)}
+          </span>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm hover:bg-red-600"
+        aria-label={`Remove ${item.file.name}`}
+      >
+        <X size={12} />
+      </button>
+    </div>
+  );
+}
+
 export default function PortfolioPage() {
   const router = useRouter();
   const dispatch = useDispatch();
@@ -76,10 +145,7 @@ export default function PortfolioPage() {
       file,
       isImage: isPortfolioImage(file),
       isVideo: isPortfolioVideo(file),
-      previewUrl:
-        isPortfolioImage(file) || isPortfolioVideo(file)
-          ? URL.createObjectURL(file)
-          : null,
+      previewUrl: URL.createObjectURL(file),
     }));
   }, [portfolioFiles]);
 
@@ -276,7 +342,7 @@ export default function PortfolioPage() {
 
                 <p className="mt-4 text-[16px] leading-5 tracking-[-0.014em] text-black/80">
                   Upload up to {PORTFOLIO_MAX_FILES} items — PNG or JPEG images
-                  (max 10MB each) and MP4, WebM, or MOV videos.
+                  and MP4, WebM, or MOV videos.
                 </p>
                 
               </div>
@@ -312,7 +378,7 @@ export default function PortfolioPage() {
                     </p>
 
                     <p className="mt-1 text-[15px] leading-[19px] text-black/80">
-                      PNG, JPEG (10MB) · MP4, WebM, MOV ({portfolioFiles.length}/
+                      PNG, JPEG · MP4, WebM, MOV ({portfolioFiles.length}/
                       {PORTFOLIO_MAX_FILES})
                     </p>
                   </div>
@@ -328,61 +394,25 @@ export default function PortfolioPage() {
               {portfolioItems.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-3">
                   {portfolioItems.map((item) => (
-                    <div
+                    <OnboardingPortfolioItemThumbnail
                       key={item.id}
-                      className="relative h-[90px] w-[90px] overflow-hidden rounded-[12px] bg-[#F1F3F4]"
-                    >
-                      {item.isImage && item.previewUrl ? (
-                        <img
-                          src={item.previewUrl}
-                          alt={item.file.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : item.isVideo && item.previewUrl ? (
-                        <div className="relative h-full w-full">
-                          <video
-                            src={item.previewUrl}
-                            className="h-full w-full object-cover"
-                            muted
-                            playsInline
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/25">
-                            <Play
-                              size={22}
-                              className="text-white"
-                              fill="white"
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <File size={24} className="text-[#005864]" />
-                        </div>
-                      )}
+                      item={item}
+                      onRemove={() => {
+                        if (item.previewUrl) {
+                          URL.revokeObjectURL(item.previewUrl);
+                        }
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (item.previewUrl) {
-                            URL.revokeObjectURL(item.previewUrl);
-                          }
-
-                          setValue(
-                            "portfolioFiles",
-                            portfolioFiles.filter(
-                              (file, index) =>
-                                `${file.name}-${file.lastModified}-${index}` !==
-                                item.id,
-                            ),
-                            { shouldValidate: true },
-                          );
-                        }}
-                        className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white"
-                        aria-label={`Remove ${item.file.name}`}
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
+                        setValue(
+                          "portfolioFiles",
+                          portfolioFiles.filter(
+                            (file, index) =>
+                              `${file.name}-${file.lastModified}-${index}` !==
+                              item.id,
+                          ),
+                          { shouldValidate: true },
+                        );
+                      }}
+                    />
                   ))}
                 </div>
               )}

@@ -30,11 +30,19 @@ import {
 } from "@/lib/parse-job-detail";
 import type { JobDetail, JobDetailAttachment } from "@/types/job-detail.types";
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({
+  label,
+  value,
+  valueClassName = "text-[#005864]",
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
   return (
     <div className="flex items-center justify-between gap-4">
       <span className="text-[16px] leading-6 text-[rgba(24,24,24,0.8)]">{label}</span>
-      <span className="text-right text-[16px] font-medium leading-6 text-[#005864]">
+      <span className={`text-right text-[16px] font-medium leading-6 ${valueClassName}`}>
         {value}
       </span>
     </div>
@@ -141,6 +149,15 @@ export default function JobDetailView({
                   showHeaderStatus
                     ? jobStatusLabel
                     : formatJobStatus(job.status, job.jobProviderStatus)
+                }
+                valueClassName={
+                  (
+                    showHeaderStatus
+                      ? jobStatusLabel
+                      : formatJobStatus(job.status, job.jobProviderStatus)
+                  ).toLowerCase() === "pending"
+                    ? "text-[#F01A1A]"
+                    : "text-[#005864]"
                 }
               />
               <InfoRow label="Job Type:" value={formatJobType(job.type)} />

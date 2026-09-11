@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Play, Upload, X } from "lucide-react";
+import { AlertTriangle, FileText, Play, Upload, X } from "lucide-react";
 import Image from "next/image";
 import { Dialog as DialogPrimitive } from "radix-ui";
 
@@ -42,6 +42,132 @@ type EditPortfolioDialogProps = {
 
 const PORTFOLIO_THUMBNAIL_CLASS =
   "relative aspect-square h-[90px] w-[90px] shrink-0 overflow-hidden rounded-[12px] bg-[#F1F3F4]";
+
+function formatFileSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
+function NewItemThumbnail({
+  item,
+  onRemove,
+  disabled,
+}: {
+  item: NewPortfolioItem;
+  onRemove: () => void;
+  disabled: boolean;
+}) {
+  const [loadError, setLoadError] = useState(false);
+
+  return (
+    <div className={PORTFOLIO_THUMBNAIL_CLASS}>
+      {item.isImage && item.previewUrl && !loadError ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={item.previewUrl}
+          alt={item.file.name}
+          className="h-full w-full object-cover"
+          onError={() => setLoadError(true)}
+        />
+      ) : item.isVideo && item.previewUrl && !loadError ? (
+        <div className="relative h-full w-full">
+          <video
+            src={item.previewUrl}
+            className="h-full w-full object-cover"
+            muted
+            playsInline
+            onError={() => setLoadError(true)}
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+            <Play size={20} className="fill-white text-white" />
+          </div>
+        </div>
+      ) : (
+        <div className="flex h-full w-full flex-col items-center justify-center bg-[#EBF2F3] p-1.5 text-center">
+          <FileText size={22} className="text-[#005864]" />
+          <span className="mt-1 w-full truncate px-1 text-[10px] font-medium text-[#1C1C1C]">
+            {item.file.name}
+          </span>
+          <span className="text-[9px] text-[#005864]/80">
+            {formatFileSize(item.file.size)}
+          </span>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={disabled}
+        className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm hover:bg-red-600"
+        aria-label={`Remove ${item.file.name}`}
+      >
+        <X size={12} />
+      </button>
+    </div>
+  );
+}
+
+function ExistingItemThumbnail({
+  item,
+  onRemove,
+  disabled,
+}: {
+  item: UserDocFile;
+  onRemove: () => void;
+  disabled: boolean;
+}) {
+  const [loadError, setLoadError] = useState(false);
+
+  return (
+    <div className={PORTFOLIO_THUMBNAIL_CLASS}>
+      {item.url && !loadError ? (
+        item.isVideo ? (
+          <div className="relative h-full w-full">
+            <video
+              src={item.url}
+              className="h-full w-full object-cover"
+              muted
+              playsInline
+              onError={() => setLoadError(true)}
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+              <Play size={20} className="fill-white text-white" />
+            </div>
+          </div>
+        ) : (
+          <Image
+            src={item.url}
+            alt={item.fileName || "Portfolio image"}
+            fill
+            sizes="90px"
+            className="object-cover"
+            unoptimized
+            onError={() => setLoadError(true)}
+          />
+        )
+      ) : (
+        <div className="flex h-full w-full flex-col items-center justify-center bg-[#EBF2F3] p-1.5 text-center">
+          <FileText size={22} className="text-[#005864]" />
+          <span className="mt-1 w-full truncate px-1 text-[10px] font-medium text-[#1C1C1C]">
+            {item.fileName || "Portfolio item"}
+          </span>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={disabled}
+        className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm hover:bg-red-600"
+        aria-label={`Remove ${item.fileName}`}
+      >
+        <X size={12} />
+      </button>
+    </div>
+  );
+}
 
 function createNewPortfolioItem(file: File, index: number): NewPortfolioItem {
   return {
@@ -224,8 +350,8 @@ export default function EditPortfolioDialog({
 
         <div className="flex flex-col gap-5 px-6 py-5">
           <p className="text-[14px] leading-5 text-[rgba(24,24,24,0.7)]">
-            Upload up to {PORTFOLIO_MAX_FILES} items — PNG or JPEG images (max
-            10MB each) and MP4, WebM, or MOV videos.
+            Upload up to {PORTFOLIO_MAX_FILES} items — PNG or JPEG images and
+            MP4, WebM, or MOV videos.
           </p>
 
           <div>
@@ -261,77 +387,21 @@ export default function EditPortfolioDialog({
           {totalItems > 0 ? (
             <div className="flex flex-wrap gap-3">
               {keptExisting.map((item) => (
-                <div key={item.id} className={PORTFOLIO_THUMBNAIL_CLASS}>
-                  {item.url ? (
-                    item.isVideo ? (
-                      <div className="relative h-full w-full">
-                        <video
-                          src={item.url}
-                          className="h-full w-full object-cover"
-                          muted
-                          playsInline
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/25">
-                          <Play size={20} className="fill-white text-white" />
-                        </div>
-                      </div>
-                    ) : (
-                      <Image
-                        src={item.url}
-                        alt={item.fileName}
-                        fill
-                        sizes="90px"
-                        className="object-cover"
-                        unoptimized
-                      />
-                    )
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onClick={() => removeExistingItem(item.id)}
-                    disabled={updatePortfolioMutation.isPending}
-                    className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white"
-                    aria-label={`Remove ${item.fileName}`}
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
+                <ExistingItemThumbnail
+                  key={item.id}
+                  item={item}
+                  onRemove={() => removeExistingItem(item.id)}
+                  disabled={updatePortfolioMutation.isPending}
+                />
               ))}
 
               {newItems.map((item) => (
-                <div key={item.id} className={PORTFOLIO_THUMBNAIL_CLASS}>
-                  {item.isImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={item.previewUrl}
-                      alt={item.file.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : item.isVideo ? (
-                    <div className="relative h-full w-full">
-                      <video
-                        src={item.previewUrl}
-                        className="h-full w-full object-cover"
-                        muted
-                        playsInline
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/25">
-                        <Play size={20} className="fill-white text-white" />
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onClick={() => removeNewItem(item.id)}
-                    disabled={updatePortfolioMutation.isPending}
-                    className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white"
-                    aria-label={`Remove ${item.file.name}`}
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
+                <NewItemThumbnail
+                  key={item.id}
+                  item={item}
+                  onRemove={() => removeNewItem(item.id)}
+                  disabled={updatePortfolioMutation.isPending}
+                />
               ))}
             </div>
           ) : (
