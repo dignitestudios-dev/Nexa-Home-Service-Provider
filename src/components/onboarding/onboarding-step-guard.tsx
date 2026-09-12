@@ -26,7 +26,9 @@ export function OnboardingStepGuard() {
     if (!effectiveUser) return;
 
     if (hasCompletedWalkthrough(effectiveUser._id)) {
-      router.replace("/home");
+      const isApproved =
+        effectiveUser.identityStatus?.trim().toLowerCase() === "approved";
+      router.replace(isApproved ? "/home" : "/identity-verification");
       return;
     }
 

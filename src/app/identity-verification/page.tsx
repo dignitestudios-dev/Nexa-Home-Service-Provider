@@ -27,10 +27,7 @@ import {
   getPersistedAuthUser,
   persistAuthUser,
 } from "@/lib/auth-session";
-import {
-  hasCompletedWalkthrough,
-  WALKTHROUGH_PATH,
-} from "@/lib/walkthrough-storage";
+import { markWalkthroughCompleted } from "@/lib/walkthrough-storage";
 import { singUp } from "@/store/slices/auth-slice";
 import type { RootState } from "@/store/index";
 
@@ -131,19 +128,17 @@ export default function IdentityVerificationPage() {
       };
       persistAuthUser(approvedUser);
       dispatch(singUp(approvedUser));
+      if (approvedUser._id) {
+        markWalkthroughCompleted(approvedUser._id);
+      }
     }
     queryClient.invalidateQueries({ queryKey: CURRENT_USER_QUERY_KEY });
 
     if (!hasRedirectedRef.current) {
       hasRedirectedRef.current = true;
       if (typeof window !== "undefined") {
-        const targetUser = baseUser;
-        const targetPath =
-          targetUser && !hasCompletedWalkthrough(targetUser._id)
-            ? WALKTHROUGH_PATH
-            : "/home";
         setTimeout(() => {
-          window.location.href = targetPath;
+          window.location.href = "/home";
         }, 1200);
       }
     }
@@ -542,7 +537,7 @@ export default function IdentityVerificationPage() {
             <span className="mr-2">✅</span> Identity Verified
           </div>
           <p className="text-[16px] text-gray-600 max-w-sm">
-            Thank you! Your identity has been successfully verified. Continuing to app walkthrough...
+            Thank you! Your identity has been successfully verified. Taking you to your dashboard...
           </p>
         </div>
       );
