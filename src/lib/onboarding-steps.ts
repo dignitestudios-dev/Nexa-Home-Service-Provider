@@ -147,10 +147,13 @@ export function needsIdentityResubmit(
 export function getNextOnboardingStepPath(user: User): string {
   if (isOnboardingComplete(user)) {
     const normalizedIdentity = user.identityStatus?.trim().toLowerCase();
-    if (normalizedIdentity !== "approved") {
-      return "/identity-verification";
+    if (normalizedIdentity === "approved") {
+      return "/home";
     }
-    return getPostOnboardingEntryPath(user._id);
+    if (!hasCompletedWalkthrough(user._id)) {
+      return getPostOnboardingEntryPath(user._id);
+    }
+    return "/identity-verification";
   }
 
   return ONBOARDING_STEPS[getCurrentOnboardingStepIndex(user)].path;
@@ -162,7 +165,7 @@ export function isIdentityRejected(
   return identityStatus?.trim().toLowerCase() === "rejected";
 }
 
-/** Post-login redirect: email verification, then onboarding, then home. */
+/** Post-login redirect: email verification, then onboarding, then identity-verification or home (never walkthrough). */
 export function getOnboardingRedirectPath(user: User | null): string {
   if (!user) {
     return "/auth/login";
@@ -180,9 +183,6 @@ export function getOnboardingRedirectPath(user: User | null): string {
   if (isOnboardingComplete(user)) {
     if (normalizedIdentity !== "approved") {
       return "/identity-verification";
-    }
-    if (!hasCompletedWalkthrough(user._id)) {
-      return getPostOnboardingEntryPath(user._id);
     }
     return "/home";
   }

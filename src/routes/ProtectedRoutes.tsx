@@ -18,8 +18,6 @@ import {
 import {
   hasCompletedWalkthrough,
   isWalkthroughPath,
-  shouldRequireWalkthrough,
-  WALKTHROUGH_PATH,
 } from "@/lib/walkthrough-storage";
 import { isPasswordResetFlow } from "@/lib/reset-password-storage";
 import {
@@ -156,13 +154,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         return;
       }
 
-      if (!isIdentityApproved) {
-        router.replace("/identity-verification");
-        return;
-      }
-
       if (hasCompletedWalkthrough(effectiveUser._id)) {
-        router.replace("/home");
+        router.replace(isIdentityApproved ? "/home" : "/identity-verification");
         return;
       }
 
@@ -175,37 +168,25 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       return;
     }
 
-    // Require non-approved users who completed onboarding steps to remain on /identity-verification
+    // Require non-approved users who completed onboarding steps to remain on /identity-verification (unless on walkthrough)
     if (
       !isIdentityApproved &&
       isOnboardingComplete(effectiveUser) &&
       !isPublicAuthPath &&
       !isOnboardingPath(pathname) &&
-      !isPostIdentityOnboardingPath(pathname)
+      !isPostIdentityOnboardingPath(pathname) &&
+      !isWalkthroughPath(pathname)
     ) {
       router.replace("/identity-verification");
       return;
     }
 
     // If currently on /identity-verification:
-    // Approved users are redirected to walkthrough if needed, or home dashboard.
+    // Approved users are redirected to home dashboard.
     if (pathname === "/identity-verification") {
       if (isIdentityApproved) {
-        const targetPath = !hasCompletedWalkthrough(effectiveUser._id)
-          ? WALKTHROUGH_PATH
-          : "/home";
-        router.replace(targetPath);
+        router.replace("/home");
       }
-      return;
-    }
-
-    if (
-      isOnboardingComplete(effectiveUser) &&
-      isIdentityApproved &&
-      shouldRequireWalkthrough(effectiveUser._id) &&
-      !isPostIdentityOnboardingPath(pathname)
-    ) {
-      router.replace(WALKTHROUGH_PATH);
       return;
     }
 
@@ -238,7 +219,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       redirectPath.startsWith("/onboarding") &&
       hasCompletedWalkthrough(effectiveUser._id)
     ) {
-      router.replace("/home");
+      router.replace(isIdentityApproved ? "/home" : "/identity-verification");
       return;
     }
 

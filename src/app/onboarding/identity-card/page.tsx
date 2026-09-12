@@ -15,7 +15,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { extractAuthFromResponse, persistAuthUser } from "@/lib/auth-session";
 import { mergeUserOnboardingFlags } from "@/lib/onboarding-steps";
-import { markWalkthroughPending } from "@/lib/walkthrough-storage";
+import {
+  markWalkthroughPending,
+  WALKTHROUGH_PATH,
+} from "@/lib/walkthrough-storage";
 import type { RootState } from "@/store/index";
 import { singUp } from "@/store/slices/auth-slice";
 import {
@@ -156,7 +159,7 @@ export default function IdentityCardOnboardingPage() {
         markWalkthroughPending(nextUser._id);
       }
 
-      router.replace("/identity-verification");
+      router.replace(WALKTHROUGH_PATH);
     } catch (error) {
       toast.fromApiError(
         error,

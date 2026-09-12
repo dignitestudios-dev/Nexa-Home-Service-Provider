@@ -54,7 +54,9 @@ export default function WalkthroughVerifiedBadgePage() {
       markWalkthroughCompleted(effectiveUser._id);
     }
 
-    router.replace("/home");
+    const isApproved =
+      effectiveUser?.identityStatus?.trim().toLowerCase() === "approved";
+    router.replace(isApproved ? "/home" : "/identity-verification");
   };
 
   return (

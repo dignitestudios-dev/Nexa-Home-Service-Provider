@@ -85,5 +85,8 @@ export function markWalkthroughCompleted(userId: string): void {
 }
 
 export function getPostOnboardingEntryPath(userId: string): string {
-  return hasCompletedWalkthrough(userId) ? "/home" : WALKTHROUGH_PATH;
+  return hasCompletedWalkthrough(userId)
+    ? "/identity-verification"
+    : WALKTHROUGH_PATH;
 }
+
