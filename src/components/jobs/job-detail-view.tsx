@@ -56,6 +56,14 @@ type JobDetailViewProps = {
   showHeaderStatus?: boolean;
 };
 
+function getStatusColor(statusLabel: string): string {
+  const s = statusLabel.toLowerCase();
+  if (s === "pending") return "text-[#F01A1A]";
+  if (s === "accepted") return "text-[#2F80ED]";
+  if (s === "completed") return "text-[#27AE60]";
+  return "text-[#005864]";
+}
+
 export default function JobDetailView({
   job,
   backHref,
@@ -150,15 +158,11 @@ export default function JobDetailView({
                     ? jobStatusLabel
                     : formatJobStatus(job.status, job.jobProviderStatus)
                 }
-                valueClassName={
-                  (
-                    showHeaderStatus
-                      ? jobStatusLabel
-                      : formatJobStatus(job.status, job.jobProviderStatus)
-                  ).toLowerCase() === "pending"
-                    ? "text-[#F01A1A]"
-                    : "text-[#005864]"
-                }
+                valueClassName={getStatusColor(
+                  showHeaderStatus
+                    ? jobStatusLabel
+                    : formatJobStatus(job.status, job.jobProviderStatus)
+                )}
               />
               <InfoRow label="Job Type:" value={formatJobType(job.type)} />
               <InfoRow

@@ -24,7 +24,7 @@ type OtpFormData = z.infer<typeof otpSchema>;
 function SignupVerificationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [timer, setTimer] = useState(60);
+  const [timer, setTimer] = useState(120);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
