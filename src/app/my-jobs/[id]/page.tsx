@@ -34,6 +34,7 @@ export default function MyJobDetailPage() {
           backHref="/my-jobs"
           showPurchaseButton={false}
           showHeaderStatus
+          blurImage
         />
       )}
     </MainAppShell>
