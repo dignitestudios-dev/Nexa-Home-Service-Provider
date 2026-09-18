@@ -105,6 +105,9 @@ export function parseUserProfileFromResponse(data: unknown): User | null {
     selectedCategories: parseSelectedCategories(profile),
     isServiceSubscribed: Boolean(profile.isServiceSubscribed),
     isBadgeVerified: Boolean(profile.isBadgeVerified),
+    isEligibleForBadge: Boolean(profile.isEligibleForBadge),
+    isAddressAdded: Boolean(profile.isAddressAdded),
+    isPartnerActive: Boolean(profile.isPartnerActive),
   };
 }
 

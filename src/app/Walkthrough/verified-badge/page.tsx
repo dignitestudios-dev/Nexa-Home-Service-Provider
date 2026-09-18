@@ -90,7 +90,7 @@ export default function WalkthroughVerifiedBadgePage() {
           <div className="mx-auto mt-6 w-full max-w-[866px]">
             <SettingsSubscriptionPlan
               title=""
-              variant="verified-badge"
+              variant="verified-badge-onboard"
               plans={plans}
               selectedPlanId={selectedPlanId}
               onSelectPlan={setSelectedPlanId}

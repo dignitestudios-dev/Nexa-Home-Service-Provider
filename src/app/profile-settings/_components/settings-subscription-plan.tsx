@@ -1,15 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { BadgeCheck } from "lucide-react";
+import Image from "next/image";
+import { useSelector } from "react-redux";
 
 import CancelSubscriptionDialog from "./cancel-subscription-dialog";
 import { Button } from "@/components/ui/button";
+import { useCurrentUserQuery } from "@/hooks/user/use-current-user-query";
 import {
+  formatBadgeEligibilityMessage,
   formatSubscriptionPlanPrice,
 } from "@/lib/parse-subscription-plans-response";
+import type { RootState } from "@/store/index";
 import type { SubscriptionPlan } from "@/types/subscription-plan.types";
-import Image from "next/image";
 
 const DEFAULT_FEATURES = [
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus quis interdum purus, eu placerat eros.",
@@ -86,7 +89,7 @@ function PlanPriceDisplay({
 
 type SettingsSubscriptionPlanProps = {
   title: string;
-  variant: "service" | "verified-badge";
+  variant: "service" | "verified-badge" | "verified-badge-onboard";
   price?: string;
   planName?: string;
   packageName?: string;
@@ -103,6 +106,7 @@ type SettingsSubscriptionPlanProps = {
   onPurchasePlan?: (planId: string) => void;
   isPurchasing?: boolean;
   compact?: boolean;
+  isEligibleForBadge?: boolean;
 };
 
 function PlanSkeleton() {
@@ -146,8 +150,17 @@ export default function SettingsSubscriptionPlan({
   onPurchasePlan,
   isPurchasing = false,
   compact = false,
+  isEligibleForBadge: propIsEligibleForBadge,
 }: SettingsSubscriptionPlanProps) {
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const { data: currentUser } = useCurrentUserQuery();
+  const reduxUser = useSelector((state: RootState) => state.auth.user);
+  const user = currentUser ?? reduxUser;
+
+  const isEligibleForBadge =
+    propIsEligibleForBadge !== undefined
+      ? propIsEligibleForBadge
+      : Boolean(user?.isEligibleForBadge);
 
   const selectedPlan =
     plans.find((plan) => plan.id === selectedPlanId) ??
@@ -164,13 +177,15 @@ export default function SettingsSubscriptionPlan({
     expiryLabel ??
     (selectedPlan?.isSubscribed
       ? "Your subscription is currently active."
-      : "Choose a plan to get started.");
+      : variant === "verified-badge-onboard" || variant === "verified-badge"
+        ? ""
+        : "Choose a plan to get started.");
   const isPlanSubscribed = selectedPlan?.isSubscribed ?? false;
-  const isVerifiedBadgeActive =
-    variant === "verified-badge" && (selectedPlan?.isBadgeEligible ?? false);
-  const showCancelButton = Boolean(selectedPlan && isPlanSubscribed);
-  const showBuyButton = Boolean(selectedPlan && !isPlanSubscribed);
-  const isBuyNowDisabled = isPurchasing || isVerifiedBadgeActive;
+  const isBadgeEligible =
+    variant === "verified-badge" ? isEligibleForBadge : true;
+  const showCancelButton = Boolean(selectedPlan && isPlanSubscribed && variant === "verified-badge");
+  const showBuyButton = Boolean(selectedPlan && !isPlanSubscribed && variant !== "verified-badge-onboard");
+  const isBuyNowDisabled = isPurchasing || !isBadgeEligible;
 
   const handleCancelSubscription = () => {
     if (!selectedPlan?.id || isCancelling) return;
@@ -350,8 +365,8 @@ export default function SettingsSubscriptionPlan({
               <Button
                 type="button"
                 onClick={handlePurchasePlan}
-                disabled={true}
-                // disabled={isBuyNowDisabled}
+                // disabled={true}
+                disabled={isBuyNowDisabled}
                 className={`w-full cursor-pointer rounded-[12px] bg-[#005864] px-[10px] font-[600] capitalize text-white hover:bg-[#004d57] disabled:cursor-not-allowed disabled:opacity-60 ${compact
                   ? "h-10 py-2 text-[14px] leading-[18px]"
                   : "h-12 py-3 text-[16px] leading-5"
@@ -359,9 +374,9 @@ export default function SettingsSubscriptionPlan({
               >
                 {isPurchasing ? "Processing..." : "Buy Now"}
               </Button>
-              {isVerifiedBadgeActive ? (
+              {variant === "verified-badge" && !isEligibleForBadge ? (
                 <p className="mt-3 text-center text-[14px] leading-5 text-[rgba(24,24,24,0.7)]">
-                  You already have a verified badge on your profile.
+                  {formatBadgeEligibilityMessage(selectedPlan?.badgeEligibility)}
                 </p>
               ) : null}
             </div>

@@ -54,6 +54,7 @@ type JobDetailViewProps = {
   backHref: string;
   showPurchaseButton?: boolean;
   showHeaderStatus?: boolean;
+  blurImage?: boolean;
 };
 
 function getStatusColor(statusLabel: string): string {
@@ -69,6 +70,7 @@ export default function JobDetailView({
   backHref,
   showPurchaseButton = true,
   showHeaderStatus = false,
+  blurImage,
 }: JobDetailViewProps) {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
@@ -77,6 +79,9 @@ export default function JobDetailView({
   const applyJobMutation = useApplyJobMutation();
   const isPurchased =
     job.hasApplied || job.jobProviderStatus.toLowerCase() === "applied";
+  const isAddressMasked = shouldMaskClientContact(job) || shouldHideClientContactDetails(job);
+  const isImageBlurred =
+    blurImage !== undefined ? blurImage : !isPurchased || isAddressMasked;
   const canPurchase =
     showPurchaseButton && !isPurchased;
   const client = getClientDisplay(job);
@@ -100,7 +105,6 @@ export default function JobDetailView({
     }
   };
 
-  const isAddressMasked = shouldMaskClientContact(job) || shouldHideClientContactDetails(job);
   const mapUrl =
     !isAddressMasked &&
     job.address.coordinates &&
@@ -271,7 +275,7 @@ export default function JobDetailView({
                   width={140}
                   height={140}
                   className={`h-full w-full rounded-full object-cover transition-all duration-300 ${
-                    !isPurchased
+                    isImageBlurred
                       ? "scale-110 blur-md pointer-events-none select-none"
                       : ""
                   }`}

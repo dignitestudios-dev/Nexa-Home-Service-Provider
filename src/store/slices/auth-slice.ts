@@ -24,8 +24,12 @@ export interface User {
   isProfileCompleted: boolean;
   isServiceSubscribed: boolean;
   isBadgeVerified: boolean;
+  isEligibleForBadge?: boolean;
+  isAddressAdded?: boolean;
   identityStatus: string;
+  identityRejectReason?: string | null;
   isPartnerApproved: boolean;
+  isPartnerActive?: boolean;
   isDeactivatedByAdmin: boolean;
   businessDocsSubmitted: boolean;
   portfolioMediaUploaded: boolean;
