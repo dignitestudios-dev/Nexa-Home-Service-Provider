@@ -40,9 +40,9 @@ function writeCompletedUserIds(userIds: string[]): void {
 }
 
 export function isWalkthroughPath(pathname: string): boolean {
-  const basePath = pathname.split("?")[0];
+  const basePath = pathname.split("?")[0].toLowerCase();
   return (
-    basePath === WALKTHROUGH_PATH || basePath.startsWith(`${WALKTHROUGH_PATH}/`)
+    basePath === "/walkthrough" || basePath.startsWith("/walkthrough/")
   );
 }
 
