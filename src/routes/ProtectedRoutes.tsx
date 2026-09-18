@@ -149,11 +149,6 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     const isRejected = isIdentityRejected(effectiveUser.identityStatus);
 
     if (isWalkthroughPath(pathname)) {
-      if (!isOnboardingComplete(effectiveUser)) {
-        router.replace(getNextOnboardingStepPath(effectiveUser));
-        return;
-      }
-
       if (hasCompletedWalkthrough(effectiveUser._id)) {
         router.replace(isIdentityApproved ? "/home" : "/identity-verification");
         return;
@@ -226,6 +221,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     if (
       redirectPath.startsWith("/onboarding") &&
       !isPublicAuthPath &&
+      !isWalkthroughPath(pathname) &&
       pathname !== redirectPath
     ) {
       router.replace(redirectPath);
