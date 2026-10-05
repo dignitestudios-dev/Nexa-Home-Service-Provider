@@ -27,6 +27,10 @@ import {
   getPersistedAuthUser,
   persistAuthUser,
 } from "@/lib/auth-session";
+import {
+  hasCompletedHomeTutorial,
+  TUTORIAL_HOME_PATH,
+} from "@/lib/onboarding-tutorial-storage";
 import { markWalkthroughCompleted } from "@/lib/walkthrough-storage";
 import { singUp } from "@/store/slices/auth-slice";
 import type { RootState } from "@/store/index";
@@ -121,8 +125,9 @@ export default function IdentityVerificationPage() {
     setStatus("approved");
 
     const baseUser = userSource ?? authUser ?? getPersistedAuthUser();
+    let approvedUser = baseUser;
     if (baseUser) {
-      const approvedUser = {
+      approvedUser = {
         ...baseUser,
         identityStatus: "approved",
       };
@@ -138,7 +143,12 @@ export default function IdentityVerificationPage() {
       hasRedirectedRef.current = true;
       if (typeof window !== "undefined") {
         setTimeout(() => {
-          window.location.href = "/home";
+          const effectiveId = approvedUser?._id || authUser?._id;
+          if (!hasCompletedHomeTutorial(effectiveId)) {
+            window.location.href = TUTORIAL_HOME_PATH;
+          } else {
+            window.location.href = "/home";
+          }
         }, 1200);
       }
     }

@@ -190,7 +190,6 @@ export default function ProfileSetupOnboardingPage() {
   const overview = watch("overview");
   const label = watch("label");
   const address = watch("address");
-  const streetName = watch("streetName");
   const zipCode = watch("zipCode");
   const acceptTerms = watch("acceptTerms");
   const latitude = watch("latitude");
@@ -211,9 +210,6 @@ export default function ProfileSetupOnboardingPage() {
     );
     const hasLabel = Boolean(label?.trim() && label.trim().length >= 2);
     const hasAddress = Boolean(address?.trim() && address.trim().length >= 3);
-    const hasStreetName = Boolean(
-      streetName?.trim() && streetName.trim().length >= 2,
-    );
     const hasZipCode = Boolean(zipCode?.trim() && zipCode.trim().length >= 3);
     const hasAcceptedTerms = Boolean(acceptTerms);
 
@@ -225,7 +221,6 @@ export default function ProfileSetupOnboardingPage() {
       hasOverview &&
       hasLabel &&
       hasAddress &&
-      hasStreetName &&
       hasZipCode &&
       hasAcceptedTerms
     );
@@ -237,7 +232,6 @@ export default function ProfileSetupOnboardingPage() {
     overview,
     label,
     address,
-    streetName,
     zipCode,
     acceptTerms,
   ]);
@@ -493,7 +487,9 @@ export default function ProfileSetupOnboardingPage() {
         phone: toE164UsPhone(data.phoneNumber),
         overview: data.overview,
         label: data.label,
-        address: `${data.address}, ${data.streetName}, ${data.officeNo}`,
+        address: [data.address, data.streetName, data.officeNo]
+          .filter(Boolean)
+          .join(", "),
         country: data.country || "United States",
         state: data.state || "Pennsylvania",
         city: data.city || "Philadelphia",
@@ -658,11 +654,11 @@ export default function ProfileSetupOnboardingPage() {
                 onClick={() => fileInputRef.current?.click()}
                 className="mt-3 text-[16px] font-medium leading-5 text-[#1C1C1C] underline"
               >
-                Upload Profile Picture/Logo*
+                Upload Profile Picture/Logo <span className="text-red-500">*</span>
               </button>
 
               <p className="mt-1 text-center text-xs text-[#181818]/60">
-                PNG or JPG only, max 5MB (required)
+                PNG or JPG only, max 5MB <span className="text-red-500">(Required)</span>
               </p>
 
               {errors.profileImage && (
@@ -701,7 +697,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div>
                 <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                  Company Name*
+                  Company Name <span className="text-red-500">*</span>
                 </label>
                 <Input
                   {...register("companyName")}
@@ -722,7 +718,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div>
                 <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                  Phone Number
+                  Phone Number <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-1 flex gap-2">
                   <div className="flex h-12 w-[91px] shrink-0 items-center justify-center rounded-[12px] bg-[#F8F8F8]">
@@ -783,7 +779,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div ref={serviceDropdownRef}>
                 <label className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
-                  Select Service*
+                  Select Service <span className="text-red-500">*</span>
                 </label>
 
                 <button
@@ -884,7 +880,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div>
                 <label className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
-                  Overview*
+                  Overview <span className="text-red-500">*</span>
                 </label>
 
                 <div className="mt-1 rounded-[12px] bg-[#F8F8F8] p-3">
@@ -916,7 +912,7 @@ export default function ProfileSetupOnboardingPage() {
                 {/* Map search input */}
                 <div>
                   <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                    Search Location *
+                    Search Location <span className="text-red-500">*</span>
                   </label>
                   <input
                     ref={searchInputRef}
@@ -947,7 +943,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div>
                 <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                  Label This Address*
+                  Label This Address <span className="text-red-500">*</span>
                 </label>
                 <Input
                   maxLength={50}
@@ -966,7 +962,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div>
                 <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                  Address*
+                  Address <span className="text-red-500">*</span>
                 </label>
                 <Input
                   {...register("address")}
@@ -975,23 +971,6 @@ export default function ProfileSetupOnboardingPage() {
                 {errors.address && (
                   <p className="mt-1 text-sm text-red-500">
                     {errors.address.message}
-                  </p>
-                )}
-              </div>
-
-              {/* STREET */}
-
-              <div>
-                <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                  Street Name*
-                </label>
-                <Input
-                  {...register("streetName")}
-                  className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
-                />
-                {errors.streetName && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.streetName.message}
                   </p>
                 )}
               </div>
@@ -1024,7 +1003,7 @@ export default function ProfileSetupOnboardingPage() {
 
                 <div>
                   <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                    Zip Code*
+                    Zip Code <span className="text-red-500">*</span>
                   </label>
                   <Input
                     {...register("zipCode", {

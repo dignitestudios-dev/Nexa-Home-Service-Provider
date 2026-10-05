@@ -17,6 +17,10 @@ import {
   persistResetTokenFromResponse,
   getPersistedAuthUser,
 } from "@/lib/auth-session";
+import {
+  hasCompletedOnboardingTutorial,
+  TUTORIAL_ONBOARDING_PROFILE_PATH,
+} from "@/lib/onboarding-tutorial-storage";
 import { getRedirectPath } from "@/lib/auth-utils";
 import { toast } from "@/lib/toast";
 import { authService } from "@/services/auth.service";
@@ -149,7 +153,13 @@ function VerifyEmailContent() {
       persistAuthFromResponse(response, dispatch);
       clearPendingVerifyEmail();
       toast.fromApiSuccess(response, "Email verified successfully.");
-      router.replace("/onboarding/profile-setup");
+
+      const verifiedUser = response?.data?.user;
+      if (!hasCompletedOnboardingTutorial(verifiedUser?._id)) {
+        router.replace(TUTORIAL_ONBOARDING_PROFILE_PATH);
+      } else {
+        router.replace("/onboarding/profile-setup");
+      }
     } catch (error) {
       setFormError(
         getApiErrorMessage(error, "Invalid or expired OTP. Please try again."),

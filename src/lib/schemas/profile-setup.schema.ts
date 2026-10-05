@@ -150,7 +150,7 @@ export const profileSetupSchema = z.object({
 
   address: z.string().min(3, "Address is required"),
 
-  streetName: z.string().min(2, "Street name is required"),
+  streetName: z.string().optional(),
 
   officeNo: z
     .string()

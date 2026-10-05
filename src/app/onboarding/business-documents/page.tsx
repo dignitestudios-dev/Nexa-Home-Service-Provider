@@ -374,19 +374,6 @@ export default function BusinessDocumentsPage() {
               </div>
 
               <div className="mx-auto mt-10 flex w-full max-w-[500px] flex-col gap-4">
-                <button
-                  type="submit"
-                  disabled={
-                    uploadDocsMutation.isPending ||
-                    isPreparingUpload ||
-                    compressingField !== null
-                  }
-                  className="block h-12 w-full cursor-pointer rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isPreparingUpload || uploadDocsMutation.isPending
-                    ? "Uploading..."
-                    : "Continue"}
-                </button>
 
                 <button
                   type="button"
@@ -399,6 +386,19 @@ export default function BusinessDocumentsPage() {
                   className="block h-12 w-full cursor-pointer rounded-[12px] border border-[#005864] bg-transparent text-[16px] font-semibold text-[#005864] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Skip
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    uploadDocsMutation.isPending ||
+                    isPreparingUpload ||
+                    compressingField !== null
+                  }
+                  className="block h-12 w-full cursor-pointer rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isPreparingUpload || uploadDocsMutation.isPending
+                    ? "Uploading..."
+                    : "Continue"}
                 </button>
               </div>
             </form>
