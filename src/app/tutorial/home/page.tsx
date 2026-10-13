@@ -72,7 +72,7 @@ export default function TutorialHomePage() {
       popoverClass: "nexa-driver-popover",
       nextBtnText: "Next",
       prevBtnText: "Back",
-      doneBtnText: "View Job Details",
+      doneBtnText: "View a Job",
       progressText: "{{current}} of {{total}}",
       overlayClickBehavior: "none",
       steps: [
@@ -81,7 +81,7 @@ export default function TutorialHomePage() {
           popover: {
             title: "Welcome to Your Dashboard",
             description:
-              "Your ID has been verified! This is your main dashboard where you can monitor stats, manage credits, and receive local job requests.",
+              "You're approved! Track your stats, manage credits, and find job requests in your area.",
             side: "bottom",
             align: "start",
           },
@@ -89,9 +89,9 @@ export default function TutorialHomePage() {
         {
           element: "#tutorial-home-stats",
           popover: {
-            title: "Performance & Credit Stats",
+            title: "Your Stats",
             description:
-              "Track your total purchased leads, active jobs, hired count, and remaining available lead credits.",
+              "Track your leads purchased, active jobs, jobs you were hired for, and remaining credits.",
             side: "bottom",
             align: "start",
           },
@@ -99,9 +99,9 @@ export default function TutorialHomePage() {
         {
           element: "#tutorial-available-jobs-heading",
           popover: {
-            title: "Available Homeowner Jobs",
+            title: "Available Jobs",
             description:
-              "Browse real-time job requests posted by homeowners in your service area that match your trade categories.",
+              "Job requests from users in your service area, matched to the services you offer.",
             side: "top",
             align: "start",
           },
@@ -109,9 +109,9 @@ export default function TutorialHomePage() {
         {
           element: "#tutorial-first-job-card",
           popover: {
-            title: "Click on Available Jobs",
+            title: "View a Job",
             description:
-              "Click on any available job to view full project specifications, budget, homeowner notes, and purchase the lead.",
+              "Click any job to see the details and purchase the lead.",
             side: "top",
             align: "start",
           },

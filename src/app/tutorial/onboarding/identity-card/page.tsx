@@ -38,7 +38,7 @@ export default function TutorialIdentityCardPage() {
       popoverClass: "nexa-driver-popover",
       nextBtnText: "Next",
       prevBtnText: "Back",
-      doneBtnText: "Start Real Onboarding",
+      doneBtnText: "Next",
       progressText: "{{current}} of {{total}}",
       overlayClickBehavior: "none",
       steps: [
@@ -47,7 +47,7 @@ export default function TutorialIdentityCardPage() {
           popover: {
             title: "Identity Verification",
             description:
-              "Government ID verification protects homeowners and qualifies you for verified badges and high-tier jobs.",
+              "We verify every Expert's identity so users know they're hiring a real person or business.",
             side: "bottom",
             align: "center",
           },
@@ -55,9 +55,9 @@ export default function TutorialIdentityCardPage() {
         {
           element: "#tutorial-id-front-box",
           popover: {
-            title: "Front of ID Card",
+            title: "Front of ID",
             description:
-              "Upload a clear photo of the front of your driver's license, passport, or government ID.",
+              "Upload a clear photo of the front of your driver's license, passport, or other government-issued ID.",
             side: "top",
             align: "center",
           },
@@ -65,9 +65,9 @@ export default function TutorialIdentityCardPage() {
         {
           element: "#tutorial-id-back-box",
           popover: {
-            title: "Back of ID Card",
+            title: "Back of ID",
             description:
-              "Upload the back side with barcodes and security elements clearly visible.",
+              "Upload a clear photo of the back. Make sure the barcode is readable.",
             side: "top",
             align: "center",
           },
@@ -75,9 +75,9 @@ export default function TutorialIdentityCardPage() {
         {
           element: "#tutorial-id-submit-btn",
           popover: {
-            title: "Finish Walkthrough",
+            title: "You’re All Set",
             description:
-              "You have completed the walkthrough! Click 'Start Real Onboarding' to fill out your official provider profile.",
+              "Click 'Next' to start building your Expert profile.",
             side: "top",
             align: "center",
           },

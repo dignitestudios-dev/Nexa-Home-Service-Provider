@@ -37,16 +37,16 @@ export default function TutorialProfileSetupPage() {
       popoverClass: "nexa-driver-popover",
       nextBtnText: "Next",
       prevBtnText: "Back",
-      doneBtnText: "Next Step",
+      doneBtnText: "Next",
       progressText: "{{current}} of {{total}}",
       overlayClickBehavior: "none",
       steps: [
         {
           element: "#tutorial-profile-upload",
           popover: {
-            title: "Profile Picture / Logo",
+            title: "Add Your Logo or Photo",
             description:
-              "Upload a professional photo or company logo. This will be displayed to homeowners across search results.",
+              "Upload a company logo or professional photo. Users will see it when your profile appears for their job.\n\nDon't have one handy? Skip for now.",
             side: "bottom",
             align: "center",
           },
@@ -56,7 +56,7 @@ export default function TutorialProfileSetupPage() {
           popover: {
             title: "Company & Phone Details",
             description:
-              "Provide your company name and an SMS-capable phone number for receiving direct project lead notifications.",
+              "Please provide your company name along with a valid, SMS-capable phone number where you can receive direct notifications regarding new project leads, potential business opportunities, and relevant project updates. Please ensure the number is active and able to receive text messages so you don't miss any important lead notifications.",
             side: "top",
             align: "start",
           },
@@ -64,9 +64,9 @@ export default function TutorialProfileSetupPage() {
         {
           element: "#tutorial-service-selector",
           popover: {
-            title: "Select Trade Services",
+            title: "Choose Your Services",
             description:
-              "Choose the primary services your business provides to get matched with the most relevant homeowner requests.",
+              "Choose the services your business offers. You'll appear for job requests in these categories.",
             side: "bottom",
             align: "start",
           },
@@ -76,7 +76,7 @@ export default function TutorialProfileSetupPage() {
           popover: {
             title: "Location & Service Area",
             description:
-              "Set your business operating address and radius to automatically match with nearby local clients.",
+              "Set your business address and select how far you're willing to travel for jobs. Your profile will appear in relevant job requests within your selected service area, helping homeowners nearby find and connect with you. You can also add and manage multiple service locations later through your account settings to expand your reach and receive project leads from additional areas.",
             side: "top",
             align: "start",
           },
@@ -85,8 +85,7 @@ export default function TutorialProfileSetupPage() {
           element: "#tutorial-submit-button",
           popover: {
             title: "Continue to Step 2",
-            description:
-              "Click 'Next' to proceed to the Business Documents step of the onboarding tutorial.",
+            description: "Click 'Next' to add your portfolio.",
             side: "top",
             align: "center",
           },
@@ -95,7 +94,7 @@ export default function TutorialProfileSetupPage() {
       onNextClick: (element, step, { driver: drv }) => {
         if (drv.isLastStep()) {
           drv.destroy();
-          router.push("/tutorial/onboarding/business-documents");
+          router.push("/tutorial/onboarding/portfolio");
         } else {
           drv.moveNext();
         }
@@ -104,7 +103,7 @@ export default function TutorialProfileSetupPage() {
         if (driverInstance.current) {
           driverInstance.current.destroy();
         }
-        router.push("/tutorial/onboarding/business-documents");
+        router.push("/tutorial/onboarding/portfolio");
       },
     });
 

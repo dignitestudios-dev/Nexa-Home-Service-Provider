@@ -48,6 +48,7 @@ export default function TutorialJobDetailPage() {
   const initials = getUserInitials(displayName) || "AW";
 
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isPurchased, setIsPurchased] = useState(false);
 
   useEffect(() => {
@@ -62,16 +63,16 @@ export default function TutorialJobDetailPage() {
       popoverClass: "nexa-driver-popover",
       nextBtnText: "Next",
       prevBtnText: "Back",
-      doneBtnText: "Purchase Job",
+      doneBtnText: "Purchase Lead",
       progressText: "{{current}} of {{total}}",
       overlayClickBehavior: "none",
       steps: [
         {
           element: "#tutorial-job-detail-info",
           popover: {
-            title: "Job Scope & Requirements",
+            title: "Job Details",
             description:
-              "Inspect homeowner description, urgency, preferred contact methods, and credits required before purchasing.",
+              "Review the job description, photos or videos, zip code, preferred contact method, and lead price before you buy.",
             side: "right",
             align: "start",
           },
@@ -79,9 +80,9 @@ export default function TutorialJobDetailPage() {
         {
           element: "#tutorial-client-details-card",
           popover: {
-            title: "Homeowner Contact Details",
+            title: "Contact Details",
             description:
-              "Client phone number and exact address are safely masked until the lead is unlocked with your credits.",
+              "You’ll see the user’s first name and zip code now. Their full name and contact info unlock when you purchase the lead.",
             side: "left",
             align: "start",
           },
@@ -89,9 +90,9 @@ export default function TutorialJobDetailPage() {
         {
           element: "#tutorial-purchase-job-btn",
           popover: {
-            title: "Purchase the Job Lead",
+            title: "Purchase the Lead",
             description:
-              "Click 'Purchase Job' to unlock homeowner phone and address details using 15 of your available credits.",
+              "Click 'Purchase Lead' to unlock the user’s contact info. Up to 5 Experts can purchase each lead.",
             side: "top",
             align: "center",
           },
@@ -130,11 +131,13 @@ export default function TutorialJobDetailPage() {
   const handleConfirmPurchase = () => {
     setIsPurchaseModalOpen(false);
     setIsPurchased(true);
+    setIsSuccessModalOpen(true);
+  };
 
-    setTimeout(() => {
-      markHomeTutorialCompleted(user?._id);
-      router.replace("/home");
-    }, 1600);
+  const handleFinishTutorial = () => {
+    setIsSuccessModalOpen(false);
+    markHomeTutorialCompleted(user?._id);
+    router.replace("/home");
   };
 
   return (
@@ -315,7 +318,7 @@ export default function TutorialJobDetailPage() {
                   {isPurchased ? (
                     <div className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[12px] bg-emerald-600 font-semibold text-white">
                       <CheckCircle2 size={20} />
-                      <span>Lead Unlocked Successfully!</span>
+                      <span>Lead Purchased!</span>
                     </div>
                   ) : (
                     <button
@@ -323,7 +326,7 @@ export default function TutorialJobDetailPage() {
                       onClick={() => setIsPurchaseModalOpen(true)}
                       className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white shadow-md transition hover:bg-[#004852]"
                     >
-                      <span>Purchase Job</span>
+                      <span>Purchase Lead</span>
                     </button>
                   )}
                 </div>
@@ -333,13 +336,13 @@ export default function TutorialJobDetailPage() {
         </div>
       </div>
 
-      {/* ── Exact Purchase Job Modal ── */}
+      {/* ── Popup 8 — Purchase Confirmation Modal ── */}
       {isPurchaseModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
           <div className="w-full max-w-[490px] rounded-[24px] bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold uppercase tracking-wider text-[#005864]">
-                Purchase Lead
+                Purchase Confirmation
               </span>
               <button
                 type="button"
@@ -355,10 +358,10 @@ export default function TutorialJobDetailPage() {
                 <Sparkles size={32} />
               </div>
               <h3 className="mt-4 text-[22px] font-bold text-[#1C1C1C]">
-                Unlock Homeowner Details
+                Confirm Purchase
               </h3>
               <p className="mt-2 text-sm text-black/70">
-                Are you sure you want to purchase this lead? <strong>15 Credits</strong> will be deducted from your balance.
+                Purchase this lead for 15 credits? Credits are non-refundable.
               </p>
             </div>
 
@@ -391,6 +394,48 @@ export default function TutorialJobDetailPage() {
                 className="h-12 flex-1 rounded-[12px] bg-[#005864] text-sm font-semibold text-white shadow-md hover:bg-[#004852]"
               >
                 Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Popup 9 — Purchase Success Modal ── */}
+      {isSuccessModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-[490px] rounded-[24px] bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold uppercase tracking-wider text-emerald-600">
+                Purchase Success
+              </span>
+              <button
+                type="button"
+                onClick={handleFinishTutorial}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mt-4 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <CheckCircle2 size={36} />
+              </div>
+              <h3 className="mt-4 text-[22px] font-bold text-[#1C1C1C]">
+                Lead Purchased!
+              </h3>
+              <p className="mt-2 text-sm text-black/70">
+                Contact info is unlocked. Reach out using their preferred contact method.
+              </p>
+            </div>
+
+            <div className="mt-6 flex">
+              <button
+                type="button"
+                onClick={handleFinishTutorial}
+                className="h-12 w-full rounded-[12px] bg-[#005864] text-sm font-semibold text-white shadow-md hover:bg-[#004852]"
+              >
+                Done
               </button>
             </div>
           </div>

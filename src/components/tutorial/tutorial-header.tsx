@@ -44,7 +44,7 @@ export default function TutorialHeader({ onReplayTour }: TutorialHeaderProps) {
               </span>
             </div>
             <p className="text-xs text-white/90">
-              Step {currentStep.step} of 4:{" "}
+              Step {currentStep.step} of {TUTORIAL_STEPS.length}:{" "}
               <strong className="font-semibold text-white">
                 {currentStep.title}
               </strong>

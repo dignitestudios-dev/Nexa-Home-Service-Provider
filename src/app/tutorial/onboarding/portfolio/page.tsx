@@ -52,16 +52,16 @@ export default function TutorialPortfolioPage() {
       popoverClass: "nexa-driver-popover",
       nextBtnText: "Next",
       prevBtnText: "Back",
-      doneBtnText: "Next Step",
+      doneBtnText: "Next",
       progressText: "{{current}} of {{total}}",
       overlayClickBehavior: "none",
       steps: [
         {
           element: "#tutorial-portfolio-header",
           popover: {
-            title: "Showcase Your Past Work",
+            title: "Showcase Your Work",
             description:
-              "High-resolution photos and project videos dramatically boost homeowner trust and help you win more job quotes.",
+              "Photos and videos of your past work help users choose you with confidence.",
             side: "bottom",
             align: "center",
           },
@@ -69,9 +69,9 @@ export default function TutorialPortfolioPage() {
         {
           element: "#tutorial-portfolio-upload-box",
           popover: {
-            title: "Upload Dropzone",
+            title: "Upload Your Work",
             description:
-              "Easily upload up to 10 photos or short project walkthrough videos (PNG, JPEG, MP4, WebM, MOV).",
+              "Add up to 10 photos or short videos (PNG, JPEG, MP4, WebM, MOV).",
             side: "bottom",
             align: "center",
           },
@@ -79,9 +79,9 @@ export default function TutorialPortfolioPage() {
         {
           element: "#tutorial-portfolio-items-grid",
           popover: {
-            title: "Manage Project Media",
+            title: "Manage Your Portfolio",
             description:
-              "Preview and organize your showcased project photos before publishing your provider profile.",
+              "Preview and arrange your photos and videos before submitting your profile for verification.",
             side: "top",
             align: "start",
           },
@@ -89,9 +89,9 @@ export default function TutorialPortfolioPage() {
         {
           element: "#tutorial-portfolio-continue-btn",
           popover: {
-            title: "Continue to Step 4",
+            title: "Continue to Step 3",
             description:
-              "Click 'Next' to proceed to the final step of the onboarding tutorial: Identity Card.",
+              "Click 'Next' for the final step: Identity Verification.",
             side: "top",
             align: "center",
           },

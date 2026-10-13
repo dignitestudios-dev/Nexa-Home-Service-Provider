@@ -54,6 +54,7 @@
   line-height: 1.55 !important;
   color: #4b5563 !important;
   margin-bottom: 18px !important;
+  white-space: pre-line !important;
 }
 
 .nexa-driver-popover .driver-popover-footer {
