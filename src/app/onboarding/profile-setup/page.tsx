@@ -176,6 +176,7 @@ export default function ProfileSetupOnboardingPage() {
       state: "",
       city: "",
       acceptTerms: false,
+      confirmSmsCapable: false,
     },
   });
 
@@ -186,6 +187,7 @@ export default function ProfileSetupOnboardingPage() {
   const profileFile = watch("profileImage");
   const companyName = watch("companyName");
   const phoneNumber = watch("phoneNumber");
+  const confirmSmsCapable = watch("confirmSmsCapable");
   const selectedServices = watch("services");
   const overview = watch("overview");
   const label = watch("label");
@@ -203,6 +205,7 @@ export default function ProfileSetupOnboardingPage() {
     const digits = (phoneNumber ?? "").replace(/\D/g, "");
     const hasValidPhone =
       digits.length === 10 || (digits.length === 11 && digits.startsWith("1"));
+    const hasConfirmedSms = Boolean(confirmSmsCapable);
     const hasServices =
       Array.isArray(selectedServices) && selectedServices.length > 0;
     const hasOverview = Boolean(
@@ -217,6 +220,7 @@ export default function ProfileSetupOnboardingPage() {
       hasProfileImage &&
       hasCompanyName &&
       hasValidPhone &&
+      hasConfirmedSms &&
       hasServices &&
       hasOverview &&
       hasLabel &&
@@ -228,6 +232,7 @@ export default function ProfileSetupOnboardingPage() {
     profileFile,
     companyName,
     phoneNumber,
+    confirmSmsCapable,
     selectedServices,
     overview,
     label,
@@ -767,10 +772,40 @@ export default function ProfileSetupOnboardingPage() {
                     {errors.phoneNumber.message}
                   </p>
                 )}
-                <p className="mt-1.5 text-[13px] leading-5 text-black/60">
-                  <span className="font-semibold text-black/80">Important:</span>{" "}
-                  Please provide a phone number that can receive SMS/text messages. Do not use a company main line or landline.
-                </p>
+
+                <div className="mt-3 rounded-[14px] border border-[#005864]/20 bg-[#005864]/[0.03] p-4 text-left">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="confirm-sms-capable"
+                      className="mt-1 h-5 w-5 shrink-0 rounded-[4px] border border-[#181818]/60 accent-[#005864]"
+                      {...register("confirmSmsCapable")}
+                      onChange={(e) => {
+                        setValue("confirmSmsCapable", e.target.checked, {
+                          shouldValidate: true,
+                        });
+                      }}
+                    />
+                    <div className="text-[13px] leading-[20px] text-[#1C1C1C]">
+                      <p className="font-semibold text-[#005864]">
+                        SMS & Lead Monitoring Confirmation <span className="text-red-500">*</span>
+                      </p>
+                      <p className="mt-1 text-black/80">
+                        I acknowledge and confirm that the number entered:
+                      </p>
+                      <ul className="mt-1.5 list-disc space-y-1 pl-4.5 text-[13px] text-black/75">
+                        <li>Can receive SMS.</li>
+                        <li>Is actively monitored by whoever is responsible for responding to leads.</li>
+                        <li>Should not be a landline or company mainline that cannot receive texts.</li>
+                      </ul>
+                    </div>
+                  </label>
+                  {errors.confirmSmsCapable && (
+                    <p className="mt-2 text-xs font-medium text-red-500">
+                      {errors.confirmSmsCapable.message}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* ========================= */}
@@ -795,6 +830,10 @@ export default function ProfileSetupOnboardingPage() {
                     }`}
                   />
                 </button>
+
+                <p className="mt-1.5 text-[13px] leading-5 text-black/60">
+                  Additional or secondary services can be added later after selecting your primary service.
+                </p>
 
                 {errors.services && (
                   <p className="mt-1 text-sm text-red-500">

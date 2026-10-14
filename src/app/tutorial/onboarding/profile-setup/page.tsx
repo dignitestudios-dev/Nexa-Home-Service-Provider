@@ -11,8 +11,11 @@ import {
   UserRound,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/index";
 import { driver, type Driver } from "driver.js";
 import { Input } from "@/components/ui/input";
+import { markOnboardingTutorialCompleted } from "@/lib/onboarding-tutorial-storage";
 
 const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: true },
@@ -23,7 +26,16 @@ const stepItems = [
 
 export default function TutorialProfileSetupPage() {
   const router = useRouter();
+  const user = useSelector((state: RootState) => state.auth.user);
   const driverInstance = useRef<Driver | null>(null);
+
+  const handleSkipTutorial = () => {
+    if (driverInstance.current) {
+      driverInstance.current.destroy();
+    }
+    markOnboardingTutorialCompleted(user?._id);
+    router.replace("/onboarding/profile-setup");
+  };
 
   useEffect(() => {
     const d = driver({
@@ -40,6 +52,28 @@ export default function TutorialProfileSetupPage() {
       doneBtnText: "Next",
       progressText: "{{current}} of {{total}}",
       overlayClickBehavior: "none",
+      onPopoverRender: (popover, { driver: drv }) => {
+        if (!popover.footerButtons.querySelector(".driver-popover-skip-btn")) {
+          const skipBtn = document.createElement("button");
+          skipBtn.className = "driver-popover-btn driver-popover-skip-btn";
+          skipBtn.type = "button";
+          skipBtn.textContent = "Skip";
+          skipBtn.setAttribute("aria-label", "Skip Tutorial");
+          skipBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            drv.destroy();
+            handleSkipTutorial();
+          };
+          popover.footerButtons.insertBefore(
+            skipBtn,
+            popover.footerButtons.firstChild,
+          );
+        }
+      },
+      onCloseClick: () => {
+        handleSkipTutorial();
+      },
       steps: [
         {
           element: "#tutorial-profile-upload",
@@ -54,9 +88,9 @@ export default function TutorialProfileSetupPage() {
         {
           element: "#tutorial-company-details",
           popover: {
-            title: "Company & Phone Details",
+            title: "Company & SMS Phone Details",
             description:
-              "Please provide your company name along with a valid, SMS-capable phone number where you can receive direct notifications regarding new project leads, potential business opportunities, and relevant project updates. Please ensure the number is active and able to receive text messages so you don't miss any important lead notifications.",
+              "Please provide your company name and an active, SMS-capable phone number.\n\n⚠️ Required Phone Acknowledgement:\n• Must be able to receive SMS notifications\n• Must be actively monitored by whoever is responsible for responding to leads\n• Should not be a landline or company mainline that cannot receive texts\n\nYou must check the confirmation box before proceeding.",
             side: "top",
             align: "start",
           },
@@ -66,7 +100,7 @@ export default function TutorialProfileSetupPage() {
           popover: {
             title: "Choose Your Services",
             description:
-              "Choose the services your business offers. You'll appear for job requests in these categories.",
+              "Choose the services your business offers. You'll appear for job requests in these categories.\n\nTip: Select your primary service now. Additional or secondary services can easily be added later in your account settings.",
             side: "bottom",
             align: "start",
           },
@@ -293,10 +327,31 @@ export default function TutorialProfileSetupPage() {
                       className="h-12 flex-1 rounded-[12px] border-0 bg-[#F8F8F8] px-4 text-[16px] placeholder:text-[rgba(24,24,24,0.8)]"
                     />
                   </div>
-                  <p className="mt-1.5 text-[13px] leading-5 text-black/60">
-                    <span className="font-semibold text-black/80">Important:</span>{" "}
-                    Please provide a phone number that can receive SMS/text messages. Do not use a company main line or landline.
-                  </p>
+
+                  <div className="mt-3 rounded-[14px] border border-[#005864]/20 bg-[#005864]/[0.03] p-4 text-left">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked
+                        readOnly
+                        aria-label="SMS & Lead Monitoring Confirmation"
+                        className="mt-1 h-5 w-5 shrink-0 rounded-[4px] border border-[#181818]/60 accent-[#005864]"
+                      />
+                      <div className="text-[13px] leading-[20px] text-[#1C1C1C]">
+                        <p className="font-semibold text-[#005864]">
+                          SMS & Lead Monitoring Confirmation <span className="text-red-500">*</span>
+                        </p>
+                        <p className="mt-1 text-black/80">
+                          I acknowledge and confirm that the number entered:
+                        </p>
+                        <ul className="mt-1.5 list-disc space-y-1 pl-4.5 text-[13px] text-black/75">
+                          <li>Can receive SMS.</li>
+                          <li>Is actively monitored by whoever is responsible for responding to leads.</li>
+                          <li>Should not be a landline or company mainline that cannot receive texts.</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -312,6 +367,9 @@ export default function TutorialProfileSetupPage() {
                   </span>
                   <ChevronDown size={18} className="text-black/70" />
                 </div>
+                <p className="mt-1.5 text-[13px] leading-5 text-black/60">
+                  Additional or secondary services can easily be added later after selecting your primary service.
+                </p>
               </div>
 
               {/* Overview */}

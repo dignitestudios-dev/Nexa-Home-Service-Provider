@@ -51,6 +51,14 @@ export default function TutorialJobDetailPage() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isPurchased, setIsPurchased] = useState(false);
 
+  const handleSkipTutorial = () => {
+    if (driverInstance.current) {
+      driverInstance.current.destroy();
+    }
+    markHomeTutorialCompleted(user?._id);
+    router.replace("/home");
+  };
+
   useEffect(() => {
     const d = driver({
       showProgress: true,
@@ -66,6 +74,28 @@ export default function TutorialJobDetailPage() {
       doneBtnText: "Purchase Lead",
       progressText: "{{current}} of {{total}}",
       overlayClickBehavior: "none",
+      onPopoverRender: (popover, { driver: drv }) => {
+        if (!popover.footerButtons.querySelector(".driver-popover-skip-btn")) {
+          const skipBtn = document.createElement("button");
+          skipBtn.className = "driver-popover-btn driver-popover-skip-btn";
+          skipBtn.type = "button";
+          skipBtn.textContent = "Skip";
+          skipBtn.setAttribute("aria-label", "Skip Tutorial");
+          skipBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            drv.destroy();
+            handleSkipTutorial();
+          };
+          popover.footerButtons.insertBefore(
+            skipBtn,
+            popover.footerButtons.firstChild,
+          );
+        }
+      },
+      onCloseClick: () => {
+        handleSkipTutorial();
+      },
       steps: [
         {
           element: "#tutorial-job-detail-info",
@@ -224,7 +254,7 @@ export default function TutorialJobDetailPage() {
                   <InfoRow label="Status:" value="Available" valueClassName="text-[#005864]" />
                   <InfoRow label="Job Type:" value="Urgent (Today)" />
                   <InfoRow label="Contact Preferences:" value="Phone Call, SMS" />
-                  <InfoRow label="Credits:" value="15" />
+                  <InfoRow label="Credits:" value="35" />
                 </div>
               </section>
 
@@ -280,57 +310,70 @@ export default function TutorialJobDetailPage() {
             </div>
 
             {/* Right Column: Homeowner Contact & Purchase Action */}
-            <div className="flex w-full flex-1 flex-col gap-6">
-              <section
+            <div className="flex w-full max-w-[508px] flex-col self-stretch">
+              <aside
                 id="tutorial-client-details-card"
-                className="flex flex-1 flex-col justify-between rounded-[18px] bg-[#F8F8F8] p-6"
+                className="rounded-[18px] bg-[#F8F8F8] px-[30px] pb-8 pt-6"
               >
-                <div>
-                  <h2 className="text-[24px] font-bold capitalize leading-[22px] text-[#1C1C1C]">
-                    Client Detail
-                  </h2>
+                <h3 className="text-center text-[20px] font-bold capitalize leading-[22px] text-[#181818]">
+                  Client Profile
+                </h3>
 
-                  <div className="mt-6 flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#005864] text-lg font-bold text-white">
-                      SJ
-                    </div>
+                <div className="mx-auto mt-6 flex h-[140px] w-[140px] items-center justify-center rounded-full bg-[#005864] text-[40px] font-bold text-white shadow-sm">
+                  SJ
+                </div>
+
+                <p className="mx-auto mt-5 max-w-[350px] break-all text-center text-[20px] font-bold capitalize leading-[30px] text-black">
+                  Sarah J.
+                </p>
+                <p className="mt-1 text-center text-sm font-medium text-black/60">
+                  Verified Homeowner
+                </p>
+
+                <div className="mt-6 flex flex-col gap-2">
+                  <div className="flex items-center justify-between rounded-[12px] bg-[rgba(0,88,100,0.06)] px-5 py-4">
                     <div>
-                      <h3 className="text-[18px] font-semibold text-[#1C1C1C]">Sarah J.</h3>
-                      <p className="text-sm text-black/60">Verified Homeowner</p>
+                      <p className="text-[16px] font-semibold capitalize leading-5 text-[#005864]">
+                        Phone Number
+                      </p>
+                      <p className="mt-1 text-[16px] capitalize leading-5 text-[rgba(24,24,24,0.8)]">
+                        {isPurchased ? "(555) 349-8821" : "(555) ***-****"}
+                      </p>
                     </div>
+                    <Phone className="h-6 w-6 text-[rgba(24,24,24,0.8)]" strokeWidth={1.5} />
                   </div>
 
-                  <div className="mt-6 space-y-4 border-t border-gray-200 pt-6">
-                    <div className="flex items-center gap-3 text-[16px] text-[#1C1C1C]">
-                      <Phone className="h-5 w-5 text-[#005864]" />
-                      <span>{isPurchased ? "(555) 349-8821" : "(555) ***-****"}</span>
+                  <div className="flex items-center justify-between rounded-[12px] bg-[rgba(0,88,100,0.06)] px-5 py-4">
+                    <div className="min-w-0">
+                      <p className="text-[16px] font-semibold capitalize leading-5 text-[#005864]">
+                        Email
+                      </p>
+                      <p className="mt-1 break-all text-[16px] leading-5 text-[rgba(24,24,24,0.8)]">
+                        {isPurchased ? "sarah.jenkins@gmail.com" : "s***@gmail.com"}
+                      </p>
                     </div>
-
-                    <div className="flex items-center gap-3 text-[16px] text-[#1C1C1C]">
-                      <Mail className="h-5 w-5 text-[#005864]" />
-                      <span>{isPurchased ? "sarah.jenkins@gmail.com" : "s***@gmail.com"}</span>
-                    </div>
+                    <Mail className="h-6 w-6 shrink-0 text-[rgba(24,24,24,0.8)]" strokeWidth={1.5} />
                   </div>
                 </div>
+              </aside>
 
-                {/* Purchase Button */}
-                <div id="tutorial-purchase-job-btn" className="mt-8">
-                  {isPurchased ? (
-                    <div className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[12px] bg-emerald-600 font-semibold text-white">
-                      <CheckCircle2 size={20} />
-                      <span>Lead Purchased!</span>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsPurchaseModalOpen(true)}
-                      className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white shadow-md transition hover:bg-[#004852]"
-                    >
-                      <span>Purchase Lead</span>
-                    </button>
-                  )}
-                </div>
-              </section>
+              {/* Purchase Button */}
+              <div id="tutorial-purchase-job-btn" className="mt-6 xl:mt-auto">
+                {isPurchased ? (
+                  <div className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-emerald-600 font-semibold text-white">
+                    <CheckCircle2 size={20} />
+                    <span>Lead Purchased!</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsPurchaseModalOpen(true)}
+                    className="h-12 w-full shrink-0 rounded-[12px] bg-[#005864] text-[16px] font-semibold capitalize leading-5 text-white shadow-md transition hover:bg-[#004852]"
+                  >
+                    <span>Purchase Lead</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -361,7 +404,7 @@ export default function TutorialJobDetailPage() {
                 Confirm Purchase
               </h3>
               <p className="mt-2 text-sm text-black/70">
-                Purchase this lead for 15 credits? Credits are non-refundable.
+                Purchase this lead for 35 credits? Credits are non-refundable.
               </p>
             </div>
 
@@ -372,11 +415,11 @@ export default function TutorialJobDetailPage() {
               </div>
               <div className="flex justify-between py-1 text-black/80">
                 <span>Lead Cost:</span>
-                <span className="font-semibold text-red-500">15 Credits</span>
+                <span className="font-semibold text-red-500">35 Credits</span>
               </div>
               <div className="mt-2 border-t border-gray-200 pt-2 flex justify-between font-bold text-[#1C1C1C]">
                 <span>Balance After Purchase:</span>
-                <span className="text-[#005864]">35 Credits</span>
+                <span className="text-[#005864]">15 Credits</span>
               </div>
             </div>
 

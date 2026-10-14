@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeClosed } from "lucide-react"
+import { Eye, EyeClosed, Info } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -252,15 +252,44 @@ export default function LoginForm() {
             />
 
             {isLoginMode === "no" && (
-              <PasswordField
-                label="Confirm Password"
-                showPassword={showConfirmPassword}
-                setShowPassword={setShowConfirmPassword}
-                register={register}
-                fieldName="confirmPassword"
-                isLoading={isLoading}
-                maxLength={32}
-              />
+              <>
+                <PasswordField
+                  label="Confirm Password"
+                  showPassword={showConfirmPassword}
+                  setShowPassword={setShowConfirmPassword}
+                  register={register}
+                  fieldName="confirmPassword"
+                  isLoading={isLoading}
+                  maxLength={32}
+                />
+
+                {/* Onboarding Requirements Disclaimer */}
+                <div className="mb-4 mt-2 flex items-start gap-3 rounded-[14px] border border-[#005864]/20 bg-[#005864]/[0.04] p-3.5 text-left">
+                  <Info size={18} className="mt-0.5 shrink-0 text-[#005864]" />
+                  <div className="text-[13px] leading-[20px] text-[#1C1C1C]">
+                    <p className="font-semibold text-[#005864]">
+                      Onboarding Requirements Disclaimer
+                    </p>
+                    <p className="mt-1 text-black/80">
+                      Before the walkthrough and onboarding begin, please ensure you have the following ready:
+                    </p>
+                    <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[13px] text-black/75">
+                      <li>
+                        <strong className="font-semibold text-[#1C1C1C]">EIN</strong> (Employer Identification Number / Tax Registration)
+                      </li>
+                      <li>
+                        <strong className="font-semibold text-[#1C1C1C]">Valid photo ID</strong> (Driver&apos;s License, State ID, or Passport)
+                      </li>
+                      <li>
+                        For the ID, <strong className="font-semibold text-[#1C1C1C]">support front and back</strong> where applicable.
+                      </li>
+                      <li>
+                        <strong className="font-semibold text-[#1C1C1C]">Primary service</strong> (additional/secondary services can be added later).
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </>
             )}
           </>
         )}

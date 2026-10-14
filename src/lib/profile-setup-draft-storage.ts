@@ -26,6 +26,7 @@ export type ProfileSetupDraft = {
   state: string;
   city: string;
   acceptTerms: boolean;
+  confirmSmsCapable?: boolean;
   profileImage: ProfileSetupDraftImage | null;
 };
 
@@ -92,6 +93,7 @@ function serializeDraft(
     state: values.state ?? "",
     city: values.city ?? "",
     acceptTerms: Boolean(values.acceptTerms),
+    confirmSmsCapable: Boolean(values.confirmSmsCapable),
     profileImage,
   };
 }
@@ -192,5 +194,6 @@ export function draftToProfileSetupFormValues(
     state: draft.state,
     city: draft.city,
     acceptTerms: draft.acceptTerms,
+    confirmSmsCapable: Boolean(draft.confirmSmsCapable),
   };
 }

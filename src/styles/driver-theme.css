@@ -94,15 +94,22 @@
   text-shadow: none !important;
 }
 
-.nexa-driver-popover .driver-popover-prev-btn {
+.nexa-driver-popover .driver-popover-prev-btn,
+.nexa-driver-popover .driver-popover-skip-btn {
   background: #f3f4f6 !important;
   color: #374151 !important;
   border: 1px solid #e5e7eb !important;
 }
 
-.nexa-driver-popover .driver-popover-prev-btn:hover {
+.nexa-driver-popover .driver-popover-prev-btn:hover,
+.nexa-driver-popover .driver-popover-skip-btn:hover {
   background: #e5e7eb !important;
   color: #111827 !important;
+}
+
+.nexa-driver-popover .driver-popover-prev-btn:active,
+.nexa-driver-popover .driver-popover-skip-btn:active {
+  transform: scale(0.97) !important;
 }
 
 .nexa-driver-popover .driver-popover-next-btn {
@@ -119,15 +126,9 @@
 }
 
 .nexa-driver-popover .driver-popover-close-btn {
-  color: #9ca3af !important;
-  padding: 4px !important;
-  border-radius: 8px !important;
-  transition: all 0.15s ease !important;
-}
-
-.nexa-driver-popover .driver-popover-close-btn:hover {
-  color: #111827 !important;
-  background: #f3f4f6 !important;
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .nexa-driver-popover .driver-popover-arrow-side-top {

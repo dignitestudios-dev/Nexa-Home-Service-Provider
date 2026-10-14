@@ -9,6 +9,7 @@ import { ChevronDown, Filter, RefreshCw, Search, Bell } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store/index";
 import { getUserDisplayName, getUserInitials } from "@/lib/parse-user-profile";
+import { markHomeTutorialCompleted } from "@/lib/onboarding-tutorial-storage";
 
 const DUMMY_FEED_JOBS = [
   {
@@ -18,7 +19,7 @@ const DUMMY_FEED_JOBS = [
       "High-pressure pipe burst under kitchen sink. Immediate repair and pipe fitting replacement needed to prevent water damage.",
     type: "Urgent",
     when: "Today",
-    credits: 15,
+    credits: 35,
     location: "Center City, Philadelphia, PA",
   },
   {
@@ -28,7 +29,7 @@ const DUMMY_FEED_JOBS = [
       "Central air conditioner blowing warm air. Compressor making rattling noise and outdoor fan running intermittently.",
     type: "Fixed Price",
     when: "This Week",
-    credits: 20,
+    credits: 35,
     location: "South Philadelphia, PA",
   },
   {
@@ -38,7 +39,7 @@ const DUMMY_FEED_JOBS = [
       "Upgrade 100A residential panel to 200A service with whole-house surge protector and new breaker labeling.",
     type: "Fixed Price",
     when: "Flexible",
-    credits: 25,
+    credits: 30,
     location: "University City, Philadelphia, PA",
   },
   {
@@ -48,7 +49,7 @@ const DUMMY_FEED_JOBS = [
       "Sand, stain, and seal 650 sq ft of red oak flooring in living and dining areas. Satin polyurethane finish.",
     type: "Fixed Price",
     when: "Next Week",
-    credits: 18,
+    credits: 25,
     location: "Fishtown, Philadelphia, PA",
   },
 ];
@@ -59,6 +60,14 @@ export default function TutorialHomePage() {
   const user = useSelector((state: RootState) => state.auth.user);
   const displayName = getUserDisplayName(user) || "Alexander Wright";
   const initials = getUserInitials(displayName) || "AW";
+
+  const handleSkipTutorial = () => {
+    if (driverInstance.current) {
+      driverInstance.current.destroy();
+    }
+    markHomeTutorialCompleted(user?._id);
+    router.replace("/home");
+  };
 
   useEffect(() => {
     const d = driver({
@@ -75,6 +84,28 @@ export default function TutorialHomePage() {
       doneBtnText: "View a Job",
       progressText: "{{current}} of {{total}}",
       overlayClickBehavior: "none",
+      onPopoverRender: (popover, { driver: drv }) => {
+        if (!popover.footerButtons.querySelector(".driver-popover-skip-btn")) {
+          const skipBtn = document.createElement("button");
+          skipBtn.className = "driver-popover-btn driver-popover-skip-btn";
+          skipBtn.type = "button";
+          skipBtn.textContent = "Skip";
+          skipBtn.setAttribute("aria-label", "Skip Tutorial");
+          skipBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            drv.destroy();
+            handleSkipTutorial();
+          };
+          popover.footerButtons.insertBefore(
+            skipBtn,
+            popover.footerButtons.firstChild,
+          );
+        }
+      },
+      onCloseClick: () => {
+        handleSkipTutorial();
+      },
       steps: [
         {
           element: "#tutorial-home-welcome",
@@ -145,7 +176,7 @@ export default function TutorialHomePage() {
         driverInstance.current.destroy();
       }
     };
-  }, [router]);
+  }, [router, user]);
 
   return (
     <div className="min-h-screen overflow-hidden select-none bg-[#ffff] p-3 md:p-5">

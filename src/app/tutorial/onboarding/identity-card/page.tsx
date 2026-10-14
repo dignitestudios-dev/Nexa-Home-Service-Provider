@@ -26,6 +26,14 @@ export default function TutorialIdentityCardPage() {
   const user = useSelector((state: RootState) => state.auth.user);
   const driverInstance = useRef<Driver | null>(null);
 
+  const handleSkipTutorial = () => {
+    if (driverInstance.current) {
+      driverInstance.current.destroy();
+    }
+    markOnboardingTutorialCompleted(user?._id);
+    router.replace("/onboarding/profile-setup");
+  };
+
   useEffect(() => {
     const d = driver({
       showProgress: true,
@@ -41,6 +49,28 @@ export default function TutorialIdentityCardPage() {
       doneBtnText: "Next",
       progressText: "{{current}} of {{total}}",
       overlayClickBehavior: "none",
+      onPopoverRender: (popover, { driver: drv }) => {
+        if (!popover.footerButtons.querySelector(".driver-popover-skip-btn")) {
+          const skipBtn = document.createElement("button");
+          skipBtn.className = "driver-popover-btn driver-popover-skip-btn";
+          skipBtn.type = "button";
+          skipBtn.textContent = "Skip";
+          skipBtn.setAttribute("aria-label", "Skip Tutorial");
+          skipBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            drv.destroy();
+            handleSkipTutorial();
+          };
+          popover.footerButtons.insertBefore(
+            skipBtn,
+            popover.footerButtons.firstChild,
+          );
+        }
+      },
+      onCloseClick: () => {
+        handleSkipTutorial();
+      },
       steps: [
         {
           element: "#tutorial-id-header",

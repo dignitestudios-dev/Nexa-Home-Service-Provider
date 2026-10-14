@@ -9,7 +9,10 @@ import {
   UserRound,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/index";
 import { driver, type Driver } from "driver.js";
+import { markOnboardingTutorialCompleted } from "@/lib/onboarding-tutorial-storage";
 
 const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: false },
@@ -38,7 +41,16 @@ const SAMPLE_MEDIA = [
 
 export default function TutorialPortfolioPage() {
   const router = useRouter();
+  const user = useSelector((state: RootState) => state.auth.user);
   const driverInstance = useRef<Driver | null>(null);
+
+  const handleSkipTutorial = () => {
+    if (driverInstance.current) {
+      driverInstance.current.destroy();
+    }
+    markOnboardingTutorialCompleted(user?._id);
+    router.replace("/onboarding/profile-setup");
+  };
 
   useEffect(() => {
     const d = driver({
@@ -55,6 +67,28 @@ export default function TutorialPortfolioPage() {
       doneBtnText: "Next",
       progressText: "{{current}} of {{total}}",
       overlayClickBehavior: "none",
+      onPopoverRender: (popover, { driver: drv }) => {
+        if (!popover.footerButtons.querySelector(".driver-popover-skip-btn")) {
+          const skipBtn = document.createElement("button");
+          skipBtn.className = "driver-popover-btn driver-popover-skip-btn";
+          skipBtn.type = "button";
+          skipBtn.textContent = "Skip";
+          skipBtn.setAttribute("aria-label", "Skip Tutorial");
+          skipBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            drv.destroy();
+            handleSkipTutorial();
+          };
+          popover.footerButtons.insertBefore(
+            skipBtn,
+            popover.footerButtons.firstChild,
+          );
+        }
+      },
+      onCloseClick: () => {
+        handleSkipTutorial();
+      },
       steps: [
         {
           element: "#tutorial-portfolio-header",

@@ -176,6 +176,13 @@ export const profileSetupSchema = z.object({
   acceptTerms: z
     .boolean()
     .refine((value) => value, "Please accept Terms & Conditions"),
+
+  confirmSmsCapable: z
+    .boolean()
+    .refine(
+      (value) => value === true,
+      "Please confirm that this number can receive SMS, is actively monitored for leads, and is not a landline",
+    ),
 });
 
 export const BUSINESS_DOC_MAX_BYTES = 10 * 1024 * 1024;
