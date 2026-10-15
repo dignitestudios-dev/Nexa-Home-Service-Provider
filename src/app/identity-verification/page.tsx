@@ -383,7 +383,7 @@ export default function IdentityVerificationPage() {
     try {
       const payload = await prepareIdentityCardDocumentsForUpload(data);
       const response = await uploadIdDocsMutation.mutateAsync(payload);
-      toast.fromApiSuccess(response, "Identity card uploaded successfully.");
+      toast.fromApiSuccess(response, "Identity Verification uploaded successfully.");
 
       justSubmittedRef.current = true;
 
@@ -416,7 +416,7 @@ export default function IdentityVerificationPage() {
         }
       }, 2500);
     } catch (error) {
-      toast.fromApiError(error, "Could not upload identity card. Please try again.");
+      toast.fromApiError(error, "Could not upload Identity Verification. Please try again.");
     } finally {
       setIsPreparingUpload(false);
     }

@@ -19,9 +19,9 @@ import { markOnboardingTutorialCompleted } from "@/lib/onboarding-tutorial-stora
 
 const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: true },
-  { label: "Business Documents", icon: FileText, active: false },
+  // { label: "Business Documents", icon: FileText, active: false },
   { label: "Portfolio", icon: BriefcaseBusiness, active: false },
-  { label: "Identity Card", icon: IdCard, active: false },
+  { label: "Identity Verification", icon: IdCard, active: false },
 ];
 
 export default function TutorialProfileSetupPage() {
@@ -88,9 +88,9 @@ export default function TutorialProfileSetupPage() {
         {
           element: "#tutorial-company-details",
           popover: {
-            title: "Company & SMS Phone Details",
+            title: "Company & Phone Details",
             description:
-              "Please provide your company name and an active, SMS-capable phone number.\n\n⚠️ Required Phone Acknowledgement:\n• Must be able to receive SMS notifications\n• Must be actively monitored by whoever is responsible for responding to leads\n• Should not be a landline or company mainline that cannot receive texts\n\nYou must check the confirmation box before proceeding.",
+              "Please provide your company name, an active SMS-capable phone number, and an optional secondary phone number.\n\n⚠️ Required Phone Acknowledgement:\n• Must be able to receive SMS notifications\n• Must be actively monitored by whoever is responsible for responding to leads\n• Should not be a landline or company mainline that cannot receive texts\n\nYou must check the confirmation box before proceeding.",
             side: "top",
             align: "start",
           },
@@ -350,6 +350,45 @@ export default function TutorialProfileSetupPage() {
                           <li>Should not be a landline or company mainline that cannot receive texts.</li>
                         </ul>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Secondary Phone Number (Optional) */}
+                  <div className="mt-4">
+                    <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                      Secondary Phone Number{" "}
+                      <span className="text-xs font-normal text-[#181818]/60">(Optional)</span>
+                    </label>
+                    <div className="mt-1 flex gap-2">
+                      <div className="flex h-12 w-[91px] shrink-0 items-center justify-center rounded-[12px] bg-[#F8F8F8]">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-[5px]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src="/asset/usa.png"
+                              alt="USA flag"
+                              width={21}
+                              height={15}
+                              className="h-[15px] w-[21px] rounded-[2px] object-cover"
+                            />
+                            <span className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
+                              +1
+                            </span>
+                          </div>
+                          <ChevronDown
+                            size={16}
+                            className="text-[rgba(24,24,24,0.8)]"
+                            aria-hidden
+                          />
+                        </div>
+                      </div>
+                      <Input
+                        type="text"
+                        value="(555) 987-6543"
+                        readOnly
+                        placeholder="Add secondary phone number (optional)"
+                        className="h-12 flex-1 rounded-[12px] border-0 bg-[#F8F8F8] px-4 text-[16px] placeholder:text-[rgba(24,24,24,0.8)]"
+                      />
                     </div>
                   </div>
                 </div>

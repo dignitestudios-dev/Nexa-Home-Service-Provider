@@ -48,9 +48,9 @@ import { getRedirectPath } from "@/lib/auth-utils";
 
 const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: true },
-  { label: "Business Documents", icon: FileText, active: false },
+  // { label: "Business Documents", icon: FileText, active: false },
   { label: "Portfolio", icon: BriefcaseBusiness, active: false },
-  { label: "Identity Card", icon: IdCard, active: false },
+  { label: "Identity Verification", icon: IdCard, active: false },
 ];
 
 // ─── Google Maps helpers ──────────────────────────────────────────────────────
@@ -163,6 +163,7 @@ export default function ProfileSetupOnboardingPage() {
       name: user?.name?.trim() ?? "",
       companyName: "",
       phoneNumber: "",
+      secondaryPhone: "",
       services: [],
       overview: "",
       label: "",
@@ -490,6 +491,9 @@ export default function ProfileSetupOnboardingPage() {
         profilePicture: data.profileImage,
         companyName: data.companyName.trim(),
         phone: toE164UsPhone(data.phoneNumber),
+        secondaryPhone: data.secondaryPhone?.trim()
+          ? toE164UsPhone(data.secondaryPhone)
+          : undefined,
         overview: data.overview,
         label: data.label,
         address: [data.address, data.streetName, data.officeNo]
@@ -806,6 +810,64 @@ export default function ProfileSetupOnboardingPage() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              {/* ========================= */}
+              {/* SECONDARY PHONE NUMBER (OPTIONAL) */}
+              {/* ========================= */}
+
+              <div>
+                <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                  Secondary Phone Number{" "}
+                  <span className="text-xs font-normal text-[#181818]/60">(Optional)</span>
+                </label>
+                <div className="mt-1 flex gap-2">
+                  <div className="flex h-12 w-[91px] shrink-0 items-center justify-center rounded-[12px] bg-[#F8F8F8]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-[5px]">
+                        <img
+                          src="/asset/usa.png"
+                          alt="USA flag"
+                          width={21}
+                          height={15}
+                          className="h-[15px] w-[21px] rounded-[2px] object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                        <span className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
+                          +1
+                        </span>
+                      </div>
+                      <ChevronDown
+                        size={16}
+                        className="text-[rgba(24,24,24,0.8)]"
+                        aria-hidden
+                      />
+                    </div>
+                  </div>
+                  <Input
+                    type="text"
+                    inputMode="tel"
+                    placeholder="Add secondary phone number (optional)"
+                    className="h-12 flex-1 rounded-[12px] border-0 bg-[#F8F8F8] px-4 text-[16px] placeholder:text-[rgba(24,24,24,0.8)]"
+                    {...register("secondaryPhone", {
+                      onChange: (event) => {
+                        const formattedValue = formatUsPhoneNumber(
+                          event.target.value,
+                        );
+                        setValue("secondaryPhone", formattedValue, {
+                          shouldValidate: true,
+                        });
+                      },
+                    })}
+                  />
+                </div>
+                {errors.secondaryPhone && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.secondaryPhone.message}
+                  </p>
+                )}
               </div>
 
               {/* ========================= */}

@@ -13,6 +13,7 @@ export type ProfileSetupDraft = {
   name: string;
   companyName: string;
   phoneNumber: string;
+  secondaryPhone?: string;
   services: string[];
   overview: string;
   label: string;
@@ -80,6 +81,7 @@ function serializeDraft(
     name: values.name ?? "",
     companyName: values.companyName ?? "",
     phoneNumber: values.phoneNumber ?? "",
+    secondaryPhone: values.secondaryPhone ?? "",
     services: Array.isArray(values.services) ? values.services : [],
     overview: values.overview ?? "",
     label: values.label ?? "",
@@ -181,6 +183,7 @@ export function draftToProfileSetupFormValues(
     name: draft.name || fallbackName,
     companyName: draft.companyName,
     phoneNumber: draft.phoneNumber,
+    secondaryPhone: draft.secondaryPhone ?? "",
     services: draft.services,
     overview: draft.overview,
     label: draft.label,

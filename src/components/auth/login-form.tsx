@@ -278,14 +278,14 @@ export default function LoginForm() {
                         <strong className="font-semibold text-[#1C1C1C]">EIN</strong> (Employer Identification Number / Tax Registration)
                       </li>
                       <li>
-                        <strong className="font-semibold text-[#1C1C1C]">Valid photo ID</strong> (Driver&apos;s License, State ID, or Passport)
+                        <strong className="font-semibold text-[#1C1C1C]">Valid photo ID</strong>{" "} (Driver&apos;s License, State ID, or Passport)
                       </li>
-                      <li>
+                      {/* <li>
                         For the ID, <strong className="font-semibold text-[#1C1C1C]">support front and back</strong> where applicable.
                       </li>
                       <li>
                         <strong className="font-semibold text-[#1C1C1C]">Primary service</strong> (additional/secondary services can be added later).
-                      </li>
+                      </li> */}
                     </ul>
                   </div>
                 </div>

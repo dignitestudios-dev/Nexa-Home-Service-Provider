@@ -212,7 +212,7 @@ Session state is coordinated across three synchronizing stores:
 3. **Portfolio Showcase (`/onboarding/portfolio`)**:
    - Allows uploading up to 10 photos and videos.
    - Generates local object URL previews, supports video playback indicators, and allows individual removal before submission.
-4. **Identity Card (`/onboarding/identity-card`)**:
+4. **Identity Verification (`/onboarding/identity-card`)**:
    - Captures Front and Back sides of Government ID Card.
    - Upon upload, sets `identityStatus: "pending"` and routes to `/onboarding/id-submitted`.
 

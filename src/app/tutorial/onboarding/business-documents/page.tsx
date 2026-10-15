@@ -20,7 +20,7 @@ const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: false },
   { label: "Business Documents", icon: FileText, active: true },
   { label: "Portfolio", icon: BriefcaseBusiness, active: false },
-  { label: "Identity Card", icon: IdCard, active: false },
+  { label: "Identity Verification", icon: IdCard, active: false },
 ];
 
 const documentFields = [
@@ -180,18 +180,16 @@ export default function TutorialBusinessDocumentsPage() {
               return (
                 <div
                   key={`mobile-${step.label}`}
-                  className={`flex shrink-0 items-center gap-2 rounded-[10px] px-3 py-2 ${
-                    isActive ? "bg-white" : "bg-white/20"
-                  }`}
+                  className={`flex shrink-0 items-center gap-2 rounded-[10px] px-3 py-2 ${isActive ? "bg-white" : "bg-white/20"
+                    }`}
                 >
                   <Icon
                     size={16}
                     className={isActive ? "text-[#005864]" : "text-white/80"}
                   />
                   <span
-                    className={`text-[13px] font-medium ${
-                      isActive ? "text-[#005864]" : "text-white"
-                    }`}
+                    className={`text-[13px] font-medium ${isActive ? "text-[#005864]" : "text-white"
+                      }`}
                   >
                     {step.label}
                   </span>
@@ -214,11 +212,10 @@ export default function TutorialBusinessDocumentsPage() {
                   <div key={step.label} className="flex flex-col">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex h-12 w-12 items-center justify-center rounded-[8px] ${
-                          isActive
+                        className={`flex h-12 w-12 items-center justify-center rounded-[8px] ${isActive
                             ? "bg-white shadow-[0_6px_16px_rgba(0,0,0,0.12)]"
                             : "bg-white/30"
-                        }`}
+                          }`}
                       >
                         <Icon
                           size={23}
@@ -228,9 +225,8 @@ export default function TutorialBusinessDocumentsPage() {
                         />
                       </div>
                       <span
-                        className={`text-[14px] leading-[17px] tracking-[-0.008em] ${
-                          isActive ? "text-white" : "text-white/60"
-                        }`}
+                        className={`text-[14px] leading-[17px] tracking-[-0.008em] ${isActive ? "text-white" : "text-white/60"
+                          }`}
                       >
                         {step.label}
                       </span>

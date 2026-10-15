@@ -16,9 +16,9 @@ import type { RootState } from "@/store/index";
 
 const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: false },
-  { label: "Business Documents", icon: FileText, active: false },
+  // { label: "Business Documents", icon: FileText, active: false },
   { label: "Portfolio", icon: BriefcaseBusiness, active: false },
-  { label: "Identity Card", icon: IdCard, active: true },
+  { label: "Identity Verification", icon: IdCard, active: true },
 ];
 
 export default function TutorialIdentityCardPage() {
@@ -103,6 +103,16 @@ export default function TutorialIdentityCardPage() {
           },
         },
         {
+          element: "#tutorial-id-ein-box",
+          popover: {
+            title: "EIN Document",
+            description:
+              "Upload your official IRS EIN confirmation document or letter (CP 575 or 147C) to verify your registered business entity.",
+            side: "top",
+            align: "center",
+          },
+        },
+        {
           element: "#tutorial-id-submit-btn",
           popover: {
             title: "You’re All Set",
@@ -159,9 +169,8 @@ export default function TutorialIdentityCardPage() {
                   <div key={step.label} className="flex flex-col">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex h-12 w-12 items-center justify-center rounded-[8px] ${
-                          step.active ? "bg-white" : "bg-white/30"
-                        }`}
+                        className={`flex h-12 w-12 items-center justify-center rounded-[8px] ${step.active ? "bg-white" : "bg-white/30"
+                          }`}
                       >
                         <Icon
                           size={23}
@@ -171,9 +180,8 @@ export default function TutorialIdentityCardPage() {
                         />
                       </div>
                       <span
-                        className={`text-[14px] leading-[17px] tracking-[-0.008em] ${
-                          step.active ? "text-white" : "text-white/60"
-                        }`}
+                        className={`text-[14px] leading-[17px] tracking-[-0.008em] ${step.active ? "text-white" : "text-white/60"
+                          }`}
                       >
                         {step.label}
                       </span>
@@ -197,12 +205,10 @@ export default function TutorialIdentityCardPage() {
           <div className="w-full max-w-[496px] pb-6">
             <div id="tutorial-id-header" className="text-center">
               <h1 className="text-[36px] font-semibold leading-[45px] tracking-[-0.82px] text-[#1C1C1C]">
-                Upload Identity Card
+                Upload Verification Documents
               </h1>
               <p className="mt-4 text-[16px] leading-[22px] text-black/80">
-                Please upload a clear photo of your government-issued ID (e.g.,
-                driver&apos;s license, state ID, or passport). This helps us confirm
-                your identity and keep NexaHome safe for everyone.
+                Please upload clear photos of your government-issued ID (front and back) and your official EIN document. This helps us confirm your identity, verify your business, and keep NexaHome safe for everyone.
               </p>
             </div>
 
@@ -238,6 +244,23 @@ export default function TutorialIdentityCardPage() {
                     <File size={24} className="text-[#005864]" />
                     <span className="mt-2 text-[13px] leading-[18px] text-[#1C1C1C]">
                       driver_license_back.jpg
+                    </span>
+                  </div>
+                </div>
+
+                {/* EIN Document */}
+                <div id="tutorial-id-ein-box">
+                  <p className="text-sm font-medium text-[#1C1C1C]">
+                    Upload EIN Document
+                  </p>
+                  <p className="mb-2 mt-1 text-xs text-[#181818]/60">
+                    JPG, PNG or PDF (max 10MB). Files over 10MB cannot be uploaded.
+                  </p>
+
+                  <div className="relative mx-auto flex h-[140px] w-full max-w-[620px] flex-col items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#005864] bg-[#F9FAFA]">
+                    <File size={24} className="text-[#005864]" />
+                    <span className="mt-2 text-[13px] leading-[18px] text-[#1C1C1C]">
+                      ein_verification_letter.pdf
                     </span>
                   </div>
                 </div>

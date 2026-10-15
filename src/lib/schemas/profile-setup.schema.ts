@@ -136,6 +136,16 @@ export const profileSetupSchema = z.object({
       return digits.length === 11 && digits.startsWith("1");
     }, "Enter a valid US phone number (e.g. (202) 555-0156)"),
 
+  secondaryPhone: z
+    .string()
+    .optional()
+    .refine((value) => {
+      if (!value || value.trim() === "") return true;
+      const digits = value.replace(/\D/g, "");
+      if (digits.length === 10) return true;
+      return digits.length === 11 && digits.startsWith("1");
+    }, "Enter a valid US phone number (e.g. (202) 555-0156)"),
+
   services: servicesSchema(SUBSCRIBED_PROFILE_SERVICE_LIMIT),
 
   overview: z
@@ -294,6 +304,8 @@ export const identityCardSchema = z.object({
   idCardFront: idFileSchema,
 
   idCardBack: idFileSchema,
+
+  einDocument: idFileSchema,
 });
 
 export type ProfileSetupFormData = z.input<typeof profileSetupSchema>;

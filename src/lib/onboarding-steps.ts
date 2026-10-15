@@ -7,6 +7,7 @@ export const ONBOARDING_STEPS = [
     path: "/onboarding/profile-setup",
     isComplete: (user: User) => user.isProfileCompleted,
   },
+  /*
   {
     id: "business-docs",
     path: "/onboarding/business-documents",
@@ -15,6 +16,7 @@ export const ONBOARDING_STEPS = [
       user.portfolioMediaUploaded ||
       isIdentityStepComplete(user.identityStatus),
   },
+  */
   {
     id: "portfolio",
     path: "/onboarding/portfolio",
@@ -71,7 +73,10 @@ export function getOnboardingPathStepIndex(pathname: string): number | null {
   const isPostIdentity = ONBOARDING_POST_IDENTITY_PATHS.some(
     (path) => basePath === path || basePath.startsWith(`${path}/`),
   );
-  if (isPostIdentity) return 3;
+  if (isPostIdentity) {
+    const identityIndex = ONBOARDING_STEPS.findIndex((s) => s.id === "identity");
+    return identityIndex >= 0 ? identityIndex : ONBOARDING_STEPS.length - 1;
+  }
 
   return null;
 }
@@ -110,14 +115,17 @@ export function canAccessOnboardingPath(pathname: string, user: User): boolean {
 
   const currentStepIndex = getCurrentOnboardingStepIndex(user);
 
+  const identityStepIndex = ONBOARDING_STEPS.findIndex((s) => s.id === "identity");
   if (
-    pathStepIndex === 3 &&
-    ONBOARDING_STEPS[3].path === basePath &&
+    identityStepIndex >= 0 &&
+    pathStepIndex === identityStepIndex &&
+    ONBOARDING_STEPS[identityStepIndex]?.path === basePath &&
     needsIdentityResubmit(user.identityStatus)
   ) {
     return true;
   }
 
+  /*
   // Always allow accessing business docs if they haven't submitted them
   if (pathStepIndex === 1 && !user.businessDocsSubmitted) {
     return true;
@@ -128,6 +136,7 @@ export function canAccessOnboardingPath(pathname: string, user: User): boolean {
   if (currentStepIndex === 1 && pathStepIndex > 1) {
     return true;
   }
+  */
 
   if (pathStepIndex < currentStepIndex) {
     return false;

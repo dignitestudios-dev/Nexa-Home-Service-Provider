@@ -1,7 +1,7 @@
 export const TUTORIAL_ONBOARDING_PROFILE_PATH =
   "/tutorial/onboarding/profile-setup";
-export const TUTORIAL_ONBOARDING_DOCS_PATH =
-  "/tutorial/onboarding/business-documents";
+// export const TUTORIAL_ONBOARDING_DOCS_PATH =
+//   "/tutorial/onboarding/business-documents";
 export const TUTORIAL_ONBOARDING_PORTFOLIO_PATH =
   "/tutorial/onboarding/portfolio";
 export const TUTORIAL_ONBOARDING_ID_PATH =
