@@ -38,7 +38,7 @@ export function validateProfileImage(
   file: File | null | undefined,
 ): string | null {
   if (!file) {
-    return "Profile picture/logo is required";
+    return null;
   }
 
   return validateProfileImageFile(file, "Image must be 5MB or smaller");
@@ -57,20 +57,17 @@ export function validateOptionalProfileImage(
 const profileImageSchema = z
   .instanceof(File)
   .nullable()
-  .refine((file) => file !== null, {
-    message: "Profile picture/logo is required",
-  })
+  .optional()
   .refine(
-    (file): file is File =>
-      file !== null &&
+    (file) =>
+      !file ||
       PROFILE_IMAGE_MIME_TYPES.includes(
         file.type as (typeof PROFILE_IMAGE_MIME_TYPES)[number],
       ),
     { message: "Only PNG or JPG images are allowed" },
   )
   .refine(
-    (file): file is File =>
-      file !== null && file.size <= PROFILE_IMAGE_MAX_BYTES,
+    (file) => !file || file.size <= PROFILE_IMAGE_MAX_BYTES,
     {
       message: "Image must be 5MB or smaller",
     },

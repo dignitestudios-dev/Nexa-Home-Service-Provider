@@ -229,8 +229,8 @@ export default function TutorialJobDetailPage() {
               </h1>
             </div>
 
-            <span className="flex h-[40px] items-center justify-center rounded-full bg-[#005864] px-5 text-[16px] font-semibold capitalize leading-5 text-white">
-              Available
+            <span className="flex h-[40px] items-center justify-center rounded-full bg-[#005864] px-5 text-[16px] font-semibold leading-5 text-white">
+              {isPurchased ? "Purchased" : "Need an expert right away"}
             </span>
           </div>
 
@@ -251,9 +251,9 @@ export default function TutorialJobDetailPage() {
               <section className="rounded-[12px] bg-[#F8F8F8] px-6 py-6">
                 <div className="flex flex-col gap-3">
                   <InfoRow label="Posted Date:" value="Today, 10:45 AM" />
-                  <InfoRow label="Status:" value="Available" valueClassName="text-[#005864]" />
-                  <InfoRow label="Job Type:" value="Urgent (Today)" />
-                  <InfoRow label="Contact Preferences:" value="Phone Call, SMS" />
+                  <InfoRow label="Status:" value="Need an expert right away" valueClassName="text-[#005864]" />
+                  <InfoRow label="Job Type:" value="One Time" />
+                  <InfoRow label="Contact Preferences:" value="Phone, SMS" />
                   <InfoRow label="Credits:" value="35" />
                 </div>
               </section>
@@ -296,7 +296,7 @@ export default function TutorialJobDetailPage() {
                     <p className="mt-2 max-w-[413px] break-words text-[16px] leading-5 text-[rgba(24,24,24,0.8)]">
                       {isPurchased
                         ? "1420 Market Street, Apt 4B, Philadelphia, PA 19102"
-                        : "Center City, Philadelphia, PA (Masked)"}
+                        : "*******, Philadelphia, PA (Masked)"}
                     </p>
                   </div>
                   <button
@@ -324,10 +324,7 @@ export default function TutorialJobDetailPage() {
                 </div>
 
                 <p className="mx-auto mt-5 max-w-[350px] break-all text-center text-[20px] font-bold capitalize leading-[30px] text-black">
-                  Sarah J.
-                </p>
-                <p className="mt-1 text-center text-sm font-medium text-black/60">
-                  Verified Homeowner
+                  {isPurchased ? "Sarah Jenkins" : "Sarah ******"}
                 </p>
 
                 <div className="mt-6 flex flex-col gap-2">
@@ -337,7 +334,7 @@ export default function TutorialJobDetailPage() {
                         Phone Number
                       </p>
                       <p className="mt-1 text-[16px] capitalize leading-5 text-[rgba(24,24,24,0.8)]">
-                        {isPurchased ? "(555) 349-8821" : "(555) ***-****"}
+                        {isPurchased ? "(555) 349-8821" : "************"}
                       </p>
                     </div>
                     <Phone className="h-6 w-6 text-[rgba(24,24,24,0.8)]" strokeWidth={1.5} />
@@ -349,7 +346,7 @@ export default function TutorialJobDetailPage() {
                         Email
                       </p>
                       <p className="mt-1 break-all text-[16px] leading-5 text-[rgba(24,24,24,0.8)]">
-                        {isPurchased ? "sarah.jenkins@gmail.com" : "s***@gmail.com"}
+                        {isPurchased ? "sarah.jenkins@gmail.com" : "*********************"}
                       </p>
                     </div>
                     <Mail className="h-6 w-6 shrink-0 text-[rgba(24,24,24,0.8)]" strokeWidth={1.5} />

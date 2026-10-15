@@ -31,7 +31,7 @@ import {
   PROFILE_OVERVIEW_MAX_LENGTH,
   getMaxProfileServices,
   OFFICE_NO_MAX_LENGTH,
-  validateProfileImage,
+  validateOptionalProfileImage,
   ZIP_CODE_MAX_LENGTH,
 } from "@/lib/schemas/profile-setup.schema";
 import { toast } from "@/lib/toast";
@@ -201,7 +201,6 @@ export default function ProfileSetupOnboardingPage() {
   const isDraftReadyRef = useRef(false);
 
   const isAllRequiredFilled = useMemo(() => {
-    const hasProfileImage = Boolean(profileFile);
     const hasCompanyName = Boolean(companyName?.trim());
     const digits = (phoneNumber ?? "").replace(/\D/g, "");
     const hasValidPhone =
@@ -218,7 +217,6 @@ export default function ProfileSetupOnboardingPage() {
     const hasAcceptedTerms = Boolean(acceptTerms);
 
     return (
-      hasProfileImage &&
       hasCompanyName &&
       hasValidPhone &&
       hasConfirmedSms &&
@@ -230,7 +228,6 @@ export default function ProfileSetupOnboardingPage() {
       hasAcceptedTerms
     );
   }, [
-    profileFile,
     companyName,
     phoneNumber,
     confirmSmsCapable,
@@ -318,7 +315,17 @@ export default function ProfileSetupOnboardingPage() {
   }, [profilePreviewUrl]);
 
   const handleProfileImageSelect = (file: File | null) => {
-    const validationError = validateProfileImage(file);
+    if (!file) {
+      clearErrors("profileImage");
+      setValue("profileImage", null, { shouldValidate: true });
+      void saveProfileSetupDraft(
+        { ...getValues(), profileImage: null },
+        userId,
+      );
+      return;
+    }
+
+    const validationError = validateOptionalProfileImage(file);
     if (validationError) {
       toast.error(validationError);
       setValue("profileImage", null, { shouldValidate: true });
@@ -327,7 +334,7 @@ export default function ProfileSetupOnboardingPage() {
     }
 
     clearErrors("profileImage");
-    setValue("profileImage", file!, { shouldValidate: true });
+    setValue("profileImage", file, { shouldValidate: true });
     void saveProfileSetupDraft(
       { ...getValues(), profileImage: file },
       userId,
@@ -475,8 +482,6 @@ export default function ProfileSetupOnboardingPage() {
   // =========================
 
   const onSubmit = async (data: ProfileSetupFormData) => {
-    if (!data.profileImage) return;
-
     if (data.services.length > maxServices) {
       setError("services", {
         type: "manual",
@@ -488,7 +493,8 @@ export default function ProfileSetupOnboardingPage() {
     try {
       const response = await completeProfileMutation.mutateAsync({
         name: data.name.trim(),
-        profilePicture: data.profileImage,
+        profilePicture:
+          data.profileImage instanceof File ? data.profileImage : undefined,
         companyName: data.companyName.trim(),
         phone: toE164UsPhone(data.phoneNumber),
         secondaryPhone: data.secondaryPhone?.trim()
@@ -663,12 +669,25 @@ export default function ProfileSetupOnboardingPage() {
                 onClick={() => fileInputRef.current?.click()}
                 className="mt-3 text-[16px] font-medium leading-5 text-[#1C1C1C] underline"
               >
-                Upload Profile Picture/Logo <span className="text-red-500">*</span>
+                Upload Profile Picture/Logo
               </button>
 
               <p className="mt-1 text-center text-xs text-[#181818]/60">
-                PNG or JPG only, max 5MB <span className="text-red-500">(Required)</span>
+                PNG or JPG only, max 5MB (Optional)
               </p>
+
+              {profileFile && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleProfileImageSelect(null);
+                  }}
+                  className="mt-1 text-xs text-red-500 hover:underline"
+                >
+                  Remove picture
+                </button>
+              )}
 
               {errors.profileImage && (
                 <p className="mt-2 text-sm text-red-500">
@@ -800,7 +819,7 @@ export default function ProfileSetupOnboardingPage() {
                       <ul className="mt-1.5 list-disc space-y-1 pl-4.5 text-[13px] text-black/75">
                         <li>Can receive SMS.</li>
                         <li>Is actively monitored by whoever is responsible for responding to leads.</li>
-                        <li>Should not be a landline or company mainline that cannot receive texts.</li>
+                        <li>Is not a landline or company mainline that cannot receive texts.</li>
                       </ul>
                     </div>
                   </label>

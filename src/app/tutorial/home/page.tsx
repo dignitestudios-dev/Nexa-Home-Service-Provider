@@ -17,10 +17,10 @@ const DUMMY_FEED_JOBS = [
     title: "Plumbing Services",
     description:
       "High-pressure pipe burst under kitchen sink. Immediate repair and pipe fitting replacement needed to prevent water damage.",
-    type: "Urgent",
-    when: "Today",
+    type: "One Time",
+    when: "Need an expert right away",
     credits: 35,
-    location: "Center City, Philadelphia, PA",
+    location: "*******, Philadelphia, PA",
   },
   {
     id: "hvac-compressor-repair",

@@ -254,11 +254,11 @@ export default function TutorialProfileSetupPage() {
               </div>
 
               <span className="mt-3 text-[16px] font-medium leading-5 text-[#1C1C1C] underline">
-                Upload Profile Picture/Logo <span className="text-red-500">*</span>
+                Upload Profile Picture/Logo
               </span>
 
               <p className="mt-1 text-center text-xs text-[#181818]/60">
-                PNG or JPG only, max 5MB <span className="text-red-500">(Required)</span>
+                PNG or JPG only, max 5MB (Optional)
               </p>
             </div>
 
@@ -347,7 +347,7 @@ export default function TutorialProfileSetupPage() {
                         <ul className="mt-1.5 list-disc space-y-1 pl-4.5 text-[13px] text-black/75">
                           <li>Can receive SMS.</li>
                           <li>Is actively monitored by whoever is responsible for responding to leads.</li>
-                          <li>Should not be a landline or company mainline that cannot receive texts.</li>
+                          <li>Is not a landline or company mainline that cannot receive texts.</li>
                         </ul>
                       </div>
                     </div>
