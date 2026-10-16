@@ -386,16 +386,17 @@ export default function EditProfileDialog({
                 className="h-[120px] w-full resize-none bg-transparent text-[16px] leading-5 text-[#1C1C1C] placeholder:text-black/55 outline-none"
               />
             </div>
-            <div className="mt-2 flex items-center justify-between">
-              {errors.overview ? (
-                <p className="text-sm text-red-500">{errors.overview.message}</p>
-              ) : (
-                <span />
-              )}
-              <span className="text-[14px] text-black/50">
+            <div className="mt-1.5 flex items-start justify-between gap-3">
+              <p className="text-[13px] leading-5 text-black/60">
+                Tell homeowners about yourself, your company, and the services you offer.
+              </p>
+              <span className="shrink-0 text-right text-[14px] leading-5 text-black/50">
                 {overview.length}/{PROFILE_OVERVIEW_MAX_LENGTH}
               </span>
             </div>
+            {errors.overview ? (
+              <p className="mt-1 text-sm text-red-500">{errors.overview.message}</p>
+            ) : null}
           </div>
 
           <div ref={serviceDropdownRef}>

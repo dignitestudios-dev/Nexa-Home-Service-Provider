@@ -1012,16 +1012,20 @@ export default function ProfileSetupOnboardingPage() {
                   />
                 </div>
 
-                <div className="mt-2 flex items-center justify-between">
-                  {errors.overview && (
-                    <p className="text-sm text-red-500">
-                      {errors.overview.message}
-                    </p>
-                  )}
-                  <p className="ml-auto text-right text-[16px] leading-5 text-black/60">
+                <div className="mt-1.5 flex items-start justify-between gap-3">
+                  <p className="text-[13px] leading-5 text-black/60">
+                    Tell homeowners about yourself, your company, and the services you offer.
+                  </p>
+                  <p className="shrink-0 text-right text-[16px] leading-5 text-black/60">
                     {overview.length}/{PROFILE_OVERVIEW_MAX_LENGTH}
                   </p>
                 </div>
+
+                {errors.overview && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.overview.message}
+                  </p>
+                )}
               </div>
 
               {/* ========================= */}

@@ -407,7 +407,7 @@ export default function TutorialProfileSetupPage() {
                   <ChevronDown size={18} className="text-black/70" />
                 </div>
                 <p className="mt-1.5 text-[13px] leading-5 text-black/60">
-                  Additional or secondary services can easily be added later after selecting your primary service.
+                  Additional or secondary services can be added later after selecting your primary service.
                 </p>
               </div>
 
@@ -427,9 +427,12 @@ export default function TutorialProfileSetupPage() {
                   />
                 </div>
 
-                <div className="mt-2 flex items-center justify-between">
-                  <p className="ml-auto text-right text-[16px] leading-5 text-black/60">
-                    152/1000
+                <div className="mt-1.5 flex items-start justify-between gap-3">
+                  <p className="text-[13px] leading-5 text-black/60">
+                    Tell homeowners about yourself, your company, and the services you offer.
+                  </p>
+                  <p className="shrink-0 text-right text-[16px] leading-5 text-black/60">
+                    152/1500
                   </p>
                 </div>
               </div>
