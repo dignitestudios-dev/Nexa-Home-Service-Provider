@@ -51,7 +51,7 @@ export const settingsMenu: SettingsMenuItem[] = [
     label: "Ad Promotion",
     href: "/profile-settings/ad-promotion",
     icon: Megaphone,
-    disabled: true,
+    // disabled: true,
   },
   { label: "Addresses", href: "/profile-settings/addresses", icon: MapPin },
   {
