@@ -31,7 +31,7 @@ import {
   PROFILE_OVERVIEW_MAX_LENGTH,
   getMaxProfileServices,
   OFFICE_NO_MAX_LENGTH,
-  validateProfileImage,
+  validateOptionalProfileImage,
   ZIP_CODE_MAX_LENGTH,
 } from "@/lib/schemas/profile-setup.schema";
 import { toast } from "@/lib/toast";
@@ -48,9 +48,9 @@ import { getRedirectPath } from "@/lib/auth-utils";
 
 const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: true },
-  { label: "Business Documents", icon: FileText, active: false },
+  // { label: "Business Documents", icon: FileText, active: false },
   { label: "Portfolio", icon: BriefcaseBusiness, active: false },
-  { label: "Identity Card", icon: IdCard, active: false },
+  { label: "Identity Verification", icon: IdCard, active: false },
 ];
 
 // ─── Google Maps helpers ──────────────────────────────────────────────────────
@@ -163,6 +163,7 @@ export default function ProfileSetupOnboardingPage() {
       name: user?.name?.trim() ?? "",
       companyName: "",
       phoneNumber: "",
+      secondaryPhone: "",
       services: [],
       overview: "",
       label: "",
@@ -176,6 +177,7 @@ export default function ProfileSetupOnboardingPage() {
       state: "",
       city: "",
       acceptTerms: false,
+      confirmSmsCapable: false,
     },
   });
 
@@ -186,11 +188,11 @@ export default function ProfileSetupOnboardingPage() {
   const profileFile = watch("profileImage");
   const companyName = watch("companyName");
   const phoneNumber = watch("phoneNumber");
+  const confirmSmsCapable = watch("confirmSmsCapable");
   const selectedServices = watch("services");
   const overview = watch("overview");
   const label = watch("label");
   const address = watch("address");
-  const streetName = watch("streetName");
   const zipCode = watch("zipCode");
   const acceptTerms = watch("acceptTerms");
   const latitude = watch("latitude");
@@ -199,11 +201,11 @@ export default function ProfileSetupOnboardingPage() {
   const isDraftReadyRef = useRef(false);
 
   const isAllRequiredFilled = useMemo(() => {
-    const hasProfileImage = Boolean(profileFile);
     const hasCompanyName = Boolean(companyName?.trim());
     const digits = (phoneNumber ?? "").replace(/\D/g, "");
     const hasValidPhone =
       digits.length === 10 || (digits.length === 11 && digits.startsWith("1"));
+    const hasConfirmedSms = Boolean(confirmSmsCapable);
     const hasServices =
       Array.isArray(selectedServices) && selectedServices.length > 0;
     const hasOverview = Boolean(
@@ -211,33 +213,28 @@ export default function ProfileSetupOnboardingPage() {
     );
     const hasLabel = Boolean(label?.trim() && label.trim().length >= 2);
     const hasAddress = Boolean(address?.trim() && address.trim().length >= 3);
-    const hasStreetName = Boolean(
-      streetName?.trim() && streetName.trim().length >= 2,
-    );
     const hasZipCode = Boolean(zipCode?.trim() && zipCode.trim().length >= 3);
     const hasAcceptedTerms = Boolean(acceptTerms);
 
     return (
-      hasProfileImage &&
       hasCompanyName &&
       hasValidPhone &&
+      hasConfirmedSms &&
       hasServices &&
       hasOverview &&
       hasLabel &&
       hasAddress &&
-      hasStreetName &&
       hasZipCode &&
       hasAcceptedTerms
     );
   }, [
-    profileFile,
     companyName,
     phoneNumber,
+    confirmSmsCapable,
     selectedServices,
     overview,
     label,
     address,
-    streetName,
     zipCode,
     acceptTerms,
   ]);
@@ -318,7 +315,17 @@ export default function ProfileSetupOnboardingPage() {
   }, [profilePreviewUrl]);
 
   const handleProfileImageSelect = (file: File | null) => {
-    const validationError = validateProfileImage(file);
+    if (!file) {
+      clearErrors("profileImage");
+      setValue("profileImage", null, { shouldValidate: true });
+      void saveProfileSetupDraft(
+        { ...getValues(), profileImage: null },
+        userId,
+      );
+      return;
+    }
+
+    const validationError = validateOptionalProfileImage(file);
     if (validationError) {
       toast.error(validationError);
       setValue("profileImage", null, { shouldValidate: true });
@@ -327,7 +334,7 @@ export default function ProfileSetupOnboardingPage() {
     }
 
     clearErrors("profileImage");
-    setValue("profileImage", file!, { shouldValidate: true });
+    setValue("profileImage", file, { shouldValidate: true });
     void saveProfileSetupDraft(
       { ...getValues(), profileImage: file },
       userId,
@@ -475,8 +482,6 @@ export default function ProfileSetupOnboardingPage() {
   // =========================
 
   const onSubmit = async (data: ProfileSetupFormData) => {
-    if (!data.profileImage) return;
-
     if (data.services.length > maxServices) {
       setError("services", {
         type: "manual",
@@ -488,12 +493,18 @@ export default function ProfileSetupOnboardingPage() {
     try {
       const response = await completeProfileMutation.mutateAsync({
         name: data.name.trim(),
-        profilePicture: data.profileImage,
+        profilePicture:
+          data.profileImage instanceof File ? data.profileImage : undefined,
         companyName: data.companyName.trim(),
         phone: toE164UsPhone(data.phoneNumber),
+        secondaryPhone: data.secondaryPhone?.trim()
+          ? toE164UsPhone(data.secondaryPhone)
+          : undefined,
         overview: data.overview,
         label: data.label,
-        address: `${data.address}, ${data.streetName}, ${data.officeNo}`,
+        address: [data.address, data.streetName, data.officeNo]
+          .filter(Boolean)
+          .join(", "),
         country: data.country || "United States",
         state: data.state || "Pennsylvania",
         city: data.city || "Philadelphia",
@@ -658,12 +669,25 @@ export default function ProfileSetupOnboardingPage() {
                 onClick={() => fileInputRef.current?.click()}
                 className="mt-3 text-[16px] font-medium leading-5 text-[#1C1C1C] underline"
               >
-                Upload Profile Picture/Logo*
+                Upload Profile Picture/Logo
               </button>
 
               <p className="mt-1 text-center text-xs text-[#181818]/60">
-                PNG or JPG only, max 5MB (required)
+                PNG or JPG only, max 5MB (Optional)
               </p>
+
+              {profileFile && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleProfileImageSelect(null);
+                  }}
+                  className="mt-1 text-xs text-red-500 hover:underline"
+                >
+                  Remove picture
+                </button>
+              )}
 
               {errors.profileImage && (
                 <p className="mt-2 text-sm text-red-500">
@@ -701,7 +725,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div>
                 <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                  Company Name*
+                  Company Name <span className="text-red-500">*</span>
                 </label>
                 <Input
                   {...register("companyName")}
@@ -722,7 +746,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div>
                 <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                  Phone Number
+                  Phone Number <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-1 flex gap-2">
                   <div className="flex h-12 w-[91px] shrink-0 items-center justify-center rounded-[12px] bg-[#F8F8F8]">
@@ -771,10 +795,98 @@ export default function ProfileSetupOnboardingPage() {
                     {errors.phoneNumber.message}
                   </p>
                 )}
-                <p className="mt-1.5 text-[13px] leading-5 text-black/60">
-                  <span className="font-semibold text-black/80">Important:</span>{" "}
-                  Please provide a phone number that can receive SMS/text messages. Do not use a company main line or landline.
-                </p>
+
+                <div className="mt-3 rounded-[14px] border border-[#005864]/20 bg-[#005864]/[0.03] p-4 text-left">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="confirm-sms-capable"
+                      className="mt-1 h-5 w-5 shrink-0 rounded-[4px] border border-[#181818]/60 accent-[#005864]"
+                      {...register("confirmSmsCapable")}
+                      onChange={(e) => {
+                        setValue("confirmSmsCapable", e.target.checked, {
+                          shouldValidate: true,
+                        });
+                      }}
+                    />
+                    <div className="text-[13px] leading-[20px] text-[#1C1C1C]">
+                      <p className="font-semibold text-[#005864]">
+                        SMS & Lead Monitoring Confirmation <span className="text-red-500">*</span>
+                      </p>
+                      <p className="mt-1 text-black/80">
+                        I acknowledge and confirm that the number entered:
+                      </p>
+                      <ul className="mt-1.5 list-disc space-y-1 pl-4.5 text-[13px] text-black/75">
+                        <li>Can receive SMS.</li>
+                        <li>Is actively monitored by whoever is responsible for responding to leads.</li>
+                        <li>Is not a landline or company mainline that cannot receive texts.</li>
+                      </ul>
+                    </div>
+                  </label>
+                  {errors.confirmSmsCapable && (
+                    <p className="mt-2 text-xs font-medium text-red-500">
+                      {errors.confirmSmsCapable.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* ========================= */}
+              {/* SECONDARY PHONE NUMBER (OPTIONAL) */}
+              {/* ========================= */}
+
+              <div>
+                <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
+                  Secondary Phone Number{" "}
+                  <span className="text-xs font-normal text-[#181818]/60">(Optional)</span>
+                </label>
+                <div className="mt-1 flex gap-2">
+                  <div className="flex h-12 w-[91px] shrink-0 items-center justify-center rounded-[12px] bg-[#F8F8F8]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-[5px]">
+                        <img
+                          src="/asset/usa.png"
+                          alt="USA flag"
+                          width={21}
+                          height={15}
+                          className="h-[15px] w-[21px] rounded-[2px] object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                        <span className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
+                          +1
+                        </span>
+                      </div>
+                      <ChevronDown
+                        size={16}
+                        className="text-[rgba(24,24,24,0.8)]"
+                        aria-hidden
+                      />
+                    </div>
+                  </div>
+                  <Input
+                    type="text"
+                    inputMode="tel"
+                    placeholder="Add secondary phone number (optional)"
+                    className="h-12 flex-1 rounded-[12px] border-0 bg-[#F8F8F8] px-4 text-[16px] placeholder:text-[rgba(24,24,24,0.8)]"
+                    {...register("secondaryPhone", {
+                      onChange: (event) => {
+                        const formattedValue = formatUsPhoneNumber(
+                          event.target.value,
+                        );
+                        setValue("secondaryPhone", formattedValue, {
+                          shouldValidate: true,
+                        });
+                      },
+                    })}
+                  />
+                </div>
+                {errors.secondaryPhone && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.secondaryPhone.message}
+                  </p>
+                )}
               </div>
 
               {/* ========================= */}
@@ -783,7 +895,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div ref={serviceDropdownRef}>
                 <label className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
-                  Select Service*
+                  Select Service <span className="text-red-500">*</span>
                 </label>
 
                 <button
@@ -799,6 +911,10 @@ export default function ProfileSetupOnboardingPage() {
                     }`}
                   />
                 </button>
+
+                <p className="mt-1.5 text-[13px] leading-5 text-black/60">
+                  Additional or secondary services can be added later after selecting your primary service.
+                </p>
 
                 {errors.services && (
                   <p className="mt-1 text-sm text-red-500">
@@ -884,7 +1000,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div>
                 <label className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
-                  Overview*
+                  Overview <span className="text-red-500">*</span>
                 </label>
 
                 <div className="mt-1 rounded-[12px] bg-[#F8F8F8] p-3">
@@ -896,16 +1012,20 @@ export default function ProfileSetupOnboardingPage() {
                   />
                 </div>
 
-                <div className="mt-2 flex items-center justify-between">
-                  {errors.overview && (
-                    <p className="text-sm text-red-500">
-                      {errors.overview.message}
-                    </p>
-                  )}
-                  <p className="ml-auto text-right text-[16px] leading-5 text-black/60">
+                <div className="mt-1.5 flex items-start justify-between gap-3">
+                  <p className="text-[13px] leading-5 text-black/60">
+                    Tell homeowners about yourself, your company, and the services you offer.
+                  </p>
+                  <p className="shrink-0 text-right text-[16px] leading-5 text-black/60">
                     {overview.length}/{PROFILE_OVERVIEW_MAX_LENGTH}
                   </p>
                 </div>
+
+                {errors.overview && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.overview.message}
+                  </p>
+                )}
               </div>
 
               {/* ========================= */}
@@ -916,7 +1036,7 @@ export default function ProfileSetupOnboardingPage() {
                 {/* Map search input */}
                 <div>
                   <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                    Search Location *
+                    Search Location <span className="text-red-500">*</span>
                   </label>
                   <input
                     ref={searchInputRef}
@@ -947,7 +1067,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div>
                 <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                  Label This Address*
+                  Label This Address <span className="text-red-500">*</span>
                 </label>
                 <Input
                   maxLength={50}
@@ -966,7 +1086,7 @@ export default function ProfileSetupOnboardingPage() {
 
               <div>
                 <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                  Address*
+                  Address <span className="text-red-500">*</span>
                 </label>
                 <Input
                   {...register("address")}
@@ -975,23 +1095,6 @@ export default function ProfileSetupOnboardingPage() {
                 {errors.address && (
                   <p className="mt-1 text-sm text-red-500">
                     {errors.address.message}
-                  </p>
-                )}
-              </div>
-
-              {/* STREET */}
-
-              <div>
-                <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                  Street Name*
-                </label>
-                <Input
-                  {...register("streetName")}
-                  className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4"
-                />
-                {errors.streetName && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.streetName.message}
                   </p>
                 )}
               </div>
@@ -1024,7 +1127,7 @@ export default function ProfileSetupOnboardingPage() {
 
                 <div>
                   <label className="text-[16px] font-medium leading-[22px] tracking-[-0.408px] text-[#1C1C1C]">
-                    Zip Code*
+                    Zip Code <span className="text-red-500">*</span>
                   </label>
                   <Input
                     {...register("zipCode", {

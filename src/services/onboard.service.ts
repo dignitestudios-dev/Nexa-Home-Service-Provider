@@ -20,6 +20,7 @@ export interface CompleteProfilePayload {
   referralCode?: string;
   companyName: string;
   phone?: string;
+  secondaryPhone?: string;
 
   label: string;
   address: string;
@@ -49,6 +50,8 @@ export interface UploadIdDocsPayload {
   idCardFront?: File;
 
   idCardBack?: File;
+
+  einDocument?: File;
 }
 
 // =========================
@@ -77,6 +80,10 @@ export const profileSetupService = {
 
     if (payload.phone) {
       formData.append("phone", payload.phone);
+    }
+
+    if (payload.secondaryPhone) {
+      formData.append("secondaryPhone", payload.secondaryPhone);
     }
 
     formData.append("label", payload.label);
@@ -164,6 +171,10 @@ export const profileSetupService = {
 
     if (payload.idCardBack) {
       formData.append("idCardBack", payload.idCardBack);
+    }
+
+    if (payload.einDocument) {
+      formData.append("einDocument", payload.einDocument);
     }
 
     const { data } = await API.post("/user/upload-id-docs", formData, {

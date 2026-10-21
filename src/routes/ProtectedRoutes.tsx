@@ -19,6 +19,11 @@ import {
   hasCompletedWalkthrough,
   isWalkthroughPath,
 } from "@/lib/walkthrough-storage";
+import {
+  hasCompletedHomeTutorial,
+  isTutorialPath,
+  TUTORIAL_HOME_PATH,
+} from "@/lib/onboarding-tutorial-storage";
 import { isPasswordResetFlow } from "@/lib/reset-password-storage";
 import {
   getPendingVerifyEmail,
@@ -110,6 +115,10 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       return;
     }
 
+    if (isTutorialPath(pathname)) {
+      return;
+    }
+
     if (
       isPasswordResetFlow() &&
       (isPublicAuthPath || isResetPasswordPath(pathname))
@@ -177,10 +186,14 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     }
 
     // If currently on /identity-verification:
-    // Approved users are redirected to home dashboard.
+    // Approved users are redirected to home dashboard (or home tutorial if not completed).
     if (pathname === "/identity-verification") {
       if (isIdentityApproved) {
-        router.replace("/home");
+        if (!hasCompletedHomeTutorial(effectiveUser._id)) {
+          router.replace(TUTORIAL_HOME_PATH);
+        } else {
+          router.replace("/home");
+        }
       }
       return;
     }
@@ -200,6 +213,13 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     ) {
       router.replace(getNextOnboardingStepPath(effectiveUser));
       return;
+    }
+
+    if (isIdentityApproved && !hasCompletedHomeTutorial(effectiveUser._id)) {
+      if (pathname === "/home" || pathname.startsWith("/home/")) {
+        router.replace(TUTORIAL_HOME_PATH);
+        return;
+      }
     }
 
     if (redirectPath === "/home" && isOnHomeArea) {

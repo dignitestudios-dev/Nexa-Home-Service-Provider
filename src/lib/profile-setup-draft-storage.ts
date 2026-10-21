@@ -13,6 +13,7 @@ export type ProfileSetupDraft = {
   name: string;
   companyName: string;
   phoneNumber: string;
+  secondaryPhone?: string;
   services: string[];
   overview: string;
   label: string;
@@ -26,6 +27,7 @@ export type ProfileSetupDraft = {
   state: string;
   city: string;
   acceptTerms: boolean;
+  confirmSmsCapable?: boolean;
   profileImage: ProfileSetupDraftImage | null;
 };
 
@@ -79,6 +81,7 @@ function serializeDraft(
     name: values.name ?? "",
     companyName: values.companyName ?? "",
     phoneNumber: values.phoneNumber ?? "",
+    secondaryPhone: values.secondaryPhone ?? "",
     services: Array.isArray(values.services) ? values.services : [],
     overview: values.overview ?? "",
     label: values.label ?? "",
@@ -92,6 +95,7 @@ function serializeDraft(
     state: values.state ?? "",
     city: values.city ?? "",
     acceptTerms: Boolean(values.acceptTerms),
+    confirmSmsCapable: Boolean(values.confirmSmsCapable),
     profileImage,
   };
 }
@@ -179,6 +183,7 @@ export function draftToProfileSetupFormValues(
     name: draft.name || fallbackName,
     companyName: draft.companyName,
     phoneNumber: draft.phoneNumber,
+    secondaryPhone: draft.secondaryPhone ?? "",
     services: draft.services,
     overview: draft.overview,
     label: draft.label,
@@ -192,5 +197,6 @@ export function draftToProfileSetupFormValues(
     state: draft.state,
     city: draft.city,
     acceptTerms: draft.acceptTerms,
+    confirmSmsCapable: Boolean(draft.confirmSmsCapable),
   };
 }

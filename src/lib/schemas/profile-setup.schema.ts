@@ -38,7 +38,7 @@ export function validateProfileImage(
   file: File | null | undefined,
 ): string | null {
   if (!file) {
-    return "Profile picture/logo is required";
+    return null;
   }
 
   return validateProfileImageFile(file, "Image must be 5MB or smaller");
@@ -57,20 +57,17 @@ export function validateOptionalProfileImage(
 const profileImageSchema = z
   .instanceof(File)
   .nullable()
-  .refine((file) => file !== null, {
-    message: "Profile picture/logo is required",
-  })
+  .optional()
   .refine(
-    (file): file is File =>
-      file !== null &&
+    (file) =>
+      !file ||
       PROFILE_IMAGE_MIME_TYPES.includes(
         file.type as (typeof PROFILE_IMAGE_MIME_TYPES)[number],
       ),
     { message: "Only PNG or JPG images are allowed" },
   )
   .refine(
-    (file): file is File =>
-      file !== null && file.size <= PROFILE_IMAGE_MAX_BYTES,
+    (file) => !file || file.size <= PROFILE_IMAGE_MAX_BYTES,
     {
       message: "Image must be 5MB or smaller",
     },
@@ -136,6 +133,16 @@ export const profileSetupSchema = z.object({
       return digits.length === 11 && digits.startsWith("1");
     }, "Enter a valid US phone number (e.g. (202) 555-0156)"),
 
+  secondaryPhone: z
+    .string()
+    .optional()
+    .refine((value) => {
+      if (!value || value.trim() === "") return true;
+      const digits = value.replace(/\D/g, "");
+      if (digits.length === 10) return true;
+      return digits.length === 11 && digits.startsWith("1");
+    }, "Enter a valid US phone number (e.g. (202) 555-0156)"),
+
   services: servicesSchema(SUBSCRIBED_PROFILE_SERVICE_LIMIT),
 
   overview: z
@@ -150,7 +157,7 @@ export const profileSetupSchema = z.object({
 
   address: z.string().min(3, "Address is required"),
 
-  streetName: z.string().min(2, "Street name is required"),
+  streetName: z.string().optional(),
 
   officeNo: z
     .string()
@@ -176,6 +183,13 @@ export const profileSetupSchema = z.object({
   acceptTerms: z
     .boolean()
     .refine((value) => value, "Please accept Terms & Conditions"),
+
+  confirmSmsCapable: z
+    .boolean()
+    .refine(
+      (value) => value === true,
+      "Please confirm that this number can receive SMS, is actively monitored for leads, and is not a landline",
+    ),
 });
 
 export const BUSINESS_DOC_MAX_BYTES = 10 * 1024 * 1024;
@@ -287,6 +301,8 @@ export const identityCardSchema = z.object({
   idCardFront: idFileSchema,
 
   idCardBack: idFileSchema,
+
+  einDocument: idFileSchema,
 });
 
 export type ProfileSetupFormData = z.input<typeof profileSetupSchema>;

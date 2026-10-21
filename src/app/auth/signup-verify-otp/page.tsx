@@ -14,6 +14,10 @@ import {
 } from "@/hooks/auth/use-auth-mutations";
 import { getPersistedAuthUser } from "@/lib/auth-session";
 import { getRedirectPath } from "@/lib/auth-utils";
+import {
+  hasCompletedOnboardingTutorial,
+  TUTORIAL_ONBOARDING_PROFILE_PATH,
+} from "@/lib/onboarding-tutorial-storage";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { otpSchema } from "@/lib/schemas/auth.schema";
 import { z } from "zod";
@@ -150,7 +154,11 @@ function SignupVerificationContent() {
 
     const loggedInUser = getPersistedAuthUser();
     if (loggedInUser?.isEmailVerified) {
-      router.replace(getRedirectPath(loggedInUser));
+      if (!hasCompletedOnboardingTutorial(loggedInUser._id)) {
+        router.replace(TUTORIAL_ONBOARDING_PROFILE_PATH);
+      } else {
+        router.replace(getRedirectPath(loggedInUser));
+      }
     }
   }, [isSuccessModalOpen, router]);
 
@@ -164,7 +172,11 @@ function SignupVerificationContent() {
   const handleSuccessModalClose = () => {
     setIsSuccessModalOpen(false);
     const loggedInUser = getPersistedAuthUser();
-    router.replace(getRedirectPath(loggedInUser));
+    if (loggedInUser && !hasCompletedOnboardingTutorial(loggedInUser._id)) {
+      router.replace(TUTORIAL_ONBOARDING_PROFILE_PATH);
+    } else {
+      router.replace(getRedirectPath(loggedInUser));
+    }
   };
 
   return (

@@ -3,10 +3,10 @@
 import { BriefcaseBusiness, Check, FileText, IdCard, UserRound } from "lucide-react";
 
 const stepItems = [
-  { label: "Identity Card", icon: IdCard, active: true },
   { label: "Profile Setup", icon: UserRound, active: false },
-  { label: "Business Documents", icon: FileText, active: false },
+  // { label: "Business Documents", icon: FileText, active: false },
   { label: "Portfolio", icon: BriefcaseBusiness, active: false },
+  { label: "Identity Verification", icon: IdCard, active: true },
 ];
 
 export default function IdSubmittedPage() {
@@ -23,9 +23,8 @@ export default function IdSubmittedPage() {
                   <div key={step.label} className="flex flex-col">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex h-12 w-12 items-center justify-center rounded-[8px] ${
-                          step.active ? "bg-white" : "bg-white/30"
-                        }`}
+                        className={`flex h-12 w-12 items-center justify-center rounded-[8px] ${step.active ? "bg-white" : "bg-white/30"
+                          }`}
                       >
                         <Icon
                           size={23}
@@ -33,9 +32,8 @@ export default function IdSubmittedPage() {
                         />
                       </div>
                       <span
-                        className={`text-[14px] leading-[17px] tracking-[-0.008em] ${
-                          step.active ? "text-white" : "text-white/60"
-                        }`}
+                        className={`text-[14px] leading-[17px] tracking-[-0.008em] ${step.active ? "text-white" : "text-white/60"
+                          }`}
                       >
                         {step.label}
                       </span>

@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   NotebookText,
   HandCoins,
+  Sparkles,
   TriangleAlert,
   UserRoundX,
 } from "lucide-react";
@@ -32,6 +33,11 @@ export const settingsMenu: SettingsMenuItem[] = [
     icon: Bell,
   },
   {
+    label: "Dashboard Walkthrough",
+    href: "/profile-settings/tutorials",
+    icon: Sparkles,
+  },
+  {
     label: "Advanced Category Plan",
     href: "/profile-settings/service-plan",
     icon: FileText,
@@ -45,7 +51,7 @@ export const settingsMenu: SettingsMenuItem[] = [
     label: "Ad Promotion",
     href: "/profile-settings/ad-promotion",
     icon: Megaphone,
-    disabled: true,
+    // disabled: true,
   },
   { label: "Addresses", href: "/profile-settings/addresses", icon: MapPin },
   {

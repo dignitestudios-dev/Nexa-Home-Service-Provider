@@ -14,6 +14,14 @@ import {
 } from "@/lib/home-job-filters-url";
 import { type JobFilters } from "@/types/job-filters.types";
 
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/index";
+import { getPersistedAuthUser } from "@/lib/auth-session";
+import {
+  hasCompletedHomeTutorial,
+  TUTORIAL_HOME_PATH,
+} from "@/lib/onboarding-tutorial-storage";
+
 import AvailableJobs from "./_components/available-jobs";
 import HomeJobsFilterModal from "./_components/home-jobs-filter-modal";
 import HomeSearchBar from "./_components/home-search-bar";
@@ -31,6 +39,17 @@ function HomePageContent() {
     () => parseHomeJobsPageParams(searchParams),
     [searchParams],
   );
+
+  const user = useSelector((state: RootState) => state.auth.user);
+
+  useEffect(() => {
+    const effectiveUser = user ?? getPersistedAuthUser();
+    const isApproved =
+      effectiveUser?.identityStatus?.trim().toLowerCase() === "approved";
+    if (isApproved && !hasCompletedHomeTutorial(effectiveUser?._id)) {
+      router.replace(TUTORIAL_HOME_PATH);
+    }
+  }, [user, router]);
 
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
