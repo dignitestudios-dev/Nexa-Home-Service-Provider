@@ -5,6 +5,7 @@ import { Star } from "lucide-react";
 import Image from "next/image";
 
 import PaginationControls from "@/components/ui/pagination-controls";
+import MediaGalleryModal from "@/components/media/media-gallery-modal";
 import { useReceivedReviewsQuery } from "@/hooks/reviews/use-received-reviews-query";
 import { useCurrentUserQuery } from "@/hooks/user/use-current-user-query";
 import type { UserReview } from "@/types/review.types";
@@ -49,6 +50,18 @@ function ReviewsSkeleton() {
 }
 
 function ReviewCard({ review }: { review: UserReview }) {
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+
+  const images = (review.images ?? [])
+    .filter((img) => Boolean(img?.url))
+    .slice(0, 5);
+
+  const galleryItems = images.map((image) => ({
+    id: image.id,
+    url: image.url,
+    isVideo: false,
+  }));
+
   return (
     <div className="relative min-w-0 pt-[8px]">
       {/* <div className="absolute left-[26px] top-0 z-10 h-[122px] w-[122px] overflow-hidden rounded-full border-4 border-[#F8F8F8] bg-[#005864] shadow-sm">
@@ -68,7 +81,7 @@ function ReviewCard({ review }: { review: UserReview }) {
         )}
       </div> */}
 
-      <div className="h-full min-w-0 overflow-hidden rounded-[34px] bg-[rgba(0,88,100,0.06)] px-5 pb-5 pt-[70px]">
+      <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-[34px] bg-[rgba(0,88,100,0.06)] px-5 pb-5 pt-[70px]">
         <div className="mb-3 flex min-w-0 flex-col items-start gap-[2px]">
           <span className="break-words text-[20px] font-medium leading-[25px] text-[#000000]">
             {(() => {
@@ -101,7 +114,44 @@ function ReviewCard({ review }: { review: UserReview }) {
         <p className="break-words text-[16px] font-normal leading-[26px] text-[rgba(24,24,24,0.6)]">
           {review.comment}
         </p>
+
+        {images.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {images.map((image, index) => (
+              <button
+                key={image.id || index}
+                type="button"
+                onClick={() => setPreviewIndex(index)}
+                className="group relative h-16 w-16 cursor-pointer overflow-hidden rounded-[12px] border border-black/10 bg-white/60 shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#005864]"
+                aria-label={`View review image ${index + 1}`}
+              >
+                <Image
+                  src={image.url}
+                  alt={image.fileName || `Review attachment ${index + 1}`}
+                  fill
+                  sizes="64px"
+                  className="object-cover transition-transform duration-300 group-hover:scale-110"
+                  unoptimized
+                />
+                <div className="absolute inset-0 bg-black/0 transition-colors duration-200 group-hover:bg-black/10" />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
+      {galleryItems.length > 0 && (
+        <MediaGalleryModal
+          open={previewIndex !== null}
+          onOpenChange={(open) => {
+            if (!open) setPreviewIndex(null);
+          }}
+          items={galleryItems}
+          currentIndex={previewIndex ?? 0}
+          onIndexChange={setPreviewIndex}
+          title={`${review.name}'s review photos`}
+        />
+      )}
     </div>
   );
 }

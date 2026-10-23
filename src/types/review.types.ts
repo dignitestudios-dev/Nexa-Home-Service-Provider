@@ -1,3 +1,9 @@
+export type ReviewImage = {
+  id: string;
+  url: string;
+  fileName?: string;
+};
+
 export type UserReview = {
   id: string;
   name: string;
@@ -7,6 +13,7 @@ export type UserReview = {
   rating: number;
   comment: string;
   date: string;
+  images?: ReviewImage[];
 };
 
 export type ReviewRatingDistribution = {

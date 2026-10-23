@@ -3,6 +3,7 @@ import {
   normalizeProfilePicture,
 } from "@/lib/parse-user-profile";
 import type {
+  ReviewImage,
   ReviewRatingDistribution,
   ReviewsPagination,
   ReviewsResult,
@@ -94,6 +95,36 @@ function getJobTitle(review: Record<string, unknown>): string {
   );
 }
 
+function parseReviewImages(raw: unknown): ReviewImage[] {
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .slice(0, 5)
+    .map((item, index) => {
+      if (typeof item === "string" && item.trim()) {
+        return {
+          id: `review-img-${index}`,
+          url: item.trim(),
+        };
+      }
+
+      if (item && typeof item === "object") {
+        const obj = item as Record<string, unknown>;
+        const url = toString(obj.url || obj.path || obj.src).trim();
+        if (!url) return null;
+
+        return {
+          id: toString(obj._id || obj.id) || `review-img-${index}`,
+          url,
+          fileName: toString(obj.fileName || obj.name).trim() || undefined,
+        };
+      }
+
+      return null;
+    })
+    .filter((item): item is ReviewImage => Boolean(item));
+}
+
 function parseReview(raw: unknown): UserReview | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -125,6 +156,9 @@ function parseReview(raw: unknown): UserReview | null {
     rating,
     comment: comment || "No comment provided.",
     date,
+    images: parseReviewImages(
+      review.images ?? review.attachments ?? review.photos,
+    ),
   };
 }
 
