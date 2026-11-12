@@ -8,7 +8,7 @@ import { WALKTHROUGH_PATH } from "@/lib/walkthrough-storage";
 
 const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: false },
-  // { label: "Business Documents", icon: FileText, active: false },
+  { label: "Business Documents", icon: FileText, active: false },
   { label: "Portfolio", icon: BriefcaseBusiness, active: false },
   { label: "Identity Verification", icon: IdCard, active: true },
 ];

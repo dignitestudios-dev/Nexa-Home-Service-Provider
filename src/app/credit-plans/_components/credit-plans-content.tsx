@@ -11,6 +11,7 @@ import {
 
 import CreditPackageCard from "./credit-package-card";
 import CustomPackageModal from "./custom-package-modal";
+import FreeCreditsModal from "./free-credits-modal";
 
 const CREDIT_PACKAGES = [
   {
@@ -48,6 +49,7 @@ export default function CreditPlansContent({
     useState<(typeof CREDIT_PACKAGES)[number]["id"]>("starter");
   const [isCustomPackageModalOpen, setIsCustomPackageModalOpen] =
     useState(false);
+  const [isFreeCreditsModalOpen, setIsFreeCreditsModalOpen] = useState(true);
   const checkoutMutation = useCheckoutSessionMutation();
 
   const selectedPackage = CREDIT_PACKAGES.find(
@@ -113,7 +115,7 @@ export default function CreditPlansContent({
           </p>
         </button>
 
-        <button
+        {/* <button
           type="button"
           onClick={handleBuyNow}
           // disabled={true}
@@ -121,7 +123,7 @@ export default function CreditPlansContent({
           className="mx-auto mt-8 h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold capitalize leading-5 text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {checkoutMutation.isPending ? "Processing..." : "Buy Now"}
-        </button>
+        </button> */}
 
         {footer}
       </div>
@@ -131,6 +133,11 @@ export default function CreditPlansContent({
         onOpenChange={setIsCustomPackageModalOpen}
         onConfirm={handleCustomPackageConfirm}
         isConfirming={checkoutMutation.isPending}
+      />
+
+      <FreeCreditsModal
+        open={isFreeCreditsModalOpen}
+        onOpenChange={setIsFreeCreditsModalOpen}
       />
     </div>
   );
