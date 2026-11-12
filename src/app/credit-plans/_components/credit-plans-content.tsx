@@ -82,7 +82,7 @@ export default function CreditPlansContent({
 
       <div className="mx-auto flex w-full max-w-[700px] flex-col pt-8">
         <p className="mx-auto max-w-[607px] text-center text-[16px] leading-6 tracking-[-0.014em] text-[#565656]">
-        Choose a package that fits your needs. Use credits to unlock jobs and connect directly with homeowners. You can upgrade or purchase more credits anytime.
+          Choose a package that fits your needs. Use credits to unlock jobs and connect directly with homeowners. You can upgrade or purchase more credits anytime.
         </p>
 
         <div className="mx-auto mt-8 flex w-full max-w-[500px] flex-col gap-4">
@@ -116,8 +116,8 @@ export default function CreditPlansContent({
         <button
           type="button"
           onClick={handleBuyNow}
-          disabled={true}
-          // disabled={checkoutMutation.isPending || !selectedPackage}
+          // disabled={true}
+          disabled={checkoutMutation.isPending || !selectedPackage}
           className="mx-auto mt-8 h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold capitalize leading-5 text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {checkoutMutation.isPending ? "Processing..." : "Buy Now"}

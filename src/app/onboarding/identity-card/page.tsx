@@ -55,10 +55,10 @@ export default function IdentityCardOnboardingPage() {
       label: "Upload Back Side",
     },
 
-    {
-      key: "einDocument",
-      label: "Upload EIN Document",
-    },
+    // {
+    //   key: "einDocument",
+    //   label: "Upload EIN Document",
+    // },
   ] as const;
 
   const uploadIdDocsMutation = useUploadIdDocsSetup();

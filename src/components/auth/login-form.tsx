@@ -274,9 +274,9 @@ export default function LoginForm() {
                       Before the walkthrough and onboarding begin, please ensure you have the following ready:
                     </p>
                     <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[13px] text-black/75">
-                      <li>
+                      {/* <li>
                         <strong className="font-semibold text-[#1C1C1C]">EIN</strong> (Employer Identification Number / Tax Registration)
-                      </li>
+                      </li> */}
                       <li>
                         <strong className="font-semibold text-[#1C1C1C]">Valid photo ID</strong>{" "} (Driver&apos;s License, State ID, or Passport)
                       </li>

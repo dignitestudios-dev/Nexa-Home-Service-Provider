@@ -122,7 +122,7 @@ export default function WalkthroughVerifiedBadgePage() {
                 disabled={isNavigating}
                 className="h-11 w-full rounded-[12px] bg-[rgba(0,88,100,0.06)] text-[15px] font-semibold leading-5 text-[#005864] transition hover:bg-[rgba(0,88,100,0.1)] disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {hasActiveBadgePlan ? "Continue" : "Skip for Now"}
+                {hasActiveBadgePlan ? "Continue" : "Next"}
               </button>
             </div>
           </div>

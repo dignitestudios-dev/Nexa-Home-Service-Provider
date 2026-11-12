@@ -58,7 +58,7 @@ export default function WalkthroughCreditPlansPage() {
                   type="button"
                   onClick={goToVerifiedBadge}
                   disabled={isNavigating}
-                  className="h-11 w-full rounded-[12px] bg-[rgba(0,88,100,0.06)] text-[15px] font-semibold leading-5 text-[#005864] transition hover:bg-[rgba(0,88,100,0.1)] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="h-11 w-full rounded-[12px] bg-[rgba(0,88,100,0.06)] text-[15px] font-semibold leading-5 text-[#005864] border-[#005864] border-1 transition hover:bg-[rgba(0,88,100,0.1)] disabled:cursor-not-all cursor-pointer disabled:opacity-70"
                 >
                   Skip for Now
                 </button>
