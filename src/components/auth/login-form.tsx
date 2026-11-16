@@ -234,6 +234,7 @@ export default function LoginForm() {
             type="email"
             placeholder="mikesmith@gmail.com"
             disabled={isLoading}
+            maxLength={50}
             className="mt-[6px] h-[48px] rounded-[12px] bg-[#F8F8F8] border-0 px-4 text-[16px] placeholder:text-[#181818]/50 focus-visible:ring-0 focus-visible:border-transparent shadow-none"
             {...register("email")}
           />
