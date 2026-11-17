@@ -17,6 +17,12 @@ import {
 import { markWalkthroughCompleted } from "@/lib/walkthrough-storage";
 import type { RootState } from "@/store/index";
 
+const VERIFIED_BADGE_WALKTHROUGH_FEATURES = [
+  "After 5 completed jobs, you can add the badge for $9.99/month.",
+  "Keep a 4.0★ average rating or higher. If it drops below that, you have until the end of your billing cycle to bring it back up before the badge is removed.",
+  "Cancel anytime from your profile.",
+] as const;
+
 export default function WalkthroughVerifiedBadgePage() {
   const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
@@ -94,6 +100,7 @@ export default function WalkthroughVerifiedBadgePage() {
               plans={plans}
               selectedPlanId={selectedPlanId}
               onSelectPlan={setSelectedPlanId}
+              features={VERIFIED_BADGE_WALKTHROUGH_FEATURES}
               isLoading={isLoading}
               isError={isError}
               onRetry={() => refetch()}

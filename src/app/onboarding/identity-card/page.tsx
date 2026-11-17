@@ -1,19 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   IdCard,
   UserRound,
   FileText,
   BriefcaseBusiness,
-  Upload,
-  File,
-  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { useForm } from "react-hook-form";
-import { extractAuthFromResponse, persistAuthUser } from "@/lib/auth-session";
+import { persistAuthUser } from "@/lib/auth-session";
 import { mergeUserOnboardingFlags } from "@/lib/onboarding-steps";
 import {
   markWalkthroughPending,
@@ -21,16 +17,11 @@ import {
 } from "@/lib/walkthrough-storage";
 import type { RootState } from "@/store/index";
 import { singUp } from "@/store/slices/auth-slice";
-import {
-  IdentityCardFormData,
-  identityCardSchema,
-  validateIdentityCardUploadFile,
-} from "@/lib/schemas/profile-setup.schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { compressImageFileIfNeeded } from "@/lib/compress-image-file";
-import { prepareIdentityCardDocumentsForUpload } from "@/lib/prepare-identity-card-documents";
+import { createVeriffFrame, MESSAGES } from "@veriff/incontext-sdk";
 import { toast } from "@/lib/toast";
-import { useUploadIdDocsSetup } from "@/hooks/onboarding/profile-setup-mutation";
+import { getApiErrorMessage } from "@/lib/api-error";
+import { userService } from "@/services/user.service";
+import { Button } from "@/components/ui/button";
 
 const stepItems = [
   { label: "Profile Setup", icon: UserRound, active: false },
@@ -44,122 +35,18 @@ export default function IdentityCardOnboardingPage() {
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
 
-  const idCardFields = [
-    {
-      key: "idCardFront",
-      label: "Upload Front Side",
-    },
+  const [isStarting, setIsStarting] = useState(false);
+  const [isFetchingStatus, setIsFetchingStatus] = useState(false);
 
-    {
-      key: "idCardBack",
-      label: "Upload Back Side",
-    },
-
-    {
-      key: "einDocument",
-      label: "Upload EIN Document",
-    },
-  ] as const;
-
-  const uploadIdDocsMutation = useUploadIdDocsSetup();
-  const [compressingField, setCompressingField] = useState<
-    (typeof idCardFields)[number]["key"] | null
-  >(null);
-  const [isPreparingUpload, setIsPreparingUpload] = useState(false);
-
-  // =========================
-  // RHF
-  // =========================
-
-  const {
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<IdentityCardFormData>({
-    resolver: zodResolver(identityCardSchema),
-
-    defaultValues: {
-      idCardFront: undefined as unknown as File,
-
-      idCardBack: undefined as unknown as File,
-
-      einDocument: undefined as unknown as File,
-    },
-  });
-
-  // =========================
-  // WATCH FILE
-  // =========================
-
-  const previewUrls = useMemo(() => {
-    return idCardFields.reduce(
-      (acc, field) => {
-        const file = watch(field.key);
-
-        acc[field.key] =
-          file && file.type.startsWith("image/")
-            ? URL.createObjectURL(file)
-            : "";
-
-        return acc;
-      },
-      {} as Record<string, string>,
-    );
-  }, [watch()]);
-
-  // =========================
-  // SUBMIT
-  // =========================
-
-  const handleFileSelect = async (
-    key: (typeof idCardFields)[number]["key"],
-    file: File | undefined,
-    label: string,
-  ) => {
-    if (!file) return;
-
-    const validationError = validateIdentityCardUploadFile(file);
-    if (validationError) {
-      toast.error(validationError);
-      return;
-    }
-
-    let processedFile = file;
-
-    if (file.type.startsWith("image/")) {
-      setCompressingField(key);
-
-      try {
-        processedFile = await compressImageFileIfNeeded(file);
-      } catch {
-        toast.error(`Could not optimize ${label}. Using original file.`);
-      } finally {
-        setCompressingField(null);
-      }
-    }
-
-    setValue(key, processedFile, { shouldValidate: true });
-    toast.success(`${label} added successfully.`);
-  };
-
-  const onSubmit = async (data: IdentityCardFormData) => {
-    setIsPreparingUpload(true);
-
+  const fetchStatusAndComplete = async () => {
+    setIsFetchingStatus(true);
     try {
-      const payload = await prepareIdentityCardDocumentsForUpload(data);
-      const response = await uploadIdDocsMutation.mutateAsync(payload);
+      const response = await userService.getVerificationStatus();
+      const data = response.data;
 
-      toast.fromApiSuccess(
-        response,
-        "Identity Verification uploaded successfully.",
-      );
-
-      const { user: apiUser } = extractAuthFromResponse(response);
-      const baseUser = apiUser ?? user;
-      if (baseUser) {
-        const nextUser = mergeUserOnboardingFlags(baseUser, {
-          identityStatus: apiUser?.identityStatus ?? "pending",
+      if (user) {
+        const nextUser = mergeUserOnboardingFlags(user, {
+          identityStatus: data?.identityStatus ?? "pending",
         });
         persistAuthUser(nextUser);
         dispatch(singUp(nextUser));
@@ -168,12 +55,52 @@ export default function IdentityCardOnboardingPage() {
 
       router.replace(WALKTHROUGH_PATH);
     } catch (error) {
-      toast.fromApiError(
+      const msg = getApiErrorMessage(
         error,
-        "Could not upload Identity Verification. Please try again.",
+        "Failed to load verification status.",
       );
+      if (msg) toast.error(msg);
+      // fallback navigate anyway
+      if (user) {
+        const nextUser = mergeUserOnboardingFlags(user, {
+          identityStatus: "pending",
+        });
+        persistAuthUser(nextUser);
+        dispatch(singUp(nextUser));
+        markWalkthroughPending(nextUser._id);
+      }
+      router.replace(WALKTHROUGH_PATH);
     } finally {
-      setIsPreparingUpload(false);
+      setIsFetchingStatus(false);
+    }
+  };
+
+  const handleStartVerification = async () => {
+    try {
+      setIsStarting(true);
+      const response = await userService.startVerification();
+      const sessionUrl = response.data?.sessionUrl;
+
+      if (!sessionUrl) {
+        throw new Error("Invalid session URL");
+      }
+
+      createVeriffFrame({
+        url: sessionUrl,
+        onEvent: (msg) => {
+          if (msg === MESSAGES.FINISHED) {
+            fetchStatusAndComplete();
+          }
+        },
+      });
+    } catch (error) {
+      const msg = getApiErrorMessage(
+        error,
+        "Could not start verification. Please try again.",
+      );
+      if (msg) toast.error(msg);
+    } finally {
+      setIsStarting(false);
     }
   };
 
@@ -181,7 +108,7 @@ export default function IdentityCardOnboardingPage() {
     <div className="h-screen w-full overflow-hidden bg-white py-3 pr-3 pl-1 md:py-5 md:pr-10 md:pl-0">
       <div className="mx-auto flex h-full min-h-0 w-full max-w-[1440px] flex-col rounded-[32px] bg-white p-0 lg:flex-row">
         <aside className="relative hidden h-full w-[400px] shrink-0 overflow-hidden rounded-[24px] bg-[url('/asset/sidebarbg.png')] bg-cover bg-center bg-no-repeat lg:sticky lg:top-0 lg:block">
-          <div className="relative z-10 flex h-full w-full items-start md:pt-[6em] px-20">
+          <div className="relative z-10 flex h-full w-full items-start px-20 md:pt-[6em]">
             <div className="flex w-full max-w-[199px] flex-col gap-1">
               {stepItems.map((step, index) => {
                 const Icon = step.icon;
@@ -190,8 +117,9 @@ export default function IdentityCardOnboardingPage() {
                   <div key={step.label} className="flex flex-col">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex h-12 w-12 items-center justify-center rounded-[8px] ${step.active ? "bg-white" : "bg-white/30"
-                          }`}
+                        className={`flex h-12 w-12 items-center justify-center rounded-[8px] ${
+                          step.active ? "bg-white" : "bg-white/30"
+                        }`}
                       >
                         <Icon
                           size={23}
@@ -201,8 +129,9 @@ export default function IdentityCardOnboardingPage() {
                         />
                       </div>
                       <span
-                        className={`text-[14px] leading-[17px] tracking-[-0.008em] ${step.active ? "text-white" : "text-white/60"
-                          }`}
+                        className={`text-[14px] leading-[17px] tracking-[-0.008em] ${
+                          step.active ? "text-white" : "text-white/60"
+                        }`}
                       >
                         {step.label}
                       </span>
@@ -221,131 +150,26 @@ export default function IdentityCardOnboardingPage() {
           </div>
         </aside>
 
-        <main className="flex min-h-0 flex-1 justify-center overflow-y-auto px-4 py-6 sm:px-8 lg:px-16 lg:py-14">
-          <div className="w-full max-w-[496px] pb-6">
-            <div className="text-center">
-              <h1 className="text-[36px] font-semibold leading-[45px] tracking-[-0.82px] text-[#1C1C1C]">
-                Upload Verification Documents
-              </h1>
-              <p className="mt-4 text-[16px] leading-[22px] text-black/80">
-                Please upload clear photos of your government-issued ID (front and back) and your official EIN document. This helps us confirm your identity, verify your business, and keep NexaHome safe for everyone.
-              </p>
-            </div>
+        <main className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:px-8 lg:px-16 lg:py-14">
+          <div className="w-full max-w-[496px] pb-6 text-center">
+            <h1 className="text-[36px] font-semibold leading-[45px] tracking-[-0.82px] text-[#1C1C1C]">
+              Verify Your Identity
+            </h1>
+            <p className="mb-10 mt-4 text-[16px] leading-[22px] text-black/80">
+              Please verify your identity using a government-issued ID (e.g.,
+              driver&apos;s license, state ID, or passport). This helps us
+              keep NexaHome safe for everyone.
+            </p>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="mt-10">
-              <div className="flex flex-col gap-10">
-                {idCardFields.map((field) => {
-                  const selectedFile = watch(field.key);
-
-                  const previewUrl = previewUrls[field.key];
-
-                  const fileLabel = !selectedFile
-                    ? "Choose file to upload"
-                    : selectedFile.name.length <= 36
-                      ? selectedFile.name
-                      : `${selectedFile.name.slice(0, 33)}...`;
-
-                  return (
-                    <div key={field.key}>
-                      <p className="text-sm font-medium text-[#1C1C1C]">
-                        {field.label}
-                      </p>
-                      <p className="mb-2 mt-1 text-xs text-[#181818]/60">
-                        JPG, PNG or PDF (max 10MB). Files over 10MB cannot be
-                        uploaded.
-                      </p>
-
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        className="hidden"
-                        id={field.key}
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          handleFileSelect(field.key, file, field.label);
-                          event.target.value = "";
-                        }}
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          document.getElementById(field.key)?.click()
-                        }
-                        disabled={compressingField === field.key}
-                        className="relative mx-auto flex h-[140px] w-full max-w-[620px] flex-col items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#005864] bg-[#F9FAFA] disabled:cursor-not-allowed disabled:opacity-70"
-                      >
-                        {previewUrl ? (
-                          <>
-                            <img
-                              src={previewUrl}
-                              alt={field.label}
-                              className="absolute inset-0 h-full w-full object-contain bg-[#F9FAFA] p-2"
-                            />
-
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-
-                                setValue(
-                                  field.key,
-                                  undefined as unknown as File,
-                                  {
-                                    shouldValidate: true,
-                                  },
-                                );
-                              }}
-                              className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white"
-                            >
-                              <X size={14} />
-                            </button>
-
-                            <span className="absolute inset-x-0 bottom-0 truncate bg-black/45 px-2 py-1 text-center text-[11px] text-white">
-                              {fileLabel}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            {selectedFile ? (
-                              <File size={24} className="text-[#005864]" />
-                            ) : (
-                              <Upload size={24} className="text-black/80" />
-                            )}
-
-                            <span className="mt-2 text-[13px] leading-[18px] text-[#1C1C1C]">
-                              {compressingField === field.key
-                                ? "Optimizing image..."
-                                : fileLabel}
-                            </span>
-                          </>
-                        )}
-                      </button>
-
-                      {errors[field.key] && (
-                        <p className="mt-2 text-sm text-red-500">
-                          {errors[field.key]?.message}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <button
-                type="submit"
-                disabled={
-                  uploadIdDocsMutation.isPending ||
-                  isPreparingUpload ||
-                  compressingField !== null
-                }
-                className="mt-8 h-[48px] w-full cursor-pointer rounded-[12px] bg-[#005864] text-[16px] font-semibold leading-[20px] text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isPreparingUpload || uploadIdDocsMutation.isPending
-                  ? "Uploading..."
-                  : "Continue"}
-              </button>
-            </form>
+            <Button
+              onClick={handleStartVerification}
+              disabled={isStarting || isFetchingStatus}
+              className="h-14 w-full max-w-[388px] rounded-full bg-[#005864] text-lg font-[600] text-white hover:bg-[#004d57] cursor-pointer"
+            >
+              {isStarting || isFetchingStatus
+                ? "Loading..."
+                : "Start Verification"}
+            </Button>
           </div>
         </main>
       </div>

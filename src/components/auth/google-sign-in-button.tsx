@@ -13,11 +13,13 @@ import { cn } from "@/lib/utils";
 type GoogleSignInButtonProps = {
   className?: string;
   onConflict?: () => void;
+  disabled?: boolean;
 };
 
 export function GoogleSignInButton({
   className,
   onConflict,
+  disabled = false,
 }: GoogleSignInButtonProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -73,7 +75,7 @@ export function GoogleSignInButton({
     <button
       type="button"
       onClick={handleGoogleSignIn}
-      disabled={googleLoginMutation.isPending}
+      disabled={googleLoginMutation.isPending || disabled}
       className={cn(
         "flex h-[50px] w-[188px] items-center cursor-pointer justify-center gap-2 rounded-[15px] bg-[#F8F8F8] text-[14px] font-[500] text-[#181818] transition hover:bg-[#EFEFEF] disabled:cursor-not-allowed disabled:opacity-60",
         className,
