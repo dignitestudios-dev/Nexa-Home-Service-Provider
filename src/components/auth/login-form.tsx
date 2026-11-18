@@ -36,6 +36,7 @@ export default function LoginForm() {
   const [checkedEmail, setCheckedEmail] = useState<string | null>(null);
   const [isLoginMode, setIsLoginMode] = useState("no");
   const [showConflictModal, setShowConflictModal] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const checkEmailMutation = useCheckEmail();
   const registerMutation = useRegisterAuth();
@@ -118,12 +119,18 @@ export default function LoginForm() {
 
   const isSubmitDisabled =
     !hasEmail ||
+    !acceptTerms ||
     isLoading ||
     (isEmailCheckedForCurrent &&
       ((isLoginMode === "yes" && !hasPassword) ||
         (isLoginMode === "no" && (!hasPassword || !hasConfirmPassword))));
 
   const onSubmit = async (data: LoginFormData) => {
+    if (!acceptTerms) {
+      toast.error("Please accept the Terms & Conditions and Privacy Policy to continue.");
+      return;
+    }
+
     const currentEmail = data.email.trim().toLowerCase();
     if (!currentEmail) return;
 
@@ -234,6 +241,7 @@ export default function LoginForm() {
             type="email"
             placeholder="mikesmith@gmail.com"
             disabled={isLoading}
+            maxLength={50}
             className="mt-[6px] h-[48px] rounded-[12px] bg-[#F8F8F8] border-0 px-4 text-[16px] placeholder:text-[#181818]/50 focus-visible:ring-0 focus-visible:border-transparent shadow-none"
             {...register("email")}
           />
@@ -273,12 +281,17 @@ export default function LoginForm() {
                     <p className="mt-1 text-black/80">
                       Before the walkthrough and onboarding begin, please ensure you have the following ready:
                     </p>
-                    <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[13px] text-black/75">
+                    <ul className="mt-1.5 list-disc space-y-1.5 pl-4 text-[13px] text-black/75">
                       {/* <li>
                         <strong className="font-semibold text-[#1C1C1C]">EIN</strong> (Employer Identification Number / Tax Registration)
                       </li> */}
                       <li>
                         <strong className="font-semibold text-[#1C1C1C]">Valid photo ID</strong>{" "} (Driver&apos;s License, State ID, or Passport)
+                      </li>
+                      <li>
+                        <strong className="font-semibold text-[#1C1C1C]">Pilot Program Offer:</strong>{" "}
+                        <span className="font-medium text-[#1C1C1C]">1,500 Free Credits</span>{" "}
+                        will be added to your account within 24 hours of verification to buy Homeowner leads. Credits expire when the pilot ends.
                       </li>
                       {/* <li>
                         For the ID, <strong className="font-semibold text-[#1C1C1C]">support front and back</strong> where applicable.
@@ -293,6 +306,41 @@ export default function LoginForm() {
             )}
           </>
         )}
+
+        {/* Terms & Conditions Checkbox */}
+        <div className="mb-4 mt-2">
+          <label className="flex items-start gap-2.5 cursor-pointer select-none text-left">
+            <input
+              type="checkbox"
+              checked={acceptTerms}
+              onChange={(e) => setAcceptTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded-[4px] border border-[#181818]/60 accent-[#005864] cursor-pointer"
+            />
+            <span className="text-[13px] leading-[18px] text-[#2D3748]">
+              I agree to NexaHome&apos;s{" "}
+              <a
+                href="https://nexahomeapp.com/experts/terms-and-conditions/"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="font-medium text-[#005864] underline underline-offset-2 hover:opacity-80"
+              >
+                Terms & Conditions
+              </a>{" "}
+              and{" "}
+              <a
+                href="https://nexahomeapp.com/experts/privacy-policy/"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="font-medium text-[#005864] underline underline-offset-2 hover:opacity-80"
+              >
+                Privacy Policy
+              </a>
+              , and consent to receive account-related texts (msg & data rates may apply) and emails from NexaHome.
+            </span>
+          </label>
+        </div>
 
         <button
           type="submit"
@@ -324,9 +372,15 @@ export default function LoginForm() {
         </div>
 
         <div className="mt-8 flex items-center justify-between">
-          <GoogleSignInButton onConflict={() => setShowConflictModal(true)} />
+          <GoogleSignInButton
+            disabled={!acceptTerms}
+            onConflict={() => setShowConflictModal(true)}
+          />
 
-          <AppleSignInButton onConflict={() => setShowConflictModal(true)} />
+          <AppleSignInButton
+            disabled={!acceptTerms}
+            onConflict={() => setShowConflictModal(true)}
+          />
         </div>
       </div>
 

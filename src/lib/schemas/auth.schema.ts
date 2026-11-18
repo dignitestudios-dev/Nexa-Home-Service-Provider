@@ -22,6 +22,7 @@ export const loginFlowEmailSchema = z.object({
   email: emailSchema,
   password: z.string().optional(),
   confirmPassword: z.string().optional(),
+  acceptTerms: z.boolean().optional(),
 });
 
 /** Login only — no strength rules (existing users may have any password). */

@@ -172,7 +172,11 @@ export default function SettingsSubscriptionPlan({
     : price ?? "";
   const displayPlanName = selectedPlan?.name ?? planName;
   const displayFeatures =
-    selectedPlan?.description.length ? selectedPlan.description : features;
+    features !== DEFAULT_FEATURES
+      ? features
+      : selectedPlan?.description.length
+        ? selectedPlan.description
+        : features;
   const displayExpiryLabel =
     expiryLabel ??
     (selectedPlan?.isSubscribed

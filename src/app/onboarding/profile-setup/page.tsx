@@ -729,7 +729,7 @@ export default function ProfileSetupOnboardingPage() {
                 </label>
                 <Input
                   {...register("companyName")}
-                  maxLength={30}
+                  maxLength={50}
                   placeholder="ABC"
                   className="mt-1 h-12 rounded-[12px] border-0 bg-[#F8F8F8] px-4 text-[16px] placeholder:text-[rgba(24,24,24,0.8)]"
                 />

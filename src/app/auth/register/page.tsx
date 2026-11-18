@@ -240,6 +240,11 @@ export default function RegisterPage() {
                   <li>
                     <strong className="font-semibold text-[#1C1C1C]">Primary service</strong> (additional/secondary services can be added later).
                   </li>
+                  <li>
+                    <strong className="font-semibold text-[#005864]">Pilot Program Offer:</strong>{" "}
+                    <span className="font-medium text-[#1C1C1C]">1,500 Free Credits</span>{" "}
+                    will be added to your account within 24 hours of verification to buy Homeowner leads. Credits expire when the pilot ends.
+                  </li>
                 </ul>
               </div>
             </div>

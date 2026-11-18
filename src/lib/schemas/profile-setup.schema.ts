@@ -122,7 +122,7 @@ export const profileSetupSchema = z.object({
     .string()
     .trim()
     .min(1, "Company name is required")
-    .max(30, "Company name cannot exceed 30 characters"),
+    .max(50, "Company name cannot exceed 30 characters"),
 
   phoneNumber: z
     .string()
