@@ -156,9 +156,7 @@ export default function IdentityCardOnboardingPage() {
               Verify Your Identity
             </h1>
             <p className="mb-10 mt-4 text-[16px] leading-[22px] text-black/80">
-              Please verify your identity using a government-issued ID (e.g.,
-              driver&apos;s license, state ID, or passport). This helps us
-              keep NexaHome safe for everyone.
+             To register as an Expert, you must complete identity verification through Veriff by submitting a valid government-issued ID and completing a selfie with a liveness check. If verification is incomplete or unsuccessful, you will be prompted to retry the process."
             </p>
 
             <Button
