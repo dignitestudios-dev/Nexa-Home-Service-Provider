@@ -30,20 +30,11 @@ export default function FreeCreditsModal({
           </DialogTitle>
 
           <p className="mt-3 text-[14px] leading-relaxed text-[#2D3748]">
-            Credits will be automatically added to your account within 24 hours of successful account verification.
+            Credits will be added to your account within 24 hours of verification. Use them to buy Homeowner leads.
           </p>
 
-          <div className="mt-5 w-full rounded-[16px] bg-[#F4F9FA] p-4 text-left border border-[#005864]/15">
-            <p className="text-[14px] font-semibold text-[#181818]">
-              Enjoy Free Credits During Our Pilot!
-            </p>
-            <p className="mt-1 text-[13px] leading-relaxed text-[#565656]">
-              Explore NexaHome, connect with homeowners, and use your 1,500 complimentary credits to experience the platform.
-            </p>
-          </div>
-
-          <p className="mt-4 text-[12px] leading-relaxed text-[#718096]">
-            Your free credits are available for a limited time during the pilot program. Once the pilot ends, any remaining credits will be reset to zero. You will then be able to purchase credit packages to continue using NexaHome.
+          <p className="mt-3 text-[13px] leading-relaxed text-[#718096]">
+            Credits expire when the pilot ends. After that, you can buy credit packages.
           </p>
 
           <button

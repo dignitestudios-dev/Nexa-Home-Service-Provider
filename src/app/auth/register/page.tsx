@@ -293,7 +293,11 @@ export default function RegisterPage() {
             <div className="h-px bg-black/20 flex-1" />
           </div>
 
-          <div className="mt-5 flex items-center justify-between">
+          <p className="mt-3 text-center text-[14px] font-[500] text-black/70">
+            Sign up / Log in using
+          </p>
+
+          <div className="mt-4 flex items-center justify-between">
             <GoogleSignInButton />
 
             <AppleSignInButton />

@@ -7,7 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { userService } from "@/services/user.service";
 import OnboardingLogoutButton from "@/components/onboarding/onboarding-logout-button";
-import { Upload, File as FileIcon, X } from "lucide-react";
+import { Upload, File as FileIcon, X, CheckCircle2, Clock } from "lucide-react";
+import { createVeriffFrame, MESSAGES } from "@veriff/incontext-sdk";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useForm } from "react-hook-form";
@@ -101,6 +102,7 @@ export default function IdentityVerificationPage() {
     return 5;
   });
   const [isFetchingStatus, setIsFetchingStatus] = useState(false);
+  const [isStartingVeriff, setIsStartingVeriff] = useState(false);
 
   const uploadIdDocsMutation = useUploadIdDocsSetup();
 
@@ -422,6 +424,35 @@ export default function IdentityVerificationPage() {
     }
   };
 
+  const handleStartVeriff = async () => {
+    try {
+      setIsStartingVeriff(true);
+      const response = await userService.startVerification();
+      const sessionUrl = response.data?.sessionUrl ?? response?.sessionUrl;
+
+      if (!sessionUrl) {
+        throw new Error("Invalid session URL");
+      }
+
+      createVeriffFrame({
+        url: sessionUrl,
+        onEvent: (msg) => {
+          if (msg === MESSAGES.FINISHED) {
+            fetchStatus(false);
+          }
+        },
+      });
+    } catch (error) {
+      const msg = getApiErrorMessage(
+        error,
+        "Could not start verification. Please try again.",
+      );
+      if (msg) toast.error(msg);
+    } finally {
+      setIsStartingVeriff(false);
+    }
+  };
+
   const renderUploadForm = () => {
     return (
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 w-full">
@@ -543,8 +574,9 @@ export default function IdentityVerificationPage() {
     if (status === "approved") {
       return (
         <div className="flex flex-col items-center gap-5 text-center py-6">
-          <div className="rounded-full bg-green-50 px-8 py-4 text-green-700 flex items-center shadow-sm border border-green-100 font-bold text-xl">
-            <span className="mr-2">✅</span> Identity Verified
+          <div className="rounded-full bg-green-50 px-8 py-4 text-green-700 flex items-center shadow-sm border border-green-100 font-bold text-xl gap-2.5">
+            <CheckCircle2 className="h-6 w-6 text-green-600 shrink-0" />
+            <span>Identity Verified</span>
           </div>
           <p className="text-[16px] text-gray-600 max-w-sm">
             Thank you! Your identity has been successfully verified. Taking you to your dashboard...
@@ -556,8 +588,9 @@ export default function IdentityVerificationPage() {
     if (status === "pending") {
       return (
         <div className="flex flex-col items-center gap-5 text-center py-6">
-          <div className="rounded-full bg-yellow-50 px-8 py-4 text-yellow-700 flex items-center shadow-sm border border-yellow-100 font-bold text-xl">
-            <span className="mr-2">⏳</span> Under Review
+          <div className="rounded-full bg-yellow-50 px-8 py-4 text-yellow-700 flex items-center shadow-sm border border-yellow-100 font-bold text-xl gap-2.5">
+            <Clock className="h-6 w-6 text-yellow-600 shrink-0" />
+            <span>Under Review</span>
           </div>
           <p className="text-[16px] text-gray-600 max-w-sm">
             Your identity documents are currently under review. This page will automatically update once the review is complete.
@@ -572,25 +605,47 @@ export default function IdentityVerificationPage() {
           <div className="rounded-2xl bg-orange-50 border border-orange-200 p-6 w-full shadow-sm mb-6">
             <h3 className="text-orange-800 font-bold text-lg mb-2">Resubmission Requested</h3>
             <p className="text-[15px] text-orange-700 leading-relaxed">
-              Please provide clearer ID photos or additional documents to complete your verification.
+              Please re-verify your identity to complete verification.
             </p>
           </div>
-          {renderUploadForm()}
+          {attemptsRemaining === 1 ? (
+            renderUploadForm()
+          ) : (
+            <Button
+              type="button"
+              onClick={handleStartVeriff}
+              disabled={isStartingVeriff || isFetchingStatus}
+              className="h-14 w-full rounded-full bg-[#005864] text-white hover:bg-[#004d57] font-[600] text-[17px] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+            >
+              {isStartingVeriff ? (
+                <>
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Starting Verification...</span>
+                </>
+              ) : (
+                "Retry Verification with Veriff"
+              )}
+            </Button>
+          )}
         </div>
       );
     }
 
     if (status === "rejected") {
+      const isLastAttempt = attemptsRemaining === 1;
+
       return (
         <div className="flex flex-col items-center text-center w-full">
           <div className="rounded-2xl bg-red-50 border border-red-200 p-6 w-full shadow-sm mb-6">
             <h3 className="text-red-800 font-bold text-lg mb-2">Verification Declined</h3>
             <p className="text-[15px] text-red-700 mb-4">
-              We were unable to verify your identity with the provided documents.
+              We were unable to verify your identity.
             </p>
             {attemptsRemaining > 0 ? (
               <p className="text-[14px] font-semibold text-red-700 bg-red-100 py-1.5 px-4 rounded-full inline-block">
-                You have {attemptsRemaining} attempt{attemptsRemaining > 1 ? "s" : ""} remaining.
+                {isLastAttempt
+                  ? "Final attempt: Please upload your ID photos manually."
+                  : `You have ${attemptsRemaining} attempt${attemptsRemaining > 1 ? "s" : ""} remaining.`}
               </p>
             ) : (
               <p className="text-[14px] font-bold text-red-700 bg-red-100 py-2 px-5 rounded-full inline-block">
@@ -599,7 +654,27 @@ export default function IdentityVerificationPage() {
             )}
           </div>
 
-          {attemptsRemaining > 0 && renderUploadForm()}
+          {attemptsRemaining > 0 && (
+            isLastAttempt ? (
+              renderUploadForm()
+            ) : (
+              <Button
+                type="button"
+                onClick={handleStartVeriff}
+                disabled={isStartingVeriff || isFetchingStatus}
+                className="h-14 w-full rounded-full bg-[#005864] text-white hover:bg-[#004d57] font-[600] text-[17px] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+              >
+                {isStartingVeriff ? (
+                  <>
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Starting Verification...</span>
+                  </>
+                ) : (
+                  "Verify Again with Veriff"
+                )}
+              </Button>
+            )
+          )}
         </div>
       );
     }
@@ -608,10 +683,24 @@ export default function IdentityVerificationPage() {
     return (
       <div className="flex flex-col items-center text-center w-full">
         <h2 className="text-[28px] font-bold text-gray-900 tracking-tight">Identity Verification</h2>
-        <p className="text-[16px] text-gray-600 mt-3 mb-2 max-w-sm">
-          Please upload your government-issued ID to verify your identity and access the platform.
+        <p className="text-[16px] text-gray-600 mt-3 mb-6 max-w-sm">
+          Please verify your identity using a government-issued ID to access the platform.
         </p>
-        {renderUploadForm()}
+        <Button
+          type="button"
+          onClick={handleStartVeriff}
+          disabled={isStartingVeriff || isFetchingStatus}
+          className="h-14 w-full rounded-full bg-[#005864] text-white hover:bg-[#004d57] font-[600] text-[17px] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+        >
+          {isStartingVeriff ? (
+            <>
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <span>Starting Verification...</span>
+            </>
+          ) : (
+            "Start Verification with Veriff"
+          )}
+        </Button>
       </div>
     );
   };

@@ -12,6 +12,12 @@ import {
   getBillingRedirectUrl,
 } from "@/lib/billing-redirect-urls";
 
+const VERIFIED_BADGE_FEATURES = [
+  "After 5 completed jobs, you can add the badge for $9.99/month.",
+  "Keep a 4.0★ average rating or higher. If it drops below that, you have until the end of your billing cycle to bring it back up before the badge is removed.",
+  "Cancel anytime from your profile.",
+] as const;
+
 export default function VerifiedBadgePlanPage() {
   const { data: plans = [], isLoading, isError, refetch } =
     useSubscriptionPlansQuery({ type: "badge" });
@@ -38,6 +44,7 @@ export default function VerifiedBadgePlanPage() {
       plans={plans}
       selectedPlanId={selectedPlanId}
       onSelectPlan={setSelectedPlanId}
+      features={VERIFIED_BADGE_FEATURES}
       isLoading={isLoading}
       isError={isError}
       onRetry={() => refetch()}
