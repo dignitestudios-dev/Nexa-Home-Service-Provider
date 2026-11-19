@@ -302,7 +302,7 @@ export const identityCardSchema = z.object({
 
   idCardBack: idFileSchema,
 
-  einDocument: idFileSchema,
+  einDocument: idFileSchema.optional(),
 });
 
 export type ProfileSetupFormData = z.input<typeof profileSetupSchema>;

@@ -6,9 +6,9 @@ export async function prepareIdentityCardDocumentsForUpload(
   data: IdentityCardFormData,
 ): Promise<UploadIdDocsPayload> {
   const [idCardFront, idCardBack, einDocument] = await Promise.all([
-    compressImageFileIfNeeded(data.idCardFront),
-    compressImageFileIfNeeded(data.idCardBack),
-    compressImageFileIfNeeded(data.einDocument),
+    data.idCardFront ? compressImageFileIfNeeded(data.idCardFront) : undefined,
+    data.idCardBack ? compressImageFileIfNeeded(data.idCardBack) : undefined,
+    data.einDocument ? compressImageFileIfNeeded(data.einDocument) : undefined,
   ]);
 
   return {

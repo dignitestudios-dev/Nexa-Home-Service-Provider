@@ -455,7 +455,17 @@ export default function IdentityVerificationPage() {
 
   const renderUploadForm = () => {
     return (
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 w-full">
+      <form
+        onSubmit={handleSubmit(onSubmit, (formErrors) => {
+          const firstError =
+            formErrors.idCardFront?.message ||
+            formErrors.idCardBack?.message ||
+            formErrors.einDocument?.message ||
+            "Please upload both front and back sides of your ID.";
+          toast.error(firstError);
+        })}
+        className="mt-8 w-full"
+      >
         <div className="flex flex-col gap-6 text-left">
           {idCardFields.map((field) => {
             const selectedFile = watch(field.key);
