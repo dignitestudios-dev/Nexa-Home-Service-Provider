@@ -125,6 +125,16 @@ export function canAccessOnboardingPath(pathname: string, user: User): boolean {
     return true;
   }
 
+  // Allow proceeding to identity verification if portfolio is skipped/optional
+  const portfolioStepIndex = ONBOARDING_STEPS.findIndex((s) => s.id === "portfolio");
+  if (
+    currentStepIndex === portfolioStepIndex &&
+    identityStepIndex >= 0 &&
+    pathStepIndex === identityStepIndex
+  ) {
+    return true;
+  }
+
   /*
   // Always allow accessing business docs if they haven't submitted them
   if (pathStepIndex === 1 && !user.businessDocsSubmitted) {

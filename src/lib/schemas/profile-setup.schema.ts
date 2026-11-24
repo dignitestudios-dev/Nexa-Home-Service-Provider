@@ -147,11 +147,11 @@ export const profileSetupSchema = z.object({
 
   overview: z
     .string()
-    .min(10, "Overview must be at least 10 characters")
     .max(
       PROFILE_OVERVIEW_MAX_LENGTH,
       `Overview cannot exceed ${PROFILE_OVERVIEW_MAX_LENGTH} characters`,
-    ),
+    )
+    .optional(),
 
   label: z.string().min(2, "Label is required"),
 
