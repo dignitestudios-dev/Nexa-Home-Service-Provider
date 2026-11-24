@@ -244,6 +244,12 @@ export default function PortfolioPage() {
     }
   };
 
+  const handleSkip = () => {
+    navigateToNextOnboardingStep(router, dispatch, user, {
+      completedFlags: { portfolioMediaUploaded: true },
+    });
+  };
+
   const isUploadDisabled =
     uploadPortfolioMutation.isPending ||
     isOptimizingFiles ||
@@ -417,20 +423,35 @@ export default function PortfolioPage() {
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={
-                  uploadPortfolioMutation.isPending ||
-                  isPreparingUpload ||
-                  isOptimizingFiles ||
-                  portfolioFiles.length === 0
-                }
-                className="mx-auto mt-10 block h-12 w-full max-w-[500px] rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isPreparingUpload || uploadPortfolioMutation.isPending
-                  ? "Uploading..."
-                  : "Continue"}
-              </button>
+              <div className="mx-auto mt-10 flex w-full max-w-[500px] flex-col gap-4">
+                <button
+                  type="button"
+                  onClick={handleSkip}
+                  disabled={
+                    uploadPortfolioMutation.isPending ||
+                    isPreparingUpload ||
+                    isOptimizingFiles
+                  }
+                  className="block h-12 w-full cursor-pointer rounded-[12px] border border-[#005864] bg-transparent text-[16px] font-semibold text-[#005864] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Skip
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={
+                    uploadPortfolioMutation.isPending ||
+                    isPreparingUpload ||
+                    isOptimizingFiles ||
+                    portfolioFiles.length === 0
+                  }
+                  className="block h-12 w-full cursor-pointer rounded-[12px] bg-[#005864] text-[16px] font-semibold text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isPreparingUpload || uploadPortfolioMutation.isPending
+                    ? "Uploading..."
+                    : "Continue"}
+                </button>
+              </div>
             </form>
           </section>
         </main>

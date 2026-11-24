@@ -208,9 +208,6 @@ export default function ProfileSetupOnboardingPage() {
     const hasConfirmedSms = Boolean(confirmSmsCapable);
     const hasServices =
       Array.isArray(selectedServices) && selectedServices.length > 0;
-    const hasOverview = Boolean(
-      overview?.trim() && overview.trim().length >= 10,
-    );
     const hasLabel = Boolean(label?.trim() && label.trim().length >= 2);
     const hasAddress = Boolean(address?.trim() && address.trim().length >= 3);
     const hasZipCode = Boolean(zipCode?.trim() && zipCode.trim().length >= 3);
@@ -221,7 +218,6 @@ export default function ProfileSetupOnboardingPage() {
       hasValidPhone &&
       hasConfirmedSms &&
       hasServices &&
-      hasOverview &&
       hasLabel &&
       hasAddress &&
       hasZipCode &&
@@ -232,7 +228,6 @@ export default function ProfileSetupOnboardingPage() {
     phoneNumber,
     confirmSmsCapable,
     selectedServices,
-    overview,
     label,
     address,
     zipCode,
@@ -1000,7 +995,8 @@ export default function ProfileSetupOnboardingPage() {
 
               <div>
                 <label className="text-[16px] font-medium leading-5 text-[#1C1C1C]">
-                  Overview <span className="text-red-500">*</span>
+                  Overview{" "}
+                  <span className="text-xs font-normal text-[#181818]/60">(Optional)</span>
                 </label>
 
                 <div className="mt-1 rounded-[12px] bg-[#F8F8F8] p-3">
@@ -1017,7 +1013,7 @@ export default function ProfileSetupOnboardingPage() {
                     Tell homeowners about yourself, your company, and the services you offer.
                   </p>
                   <p className="shrink-0 text-right text-[16px] leading-5 text-black/60">
-                    {overview.length}/{PROFILE_OVERVIEW_MAX_LENGTH}
+                    {overview?.length ?? 0}/{PROFILE_OVERVIEW_MAX_LENGTH}
                   </p>
                 </div>
 
