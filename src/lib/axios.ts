@@ -110,23 +110,19 @@ API.interceptors.response.use(
 
   (error) => {
 
-    if (error?.response?.status === 403 || error?.response?.status === 401) {
+   if (error?.response?.status === 403 || error?.response?.status === 401) {
+  const requestUrl = error?.config?.url || "";
+  const isAuthRequest = requestUrl.startsWith("/auth/");
+  const isLoginRoute = window.location.pathname === "/auth/login";
 
-      const requestUrl = error?.config?.url || "";
+  if (!isAuthRequest && !isLoginRoute) {
+    clearAuthTokenCookie();
 
-      const isAuthRequest = requestUrl.startsWith("/auth/");
-
-      if (!isAuthRequest) {
-
-        clearAuthTokenCookie();
-
-        if (typeof window !== "undefined") {
-          window.location.href = "/auth/login";
-        }
-
-      }
-
+    if (typeof window !== "undefined") {
+      window.location.href = "/auth/login";
     }
+  }
+}
 
     return Promise.reject(error);
 
